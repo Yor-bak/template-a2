@@ -1,27 +1,32 @@
+"use client";
 import Link from "next/link";
-import { services } from "@/data/services";
-import { clinic } from "@/data/clinic";
+import { useServices } from "@/contexts/ServicesContext";
+import { useClinicConfig } from "@/contexts/ClinicConfigContext";
 import { whatsappLink } from "@/lib/utils";
 import { SectionTitle } from "@/components/public/SectionTitle";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { MessageCircle, CalendarDays } from "lucide-react";
 
 export default function ServicesPage() {
-  const emergency = services.find((s) => s.isEmergency);
-  const regular = services.filter((s) => !s.isEmergency);
+  const { config } = useClinicConfig();
+  const { getPublicServices } = useServices();
+  const publicServices = getPublicServices();
+
+  const emergency = publicServices.find((s) => s.isEmergency);
+  const regular = publicServices.filter((s) => !s.isEmergency);
 
   return (
-    <div className="bg-[#FAFAF7]">
+    <div className="bg-[var(--color-background)]">
       {/* Header */}
-      <div className="bg-[#173B45] relative overflow-hidden">
+      <div className="bg-[var(--color-primary)] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
-            backgroundImage: "linear-gradient(#70D6C7 1px, transparent 1px), linear-gradient(90deg, #70D6C7 1px, transparent 1px)",
+            backgroundImage: "linear-gradient(var(--color-accent) 1px, transparent 1px), linear-gradient(90deg, var(--color-accent) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 text-center">
-          <p className="text-[#70D6C7] text-xs font-bold uppercase tracking-widest mb-3">Catálogo completo</p>
+          <p className="text-[var(--color-accent)] text-xs font-bold uppercase tracking-widest mb-3">Catálogo completo</p>
           <h1 className="text-4xl font-extrabold text-white mb-4">Nuestros servicios</h1>
           <p className="text-white/60 max-w-xl mx-auto text-base">
             Tratamientos dentales completos con atención personalizada y tecnología moderna.
@@ -30,13 +35,12 @@ export default function ServicesPage() {
             * Los precios son orientativos. Algunos tratamientos requieren valoración previa.
           </p>
 
-          {/* Urgencias CTA dentro del header */}
           {emergency && (
             <div className="mt-8 inline-flex flex-col sm:flex-row items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-6 py-4">
               <p className="text-white/70 text-sm font-medium">¿Dolor intenso o fractura dental?</p>
               <div className="flex gap-2">
                 <a
-                  href={whatsappLink(clinic.whatsapp, "Hola, tengo una urgencia dental")}
+                  href={whatsappLink(config.whatsapp, "Hola, tengo una urgencia dental")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition-colors"
@@ -59,29 +63,36 @@ export default function ServicesPage() {
 
       {/* Grid de servicios */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-        <SectionTitle
-          eyebrow="Tratamientos"
-          title="Todo lo que necesitas para tu sonrisa"
-          subtitle="Desde revisiones de rutina hasta tratamientos avanzados. Nos adaptamos a tus necesidades."
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Urgencias destacada primero */}
-          {emergency && <ServiceCard service={emergency} />}
-          {/* Servicios regulares */}
-          {regular.map((service) => (
-            <ServiceCard key={service.id} service={service} />
-          ))}
-        </div>
+        {publicServices.length === 0 ? (
+          <div className="text-center py-16 text-[var(--color-muted-text)]">
+            <p className="text-lg font-semibold mb-2">No hay servicios disponibles</p>
+            <p className="text-sm">Vuelve pronto — estamos actualizando nuestro catálogo.</p>
+          </div>
+        ) : (
+          <>
+            <SectionTitle
+              eyebrow="Tratamientos"
+              title="Todo lo que necesitas para tu sonrisa"
+              subtitle="Desde revisiones de rutina hasta tratamientos avanzados. Nos adaptamos a tus necesidades."
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {emergency && <ServiceCard service={emergency} />}
+              {regular.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* CTA bottom */}
-      <div className="border-t border-[#E8ECEF] bg-white">
+      <div className="border-t border-[var(--color-border)] bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 text-center">
-          <h2 className="text-2xl font-extrabold text-[#102A33] mb-3">¿No encontraste lo que buscas?</h2>
-          <p className="text-[#5F737C] mb-6">Contáctanos y con gusto te orientamos sobre el tratamiento más adecuado.</p>
+          <h2 className="text-2xl font-extrabold text-[var(--color-text)] mb-3">¿No encontraste lo que buscas?</h2>
+          <p className="text-[var(--color-muted-text)] mb-6">Contáctanos y con gusto te orientamos sobre el tratamiento más adecuado.</p>
           <div className="flex flex-wrap justify-center gap-3">
             <a
-              href={whatsappLink(clinic.whatsapp, "Hola, tengo una consulta sobre tratamientos")}
+              href={whatsappLink(config.whatsapp, "Hola, tengo una consulta sobre tratamientos")}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-green-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-green-700 transition-colors"
@@ -91,7 +102,7 @@ export default function ServicesPage() {
             </a>
             <Link
               href="/agendar"
-              className="flex items-center gap-2 bg-[#173B45] text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-[#0E2F3A] transition-colors"
+              className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors"
             >
               <CalendarDays className="w-4 h-4" />
               Agendar valoración

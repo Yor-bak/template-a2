@@ -1,64 +1,126 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
 import { patients } from "@/data/patients";
 import { appointments } from "@/data/appointments";
 import { formatCurrency, formatShortDate } from "@/lib/utils";
-import { Users, Search } from "lucide-react";
+import { exportToCSV } from "@/utils/exportUtils";
+import { Users, Search, Phone, Mail, CalendarDays, Download } from "lucide-react";
 
 export default function PacientesPage() {
-  const enriched = patients.map((p) => {
-    const apts = appointments.filter((a) => a.patientId === p.id);
-    const lastApt = apts.sort((a, b) => b.desiredDate.localeCompare(a.desiredDate))[0];
-    return { ...p, appointments: apts, lastApt };
-  });
+  const [search, setSearch] = useState("");
+
+  const enriched = patients
+    .map((p) => {
+      const apts = appointments.filter((a) => a.patientId === p.id);
+      const lastApt = apts.sort((a, b) => b.desiredDate.localeCompare(a.desiredDate))[0];
+      return { ...p, apts, lastApt };
+    })
+    .filter((p) =>
+      !search ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.phone.includes(search) ||
+      p.email.toLowerCase().includes(search.toLowerCase())
+    );
+
+  function handleExport() {
+    exportToCSV("pacientes", [
+      ["Nombre", "Teléfono", "Email", "Citas", "Total gastado", "Primera visita"],
+      ...patients.map((p) => [p.name, p.phone, p.email, appointments.filter((a) => a.patientId === p.id).length, p.totalSpent, p.firstVisitAt]),
+    ]);
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Pacientes</h1>
-          <p className="text-gray-500 text-sm">{patients.length} pacientes registrados</p>
+          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Pacientes</h1>
+          <p className="text-[var(--color-muted-text)] text-sm">{patients.length} pacientes registrados</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-2 border border-[var(--color-border)] text-[var(--color-muted-text)] px-3 py-2 rounded-xl text-sm font-medium hover:bg-[var(--color-background)] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            CSV
+          </button>
+          <div className="flex items-center gap-2 text-xs text-[var(--color-muted-text)]">
+            <Users className="w-4 h-4" />
+            <span>CRM ligero</span>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-50">
+      <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm overflow-hidden">
+        {/* Search */}
+        <div className="p-4 border-b border-[#F0F4F5]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-text)]/50" />
             <input
               type="text"
-              placeholder="Buscar paciente..."
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-gray-50"
-              readOnly
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar paciente por nombre, teléfono o correo..."
+              className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] bg-[var(--color-background)] transition-colors"
             />
           </div>
         </div>
-        <div className="divide-y divide-gray-50">
+
+        {/* Lista */}
+        <div className="divide-y divide-[#F0F4F5]">
           {enriched.map((p) => (
             <Link
               key={p.id}
               href={`/dashboard/pacientes/${p.id}`}
-              className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--color-background)] transition-colors group"
             >
-              <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 font-bold text-sm flex-shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-[var(--color-accent-soft)] flex items-center justify-center text-[var(--color-primary)] font-bold text-sm flex-shrink-0 border border-[var(--color-accent)]/20">
                 {p.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
               </div>
+
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900">{p.name}</p>
-                <p className="text-xs text-gray-400">{p.phone} · {p.email}</p>
+                <p className="font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">{p.name}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                  <span className="text-xs text-[var(--color-muted-text)] flex items-center gap-1">
+                    <Phone className="w-3 h-3" />{p.phone}
+                  </span>
+                  <span className="text-xs text-[var(--color-muted-text)] flex items-center gap-1 hidden sm:flex">
+                    <Mail className="w-3 h-3" />{p.email}
+                  </span>
+                </div>
               </div>
+
               <div className="text-right flex-shrink-0 hidden sm:block">
-                <p className="text-xs text-gray-500">{p.appointments.length} cita{p.appointments.length !== 1 ? "s" : ""}</p>
-                <p className="text-xs font-semibold text-sky-700">{formatCurrency(p.totalSpent)}</p>
+                <div className="inline-flex items-center gap-1 text-xs text-[var(--color-muted-text)] mb-0.5">
+                  <CalendarDays className="w-3 h-3" />
+                  {p.apts.length} cita{p.apts.length !== 1 ? "s" : ""}
+                </div>
+                <p className="text-sm font-bold text-[var(--color-primary)]">{formatCurrency(p.totalSpent)}</p>
               </div>
+
               <div className="text-right flex-shrink-0 hidden md:block">
-                <p className="text-xs text-gray-400">Desde {formatShortDate(p.firstVisitAt)}</p>
+                <p className="text-xs text-[var(--color-muted-text)]">Desde {formatShortDate(p.firstVisitAt)}</p>
                 {p.lastApt && (
-                  <p className="text-xs text-gray-400">Último: {formatShortDate(p.lastApt.desiredDate)}</p>
+                  <p className="text-xs text-[var(--color-muted-text)]/70">Último: {formatShortDate(p.lastApt.desiredDate)}</p>
                 )}
+              </div>
+
+              <div className="text-[var(--color-muted-text)]/30 group-hover:text-[var(--color-accent)] transition-colors hidden sm:block">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+                  <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
             </Link>
           ))}
         </div>
+
+        {enriched.length === 0 && (
+          <div className="py-16 text-center text-[var(--color-muted-text)]">
+            <Users className="w-8 h-8 mx-auto mb-3 opacity-30" strokeWidth={1.5} />
+            <p className="font-semibold text-sm">No se encontraron pacientes</p>
+          </div>
+        )}
       </div>
     </div>
   );

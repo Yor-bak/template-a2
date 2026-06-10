@@ -8,6 +8,11 @@ import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS, PAYMENT_COLORS, PAYMENT_LABELS, DEMO_TODAY } from "@/lib/constants";
 import { SourceBadge, SOURCE_DESCRIPTIONS } from "@/components/dashboard/SourceBadge";
 import { ChevronLeft, AlertCircle, CheckCircle2, Bot } from "lucide-react";
+import {
+  triggerAutomationEvent,
+  buildAppointmentPayload,
+  AUTOMATION_EVENTS,
+} from "@/services/automationService";
 
 export default function CitaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,29 +25,51 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
   const [chargedAmount, setChargedAmount] = useState(String(apt.chargedAmount || apt.estimatedAmount || ""));
 
   function updateStatus(status: AppointmentStatus) {
-    setApt((a) => ({
-      ...a,
-      status,
-      statusHistory: [
-        ...a.statusHistory,
-        {
-          id: `sh_${Date.now()}`,
-          oldStatus: a.status,
-          newStatus: status,
-          changedBy: "Dra. Mariana López",
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    }));
+    setApt((a) => {
+      const updated = {
+        ...a,
+        status,
+        statusHistory: [
+          ...a.statusHistory,
+          {
+            id: `sh_${Date.now()}`,
+            oldStatus: a.status,
+            newStatus: status,
+            changedBy: "Dra. Mariana López",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+      const eventMap: Partial<Record<AppointmentStatus, string>> = {
+        confirmed: AUTOMATION_EVENTS.APPOINTMENT_CONFIRMED,
+        rejected: AUTOMATION_EVENTS.APPOINTMENT_REJECTED,
+        cancelled: AUTOMATION_EVENTS.APPOINTMENT_CANCELLED,
+        rescheduled: AUTOMATION_EVENTS.APPOINTMENT_RESCHEDULED,
+        completed: AUTOMATION_EVENTS.APPOINTMENT_COMPLETED,
+        no_show: AUTOMATION_EVENTS.APPOINTMENT_NO_SHOW,
+      };
+      const ev = eventMap[status];
+      if (ev) void triggerAutomationEvent(ev as Parameters<typeof triggerAutomationEvent>[0], buildAppointmentPayload(updated));
+      return updated;
+    });
   }
 
   function updatePayment(paymentStatus: PaymentStatus) {
-    setApt((a) => ({
-      ...a,
-      paymentStatus,
-      chargedAmount: Number(chargedAmount) || a.estimatedAmount,
-      paidAt: paymentStatus === "paid" ? DEMO_TODAY : a.paidAt,
-    }));
+    setApt((a) => {
+      const updated = {
+        ...a,
+        paymentStatus,
+        chargedAmount: Number(chargedAmount) || a.estimatedAmount,
+        paidAt: paymentStatus === "paid" ? DEMO_TODAY : a.paidAt,
+      };
+      const ev = paymentStatus === "paid"
+        ? AUTOMATION_EVENTS.PAYMENT_MARKED_PAID
+        : paymentStatus === "partial"
+        ? AUTOMATION_EVENTS.PAYMENT_MARKED_PARTIAL
+        : null;
+      if (ev) void triggerAutomationEvent(ev, buildAppointmentPayload(updated));
+      return updated;
+    });
   }
 
   function saveNotes() {

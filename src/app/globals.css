@@ -1,24 +1,23 @@
 @import "tailwindcss";
 
+/* ── Theme palette tokens (default: Dental Premium) ───────────────────────── */
 :root {
-  --petrol-900: #0E2F3A;
-  --petrol-800: #173B45;
-  --petrol-700: #1e4a57;
-  --mint-400: #70D6C7;
-  --mint-300: #a0e8de;
-  --sky-100: #BFEAF5;
-  --warm-50: #FAFAF7;
-  --dental-text: #102A33;
-  --dental-muted: #5F737C;
-  --dental-border: #E8ECEF;
+  --color-primary: #173B45;
+  --color-primary-dark: #0E2F3A;
+  --color-accent: #70D6C7;
+  --color-accent-soft: #BFEAF5;
+  --color-background: #FAFAF7;
+  --color-card: #FFFFFF;
+  --color-border: #E8ECEF;
+  --color-text: #102A33;
+  --color-muted-text: #5F737C;
 }
 
 body {
-  background: #FAFAF7;
-  color: #102A33;
+  background: var(--color-background);
+  color: var(--color-text);
 }
 
-/* Smooth scroll */
 html {
   scroll-behavior: smooth;
 }
@@ -28,9 +27,9 @@ html {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #FAFAF7;
+  background: var(--color-background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #70D6C7;
+  background: var(--color-accent);
   border-radius: 3px;
 }

@@ -95,23 +95,53 @@ Los datos están en `src/data/`:
 - `testimonials.ts` — 5 testimonios
 - `faqs.ts` — 10 preguntas frecuentes
 
-## Conexión con n8n
+## Cómo activar automatización n8n para un cliente
 
-El sistema está preparado para enviar webhooks a n8n.
+El sistema usa el patrón de "puertos de conexión": cada acción importante ya dispara un evento interno, independientemente de si la automatización está activa. Cuando el cliente compra el plan de automatización, solo hay que cambiar tres valores de configuración — sin tocar ningún componente ni página.
 
-Configura la variable en `.env.local`:
+### Pasos para activar (solo toca `src/data/clinic.ts`)
+
+```ts
+// Antes (plan manual)
+automationEnabled: false,
+automationMode: "none",
+n8nWebhookUrl: null,
+
+// Después (automatización activa con n8n)
+automationEnabled: true,
+automationMode: "n8n",
+n8nWebhookUrl: "https://tu-n8n.com/webhook/abc123",
 ```
-N8N_WEBHOOK_URL=https://tu-n8n.com/webhook/xxx
+
+### Eventos que llegan a n8n
+
+| Evento | Cuándo se dispara |
+|--------|-------------------|
+| `appointment.created_public_web` | Paciente agenda desde la web |
+| `appointment.created_manual` | Dentista registra cita desde el panel |
+| `appointment.created_by_ai_whatsapp` | IA crea cita vía WhatsApp |
+| `appointment.confirmed` | Dentista confirma cita |
+| `appointment.rejected` | Dentista rechaza cita |
+| `appointment.cancelled` | Cita cancelada |
+| `appointment.rescheduled` | Cita reagendada |
+| `appointment.completed` | Cita finalizada |
+| `appointment.no_show` | Paciente no asistió |
+| `payment.marked_paid` | Pago registrado como pagado |
+| `payment.marked_partial` | Pago registrado como parcial |
+
+### Endpoint para IA WhatsApp
+
+n8n puede crear citas automáticamente enviando un `POST` a:
+
+```
+POST /api/integrations/whatsapp-ai/appointments
 ```
 
-Eventos a implementar cuando se conecte el backend:
-- `appointment.created`
-- `appointment.confirmed`
-- `appointment.rejected`
-- `appointment.rescheduled`
-- `appointment.completed`
-- `appointment.reminder_24h`
-- `payment.marked_paid`
+Ver `src/app/api/integrations/whatsapp-ai/appointments/route.ts` para el formato del payload.
+
+### Garantía de no-bloqueo
+
+Si el webhook falla (timeout, red caída, n8n apagado), el flujo principal del dentista **no se interrumpe**. `triggerAutomationEvent()` captura todos los errores internamente. Ver `src/services/automationService.ts`.
 
 ## Variables de entorno
 

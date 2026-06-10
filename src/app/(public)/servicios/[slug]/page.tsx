@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { services, getServiceBySlug } from "@/data/services";
-import { clinic } from "@/data/clinic";
-import { whatsappLink, priceLabel } from "@/lib/utils";
-import { Clock, CheckCircle2, ChevronRight, MessageCircle, CalendarDays, AlertTriangle } from "lucide-react";
+import { priceLabel } from "@/lib/utils";
+import { Clock, CheckCircle2, ChevronRight, CalendarDays, AlertTriangle } from "lucide-react";
+import { WhatsAppCTA } from "@/components/public/WhatsAppCTA";
 
 export function generateStaticParams() {
   return services.map((s) => ({ slug: s.slug }));
@@ -19,9 +19,9 @@ export default async function ServiceDetailPage({
   if (!service) notFound();
 
   return (
-    <div className="bg-[#FAFAF7]">
+    <div className="bg-[var(--color-background)]">
       {/* Breadcrumb */}
-      <div className="bg-[#173B45] border-b border-white/10">
+      <div className="bg-[var(--color-primary)] border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
           <nav className="flex items-center gap-2 text-sm text-white/50">
             <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
@@ -43,23 +43,23 @@ export default async function ServiceDetailPage({
                 Servicio de urgencia
               </div>
             )}
-            <h1 className="text-3xl md:text-4xl font-extrabold text-[#102A33] mb-4 leading-tight">{service.name}</h1>
-            <p className="text-[#5F737C] text-base leading-relaxed mb-8">{service.fullDescription}</p>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-[var(--color-text)] mb-4 leading-tight">{service.name}</h1>
+            <p className="text-[var(--color-muted-text)] text-base leading-relaxed mb-8">{service.fullDescription}</p>
 
             {service.whenRecommended && (
-              <div className="bg-white rounded-2xl border border-[#E8ECEF] p-5 mb-5">
-                <h2 className="text-sm font-bold text-[#102A33] uppercase tracking-wide mb-2">¿Cuándo se recomienda?</h2>
-                <p className="text-[#5F737C] text-sm leading-relaxed">{service.whenRecommended}</p>
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-5 mb-5">
+                <h2 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wide mb-2">¿Cuándo se recomienda?</h2>
+                <p className="text-[var(--color-muted-text)] text-sm leading-relaxed">{service.whenRecommended}</p>
               </div>
             )}
 
             {service.includes && service.includes.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[#E8ECEF] p-5 mb-5">
-                <h2 className="text-sm font-bold text-[#102A33] uppercase tracking-wide mb-3">¿Qué incluye?</h2>
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-5 mb-5">
+                <h2 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wide mb-3">¿Qué incluye?</h2>
                 <ul className="space-y-2">
                   {service.includes.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-[#5F737C]">
-                      <CheckCircle2 className="w-4 h-4 text-[#70D6C7] mt-0.5 flex-shrink-0" />
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-[var(--color-muted-text)]">
+                      <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)] mt-0.5 flex-shrink-0" />
                       {item}
                     </li>
                   ))}
@@ -85,18 +85,18 @@ export default async function ServiceDetailPage({
           {/* Sidebar */}
           <div className="space-y-4">
             {/* Pricing card */}
-            <div className="bg-[#173B45] rounded-2xl p-6 sticky top-20">
+            <div className="bg-[var(--color-primary)] rounded-2xl p-6 sticky top-20">
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between items-center text-sm border-b border-white/10 pb-3">
                   <span className="text-white/60">Duración</span>
                   <span className="font-semibold text-white flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#70D6C7]" />
+                    <Clock className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                     {service.durationMinutes} min
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-white/60">Precio</span>
-                  <span className="font-bold text-[#70D6C7] text-base">
+                  <span className="font-bold text-[var(--color-accent)] text-base">
                     {priceLabel(service.priceType, service.estimatedPrice)}
                   </span>
                 </div>
@@ -105,37 +105,33 @@ export default async function ServiceDetailPage({
               <div className="space-y-2">
                 <Link
                   href={`/agendar?servicio=${service.slug}`}
-                  className="flex items-center justify-center gap-2 w-full bg-[#70D6C7] text-[#0E2F3A] py-3 rounded-xl font-bold text-sm hover:bg-[#a0e8de] transition-colors"
+                  className="flex items-center justify-center gap-2 w-full bg-[var(--color-accent)] text-[var(--color-primary-dark)] py-3 rounded-xl font-bold text-sm hover:bg-[var(--color-accent-soft)] transition-colors"
                 >
                   <CalendarDays className="w-4 h-4" />
                   Agendar este servicio
                 </Link>
-                <a
-                  href={whatsappLink(clinic.whatsapp, `Hola, me gustaría información sobre ${service.name}`)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <WhatsAppCTA
+                  serviceName={service.name}
                   className="flex items-center justify-center gap-2 w-full bg-white/10 border border-white/20 text-white py-3 rounded-xl font-semibold text-sm hover:bg-white/15 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Preguntar por WhatsApp
-                </a>
+                  label="Preguntar por WhatsApp"
+                />
               </div>
             </div>
 
             {/* Nota precios */}
-            <div className="bg-white rounded-2xl p-4 border border-[#E8ECEF] text-sm text-[#5F737C]">
-              <p className="font-semibold text-[#102A33] mb-1 text-xs uppercase tracking-wide">Nota sobre precios</p>
+            <div className="bg-white rounded-2xl p-4 border border-[var(--color-border)] text-sm text-[var(--color-muted-text)]">
+              <p className="font-semibold text-[var(--color-text)] mb-1 text-xs uppercase tracking-wide">Nota sobre precios</p>
               <p className="leading-relaxed text-xs">
                 Los precios mostrados son orientativos. El costo final puede variar según las condiciones de tu caso. En servicios complejos se requiere valoración previa.
               </p>
             </div>
 
             {/* Otros servicios */}
-            <div className="bg-white rounded-2xl p-4 border border-[#E8ECEF]">
-              <p className="font-semibold text-[#102A33] mb-3 text-xs uppercase tracking-wide">Ver también</p>
+            <div className="bg-white rounded-2xl p-4 border border-[var(--color-border)]">
+              <p className="font-semibold text-[var(--color-text)] mb-3 text-xs uppercase tracking-wide">Ver también</p>
               <div className="space-y-2">
                 {services.filter(s => s.slug !== service.slug && !s.isEmergency).slice(0, 3).map(s => (
-                  <Link key={s.id} href={`/servicios/${s.slug}`} className="flex items-center justify-between text-sm text-[#5F737C] hover:text-[#173B45] py-1 group">
+                  <Link key={s.id} href={`/servicios/${s.slug}`} className="flex items-center justify-between text-sm text-[var(--color-muted-text)] hover:text-[var(--color-primary)] py-1 group">
                     <span>{s.name}</span>
                     <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>

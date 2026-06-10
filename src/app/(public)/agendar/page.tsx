@@ -2,8 +2,10 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { services } from "@/data/services";
+import { useServices } from "@/contexts/ServicesContext";
 import { CheckCircle2, ChevronLeft, Clock, CalendarDays, AlertCircle, Info } from "lucide-react";
+import { PublicDatePicker } from "@/components/calendar/PublicDatePicker";
+import { PublicTimeSlotPicker } from "@/components/calendar/PublicTimeSlotPicker";
 
 type FormData = {
   name: string;
@@ -29,15 +31,12 @@ const initialForm: FormData = {
   comments: "",
 };
 
-const timeSlots = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00",
-];
 
 function AgendarForm() {
   const searchParams = useSearchParams();
   const preselected = searchParams.get("servicio");
+  const { getPublicServices } = useServices();
+  const services = getPublicServices();
 
   const [form, setForm] = useState<FormData>(initialForm);
   const [submitted, setSubmitted] = useState(false);
@@ -79,31 +78,31 @@ function AgendarForm() {
 
   if (submitted) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 bg-[#FAFAF7]">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-[#E8ECEF] shadow-lg p-10 text-center">
-          <div className="w-16 h-16 rounded-full bg-[#BFEAF5] flex items-center justify-center mx-auto mb-5">
-            <CheckCircle2 className="w-8 h-8 text-[#173B45]" />
+      <div className="min-h-[70vh] flex items-center justify-center px-4 bg-[var(--color-background)]">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-[var(--color-border)] shadow-lg p-10 text-center">
+          <div className="w-16 h-16 rounded-full bg-[var(--color-accent-soft)] flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-8 h-8 text-[var(--color-primary)]" />
           </div>
-          <h2 className="text-2xl font-extrabold text-[#102A33] mb-3">¡Solicitud recibida!</h2>
-          <p className="text-[#5F737C] text-sm leading-relaxed mb-2">
-            Hola <strong className="text-[#102A33]">{form.name}</strong>, recibimos tu solicitud de cita para{" "}
-            <strong className="text-[#102A33]">{selectedService?.name}</strong> el día{" "}
-            <strong className="text-[#102A33]">{form.date}</strong> a las{" "}
-            <strong className="text-[#102A33]">{form.time}</strong>.
+          <h2 className="text-2xl font-extrabold text-[var(--color-text)] mb-3">¡Solicitud recibida!</h2>
+          <p className="text-[var(--color-muted-text)] text-sm leading-relaxed mb-2">
+            Hola <strong className="text-[var(--color-text)]">{form.name}</strong>, recibimos tu solicitud de cita para{" "}
+            <strong className="text-[var(--color-text)]">{selectedService?.name}</strong> el día{" "}
+            <strong className="text-[var(--color-text)]">{form.date}</strong> a las{" "}
+            <strong className="text-[var(--color-text)]">{form.time}</strong>.
           </p>
-          <p className="text-[#5F737C] text-sm mb-8">
+          <p className="text-[var(--color-muted-text)] text-sm mb-8">
             Te confirmaremos la disponibilidad por WhatsApp en breve.
           </p>
           <div className="flex flex-col gap-3">
             <Link
               href="/"
-              className="bg-[#173B45] text-white py-3 rounded-xl font-bold text-sm hover:bg-[#0E2F3A] transition-colors"
+              className="bg-[var(--color-primary)] text-white py-3 rounded-xl font-bold text-sm hover:bg-[var(--color-primary-dark)] transition-colors"
             >
               Volver al inicio
             </Link>
             <button
               onClick={() => { setSubmitted(false); setForm(initialForm); }}
-              className="border border-[#E8ECEF] text-[#5F737C] py-3 rounded-xl font-semibold text-sm hover:bg-[#FAFAF7] transition-colors"
+              className="border border-[var(--color-border)] text-[var(--color-muted-text)] py-3 rounded-xl font-semibold text-sm hover:bg-[var(--color-background)] transition-colors"
             >
               Hacer otra solicitud
             </button>
@@ -113,15 +112,13 @@ function AgendarForm() {
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
-
   return (
-    <div className="bg-[#FAFAF7]">
+    <div className="bg-[var(--color-background)]">
       {/* Header */}
-      <div className="bg-[#173B45] relative overflow-hidden">
+      <div className="bg-[var(--color-primary)] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
-            backgroundImage: "linear-gradient(#70D6C7 1px, transparent 1px), linear-gradient(90deg, #70D6C7 1px, transparent 1px)",
+            backgroundImage: "linear-gradient(var(--color-accent) 1px, transparent 1px), linear-gradient(90deg, var(--color-accent) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
@@ -137,9 +134,9 @@ function AgendarForm() {
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
         {/* Aviso */}
-        <div className="flex items-start gap-3 bg-[#BFEAF5]/50 border border-[#70D6C7]/30 rounded-2xl p-4 mb-8">
-          <Info className="w-4 h-4 text-[#173B45] mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-[#173B45]">
+        <div className="flex items-start gap-3 bg-[var(--color-accent-soft)]/50 border border-[var(--color-accent)]/30 rounded-2xl p-4 mb-8">
+          <Info className="w-4 h-4 text-[var(--color-primary)] mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-[var(--color-primary)]">
             <strong>Importante:</strong> Al enviar este formulario no queda confirmada automáticamente tu cita. Te enviaremos confirmación por WhatsApp en un plazo breve.
           </p>
         </div>
@@ -189,13 +186,13 @@ function AgendarForm() {
 
               {/* Vista previa del servicio */}
               {selectedService && (
-                <div className="bg-white border border-[#E8ECEF] rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#BFEAF5] flex items-center justify-center flex-shrink-0">
-                    <CalendarDays className="w-4 h-4 text-[#173B45]" />
+                <div className="bg-white border border-[var(--color-border)] rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[var(--color-accent-soft)] flex items-center justify-center flex-shrink-0">
+                    <CalendarDays className="w-4 h-4 text-[var(--color-primary)]" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#102A33]">{selectedService.name}</p>
-                    <p className="text-xs text-[#5F737C] flex items-center gap-1">
+                    <p className="text-sm font-semibold text-[var(--color-text)]">{selectedService.name}</p>
+                    <p className="text-xs text-[var(--color-muted-text)] flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {selectedService.durationMinutes} min aprox.
                     </p>
@@ -208,29 +205,35 @@ function AgendarForm() {
                 </div>
               )}
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Fecha deseada" required error={errors.date}>
-                  <input
-                    type="date"
-                    value={form.date}
-                    min={today}
-                    onChange={(e) => set("date", e.target.value)}
-                    className={inputCls(!!errors.date)}
-                  />
-                </Field>
-                <Field label="Hora deseada" required error={errors.time}>
-                  <select
-                    value={form.time}
-                    onChange={(e) => set("time", e.target.value)}
-                    className={inputCls(!!errors.time)}
-                  >
-                    <option value="">Selecciona una hora</option>
-                    {timeSlots.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
+              {selectedService ? (
+                <div className="space-y-4">
+                  <Field label="Fecha deseada" required error={errors.date}>
+                    <PublicDatePicker
+                      selectedDate={form.date}
+                      onSelectDate={(d) => {
+                        set("date", d);
+                        set("time", "");
+                      }}
+                    />
+                  </Field>
+
+                  {form.date && (
+                    <Field label="Hora deseada" required error={errors.time}>
+                      <PublicTimeSlotPicker
+                        date={form.date}
+                        durationMin={selectedService.durationMinutes}
+                        selectedTime={form.time}
+                        onSelectTime={(t) => set("time", t)}
+                      />
+                    </Field>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-xl p-4 text-sm text-[var(--color-muted-text)]">
+                  <CalendarDays className="w-4 h-4 text-[var(--color-muted-text)]/50 flex-shrink-0" />
+                  Selecciona un servicio para ver los horarios disponibles.
+                </div>
+              )}
 
               <Field label="Motivo de consulta" required error={errors.reason}>
                 <textarea
@@ -253,9 +256,9 @@ function AgendarForm() {
                   type="checkbox"
                   checked={form.isEmergency}
                   onChange={(e) => set("isEmergency", e.target.checked)}
-                  className="w-4 h-4 rounded border-[#E8ECEF] accent-red-500"
+                  className="w-4 h-4 rounded border-[var(--color-border)] accent-red-500"
                 />
-                <span className="text-sm text-[#5F737C] group-hover:text-[#102A33] transition-colors font-medium flex items-center gap-2">
+                <span className="text-sm text-[var(--color-muted-text)] group-hover:text-[var(--color-text)] transition-colors font-medium flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-red-500" />
                   ¿Es una urgencia dental?
                 </span>
@@ -265,9 +268,9 @@ function AgendarForm() {
                   type="checkbox"
                   checked={form.isFirstVisit}
                   onChange={(e) => set("isFirstVisit", e.target.checked)}
-                  className="w-4 h-4 rounded border-[#E8ECEF] accent-[#173B45]"
+                  className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
                 />
-                <span className="text-sm text-[#5F737C] group-hover:text-[#102A33] transition-colors font-medium">
+                <span className="text-sm text-[var(--color-muted-text)] group-hover:text-[var(--color-text)] transition-colors font-medium">
                   Primera vez en la clínica
                 </span>
               </label>
@@ -285,7 +288,7 @@ function AgendarForm() {
 
           <button
             type="submit"
-            className="w-full bg-[#173B45] text-white py-4 rounded-xl font-bold text-base hover:bg-[#0E2F3A] transition-colors shadow-lg shadow-[#173B45]/20"
+            className="w-full bg-[var(--color-primary)] text-white py-4 rounded-xl font-bold text-base hover:bg-[var(--color-primary-dark)] transition-colors shadow-lg shadow-[var(--color-primary)]/20"
           >
             Enviar solicitud de cita
           </button>
@@ -298,10 +301,10 @@ function AgendarForm() {
 function SectionHeader({ step, title }: { step: number; title: string }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className="w-6 h-6 rounded-full bg-[#70D6C7] flex items-center justify-center flex-shrink-0">
-        <span className="text-[#0E2F3A] text-xs font-extrabold">{step}</span>
+      <div className="w-6 h-6 rounded-full bg-[var(--color-accent)] flex items-center justify-center flex-shrink-0">
+        <span className="text-[var(--color-primary-dark)] text-xs font-extrabold">{step}</span>
       </div>
-      <h2 className="font-bold text-[#102A33] text-sm uppercase tracking-wider">{title}</h2>
+      <h2 className="font-bold text-[var(--color-text)] text-sm uppercase tracking-wider">{title}</h2>
     </div>
   );
 }
@@ -316,8 +319,8 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-[#5F737C] mb-1.5">
-        {label}{required && <span className="text-[#70D6C7] ml-0.5">*</span>}
+      <label className="block text-sm font-medium text-[var(--color-muted-text)] mb-1.5">
+        {label}{required && <span className="text-[var(--color-accent)] ml-0.5">*</span>}
       </label>
       {children}
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -326,12 +329,12 @@ function Field({
 }
 
 function inputCls(hasError: boolean) {
-  return `w-full border ${hasError ? "border-red-300 bg-red-50 focus:ring-red-200" : "border-[#E8ECEF] bg-white focus:ring-[#BFEAF5]"} rounded-xl px-4 py-2.5 text-sm text-[#102A33] placeholder:text-[#5F737C]/50 focus:outline-none focus:ring-2 focus:border-[#70D6C7] transition-colors`;
+  return `w-full border ${hasError ? "border-red-300 bg-red-50 focus:ring-red-200" : "border-[var(--color-border)] bg-white focus:ring-[var(--color-accent-soft)]"} rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/50 focus:outline-none focus:ring-2 focus:border-[var(--color-accent)] transition-colors`;
 }
 
 export default function AgendarPage() {
   return (
-    <Suspense fallback={<div className="p-20 text-center text-[#5F737C]">Cargando...</div>}>
+    <Suspense fallback={<div className="p-20 text-center text-[var(--color-muted-text)]">Cargando...</div>}>
       <AgendarForm />
     </Suspense>
   );

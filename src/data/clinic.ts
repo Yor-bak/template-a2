@@ -27,4 +27,16 @@ export const clinic: Clinic = {
   parkingNotes: "Estacionamiento disponible frente al consultorio",
   locationReferences: "A una cuadra del metro Del Valle, frente al parque central",
   plan: "manual",
+
+  // ── Configuración de automatización ─────────────────────────────────────────
+  // Para activar automatización cuando el cliente compre el plan, cambiar:
+  //   automationEnabled: true
+  //   automationMode: "n8n" | "ai_whatsapp"
+  //   n8nWebhookUrl: "https://tu-n8n.com/webhook/..."
+  automationEnabled: false,
+  automationMode: "none",
+  n8nWebhookUrl: null,
+
+  // ── Identidad visual ─────────────────────────────────────────────────────────
+  themePalette: "dental_premium",
 };

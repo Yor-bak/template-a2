@@ -1,14 +1,21 @@
+"use client";
 import { appointments } from "@/data/appointments";
-import { clinic } from "@/data/clinic";
 import { patients } from "@/data/patients";
+import { useClinicConfig } from "@/contexts/ClinicConfigContext";
 import { StatCard } from "@/components/ui/StatCard";
 import { formatCurrency, formatShortDate, formatTime } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS, PAYMENT_COLORS, PAYMENT_LABELS, DEMO_TODAY } from "@/lib/constants";
 import Link from "next/link";
 import {
   CalendarDays, CheckCircle2, Clock, XCircle, TrendingUp,
-  DollarSign, Users, AlertCircle, BarChart3, Globe, PenLine, Bot, Zap
+  DollarSign, Users, AlertCircle, BarChart3, Globe, PenLine, Bot, Zap, Plus,
 } from "lucide-react";
+import { SetupChecklist } from "@/components/dashboard/SetupChecklist";
+
+const GRID_PATTERN = {
+  backgroundImage: "linear-gradient(var(--color-accent) 1px, transparent 1px), linear-gradient(90deg, var(--color-accent) 1px, transparent 1px)",
+  backgroundSize: "60px 60px",
+};
 
 export default function DashboardPage() {
   const todayApts = appointments.filter((a) => a.desiredDate === DEMO_TODAY);
@@ -30,7 +37,6 @@ export default function DashboardPage() {
     .filter((a) => a.paymentStatus === "paid")
     .reduce((s, a) => s + (a.chargedAmount || 0), 0);
 
-  // Stats por origen
   const byWeb = appointments.filter((a) => a.source === "public_web").length;
   const byManual = appointments.filter((a) => a.source === "manual").length;
   const byAI = appointments.filter((a) => a.source === "ai_whatsapp").length;
@@ -42,83 +48,101 @@ export default function DashboardPage() {
   const topServices = Object.entries(serviceCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
 
   const recentApts = appointments.slice(0, 5);
-  const isManualPlan = clinic.plan === "manual";
+  const { config } = useClinicConfig();
+  const isManualPlan = !config.automationEnabled;
+
+  const dateStr = new Date(DEMO_TODAY + "T12:00:00").toLocaleDateString("es-MX", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-7 flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 text-sm">
-            {new Date(DEMO_TODAY + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-          </p>
-        </div>
-        {/* Badge plan */}
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
-          isManualPlan
-            ? "bg-gray-100 text-gray-700 border-gray-200"
-            : "bg-violet-50 text-violet-700 border-violet-200"
-        }`}>
-          {isManualPlan ? <PenLine className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
-          {isManualPlan ? "Plan Agenda Manual" : "Plan Agenda Inteligente"}
+
+      {/* ── Saludo hero ──────────────────────────────────────────── */}
+      <div className="bg-[var(--color-primary)] rounded-2xl p-6 mb-7 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={GRID_PATTERN} />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-[var(--color-accent)] text-xs font-bold uppercase tracking-widest mb-1.5">Panel de gestión</p>
+            <h1 className="text-2xl font-extrabold text-white mb-1">
+              Buenos días, {config.dentistName}
+            </h1>
+            <p className="text-white/50 text-sm">
+              Gestiona tus citas, pacientes e ingresos desde un solo lugar.
+            </p>
+            <p className="text-white/30 text-xs mt-2 capitalize">{dateStr}</p>
+          </div>
+          <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-shrink-0">
+            {/* Plan badge */}
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+              isManualPlan
+                ? "bg-white/10 text-white/70 border-white/15"
+                : "bg-[var(--color-accent)]/20 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+            }`}>
+              {isManualPlan ? <PenLine className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
+              {isManualPlan ? "Agenda Manual" : "Agenda Inteligente"}
+            </div>
+            <Link
+              href="/dashboard/citas"
+              className="inline-flex items-center gap-2 bg-[var(--color-accent)] text-[var(--color-primary-dark)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--color-accent-soft)] transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva cita
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Stats del día */}
-      <div className="mb-4">
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Hoy</h2>
+      <SetupChecklist />
+
+      {/* ── Hoy ───────────────────────────────────────────────────── */}
+      <div className="mb-5">
+        <SectionLabel>Hoy</SectionLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Citas hoy" value={todayApts.length} icon={CalendarDays} color="blue" />
-          <StatCard label="Pendientes" value={pending.length} icon={Clock} color="amber" />
-          <StatCard label="Confirmadas" value={confirmed.length} icon={CheckCircle2} color="green" />
-          <StatCard label="Canceladas" value={cancelled.length} icon={XCircle} color="red" />
+          <StatCard label="Citas hoy"    value={todayApts.length} icon={CalendarDays} color="blue" />
+          <StatCard label="Pendientes"   value={pending.length}   icon={Clock}        color="amber" />
+          <StatCard label="Confirmadas"  value={confirmed.length} icon={CheckCircle2} color="teal" />
+          <StatCard label="Canceladas"   value={cancelled.length} icon={XCircle}      color="red" />
         </div>
         <div className="grid grid-cols-2 gap-4 mt-4">
-          <StatCard label="Ingresos estimados" value={formatCurrency(todayEstimated)} icon={TrendingUp} color="teal" sub="Suma de citas del día" />
-          <StatCard label="Ingresos confirmados" value={formatCurrency(todayConfirmedIncome)} icon={DollarSign} color="green" sub="Pagos recibidos hoy" />
+          <StatCard label="Ingresos estimados" value={formatCurrency(todayEstimated)} icon={TrendingUp} color="blue" sub="Suma de citas del día" />
+          <StatCard label="Cobros de hoy"      value={formatCurrency(todayConfirmedIncome)} icon={DollarSign} color="green" sub="Pagos recibidos hoy" />
         </div>
       </div>
 
-      {/* Stats del mes */}
+      {/* ── Este mes ─────────────────────────────────────────────── */}
       <div className="mb-6">
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Este mes</h2>
+        <SectionLabel>Este mes</SectionLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <StatCard label="Total citas" value={monthApts.length} icon={CalendarDays} color="blue" />
-          <StatCard label="Finalizadas" value={monthCompleted.length} icon={CheckCircle2} color="green" />
-          <StatCard label="Canceladas" value={monthCancelled.length} icon={XCircle} color="red" />
-          <StatCard label="No asistió" value={monthNoShow.length} icon={AlertCircle} color="amber" />
+          <StatCard label="Total citas"  value={monthApts.length}      icon={CalendarDays} color="blue" />
+          <StatCard label="Finalizadas"  value={monthCompleted.length} icon={CheckCircle2} color="green" />
+          <StatCard label="Canceladas"   value={monthCancelled.length} icon={XCircle}      color="red" />
+          <StatCard label="No asistió"   value={monthNoShow.length}    icon={AlertCircle}  color="amber" />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Ingresos registrados" value={formatCurrency(monthIncome)} icon={DollarSign} color="green" sub="Pagos marcados como pagados" />
           <StatCard label="Pacientes" value={patients.length} icon={Users} color="purple" />
-          {/* Stats por origen */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-3">Citas por origen</p>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="flex items-center gap-1.5 text-blue-700"><Globe className="w-3 h-3" /> Web</span>
-                <span className="font-bold text-gray-700">{byWeb}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="flex items-center gap-1.5 text-gray-700"><PenLine className="w-3 h-3" /> Manual</span>
-                <span className="font-bold text-gray-700">{byManual}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="flex items-center gap-1.5 text-violet-700"><Bot className="w-3 h-3" /> IA WhatsApp</span>
-                <span className="font-bold text-gray-700">{byAI}</span>
-              </div>
+
+          {/* Origen de citas */}
+          <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-5">
+            <p className="text-xs text-[var(--color-muted-text)] font-bold uppercase tracking-widest mb-3">Por origen</p>
+            <div className="space-y-2.5">
+              <OriginRow icon={Globe} label="Web" value={byWeb} color="text-[var(--color-primary)]" bg="bg-[var(--color-accent-soft)]" />
+              <OriginRow icon={PenLine} label="Manual" value={byManual} color="text-gray-700" bg="bg-gray-100" />
+              <OriginRow icon={Bot} label="IA WhatsApp" value={byAI} color="text-violet-700" bg="bg-violet-50" />
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-3 flex items-center gap-1">
+
+          {/* Servicios top */}
+          <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-5">
+            <p className="text-xs text-[var(--color-muted-text)] font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <BarChart3 className="w-3.5 h-3.5" /> Servicios top
             </p>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {topServices.map(([name, count]) => (
                 <div key={name} className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600 truncate">{name}</span>
-                  <span className="font-bold text-sky-700 ml-2">{count}</span>
+                  <span className="text-[var(--color-muted-text)] truncate">{name}</span>
+                  <span className="font-bold text-[var(--color-primary)] ml-2 flex-shrink-0">{count}</span>
                 </div>
               ))}
             </div>
@@ -126,15 +150,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Resumen textual */}
-      <div className="bg-sky-50 border border-sky-100 rounded-2xl p-5 mb-6 text-sm text-sky-800">
+      {/* ── Insight mensual ───────────────────────────────────────── */}
+      <div className="bg-[var(--color-accent-soft)]/50 border border-[var(--color-accent)]/30 rounded-2xl p-5 mb-6 text-sm text-[var(--color-primary)]">
         Este mes tuviste <strong>{monthCompleted.length} citas finalizadas</strong>,{" "}
         {monthCancelled.length} canceladas y{" "}
-        <strong>{formatCurrency(monthIncome)}</strong> registrados en ingresos.{" "}
-        {byAI > 0 && <span><strong>{byAI} citas</strong> fueron creadas automáticamente por WhatsApp IA.</span>}
+        <strong>{formatCurrency(monthIncome)}</strong> registrados en ingresos.
+        {byAI > 0 && <span> <strong>{byAI} citas</strong> fueron creadas automáticamente por WhatsApp IA.</span>}
       </div>
 
-      {/* Upgrade card — solo plan manual */}
+      {/* ── Upgrade — solo plan manual ─────────────────────────────── */}
       {isManualPlan && (
         <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl p-6 mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -157,19 +181,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Citas recientes */}
+      {/* ── Citas recientes ───────────────────────────────────────── */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Citas recientes</h2>
-          <Link href="/dashboard/citas" className="text-xs text-sky-600 hover:underline font-medium">
+        <div className="flex items-center justify-between mb-3">
+          <SectionLabel>Citas recientes</SectionLabel>
+          <Link href="/dashboard/citas" className="text-xs text-[var(--color-primary)] hover:text-[var(--color-accent)] font-semibold transition-colors">
             Ver todas →
           </Link>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
+                <tr className="bg-[var(--color-background)] border-b border-[var(--color-border)] text-xs text-[var(--color-muted-text)] uppercase tracking-wide">
                   <th className="text-left px-5 py-3 font-semibold">Paciente</th>
                   <th className="text-left px-5 py-3 font-semibold">Servicio</th>
                   <th className="text-left px-5 py-3 font-semibold">Fecha</th>
@@ -177,18 +201,18 @@ export default function DashboardPage() {
                   <th className="text-left px-5 py-3 font-semibold">Pago</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#F0F4F5]">
                 {recentApts.map((apt) => (
-                  <tr key={apt.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={apt.id} className="hover:bg-[var(--color-background)] transition-colors">
                     <td className="px-5 py-3">
-                      <Link href={`/dashboard/citas/${apt.id}`} className="font-medium text-gray-800 hover:text-sky-600">
+                      <Link href={`/dashboard/citas/${apt.id}`} className="font-semibold text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors">
                         {apt.patientName}
                       </Link>
-                      <p className="text-xs text-gray-400">{apt.patientPhone}</p>
+                      <p className="text-xs text-[var(--color-muted-text)]/70">{apt.patientPhone}</p>
                     </td>
-                    <td className="px-5 py-3 text-gray-600 text-xs">{apt.serviceName}</td>
-                    <td className="px-5 py-3 text-gray-600 text-xs whitespace-nowrap">
-                      {formatShortDate(apt.desiredDate)} {formatTime(apt.desiredTime)}
+                    <td className="px-5 py-3 text-[var(--color-muted-text)] text-xs">{apt.serviceName}</td>
+                    <td className="px-5 py-3 text-[var(--color-muted-text)] text-xs whitespace-nowrap">
+                      {formatShortDate(apt.desiredDate)} · {formatTime(apt.desiredTime)}
                     </td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[apt.status]}`}>
@@ -207,6 +231,28 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-bold text-[var(--color-muted-text)] uppercase tracking-widest mb-3">{children}</p>
+  );
+}
+
+function OriginRow({ icon: Icon, label, value, color, bg }: {
+  icon: React.ElementType; label: string; value: number; color: string; bg: string;
+}) {
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className={`flex items-center gap-1.5 font-medium ${color}`}>
+        <span className={`w-5 h-5 rounded-md flex items-center justify-center ${bg}`}>
+          <Icon className="w-3 h-3" />
+        </span>
+        {label}
+      </span>
+      <span className="font-bold text-[var(--color-text)]">{value}</span>
     </div>
   );
 }

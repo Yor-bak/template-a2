@@ -17,13 +17,13 @@ export const STATUS_LABELS: Record<AppointmentStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  rejected: "bg-red-100 text-red-800",
-  rescheduled: "bg-purple-100 text-purple-800",
-  completed: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-700",
-  no_show: "bg-orange-100 text-orange-800",
+  pending:     "bg-amber-50 text-amber-700",
+  confirmed:   "bg-[var(--color-accent-soft)] text-[var(--color-primary)]",
+  rejected:    "bg-red-50 text-red-700",
+  rescheduled: "bg-violet-50 text-violet-700",
+  completed:   "bg-emerald-50 text-emerald-700",
+  cancelled:   "bg-gray-100 text-gray-600",
+  no_show:     "bg-orange-50 text-orange-700",
 };
 
 export const PAYMENT_LABELS: Record<PaymentStatus, string> = {

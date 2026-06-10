@@ -1,7 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { X, CheckCircle2, PenLine } from "lucide-react";
-import { services } from "@/data/services";
+import {
+  triggerAutomationEvent,
+  buildAppointmentPayload,
+  AUTOMATION_EVENTS,
+} from "@/services/automationService";
+import { useServices } from "@/contexts/ServicesContext";
 import type { Appointment, AppointmentStatus, PreferredContact } from "@/types";
 import { DEMO_TODAY, TIME_SLOTS } from "@/lib/constants";
 
@@ -46,6 +51,8 @@ const empty: FormData = {
 };
 
 export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
+  const { getActiveServices } = useServices();
+  const services = getActiveServices();
   const [form, setForm] = useState<FormData>(empty);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [done, setDone] = useState(false);
@@ -136,6 +143,10 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
     };
 
     onAdd(newApt);
+    void triggerAutomationEvent(
+      AUTOMATION_EVENTS.APPOINTMENT_CREATED_MANUAL,
+      buildAppointmentPayload(newApt)
+    );
     setDone(true);
     setTimeout(() => {
       setDone(false);
@@ -284,7 +295,7 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
           <button type="button" onClick={handleClose} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSubmit} className="flex-1 bg-sky-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-sky-700 transition-colors">
+          <button onClick={handleSubmit} className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors">
             Registrar cita
           </button>
         </div>

@@ -10,17 +10,17 @@ export function SectionTitle({ eyebrow, title, subtitle, centered = true, light 
   return (
     <div className={`mb-12 ${centered ? "text-center" : ""}`}>
       {eyebrow && (
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#70D6C7] mb-3">
-          <span className="w-6 h-px bg-[#70D6C7]" />
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--color-accent)] mb-3">
+          <span className="w-6 h-px bg-[var(--color-accent)]" />
           {eyebrow}
-          <span className="w-6 h-px bg-[#70D6C7]" />
+          <span className="w-6 h-px bg-[var(--color-accent)]" />
         </p>
       )}
-      <h2 className={`text-3xl md:text-4xl font-extrabold leading-tight mb-4 ${light ? "text-white" : "text-[#102A33]"}`}>
+      <h2 className={`text-3xl md:text-4xl font-extrabold leading-tight mb-4 ${light ? "text-white" : "text-[var(--color-text)]"}`}>
         {title}
       </h2>
       {subtitle && (
-        <p className={`max-w-xl ${centered ? "mx-auto" : ""} text-base leading-relaxed ${light ? "text-white/60" : "text-[#5F737C]"}`}>
+        <p className={`max-w-xl ${centered ? "mx-auto" : ""} text-base leading-relaxed ${light ? "text-white/60" : "text-[var(--color-muted-text)]"}`}>
           {subtitle}
         </p>
       )}

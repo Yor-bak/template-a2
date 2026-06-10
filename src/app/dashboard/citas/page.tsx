@@ -8,7 +8,13 @@ import { STATUS_COLORS, STATUS_LABELS, PAYMENT_COLORS, PAYMENT_LABELS, DEMO_TODA
 import { filterAppointments, hasAppointmentPassed, type StatusFilter } from "@/modules/appointments/utils/filters";
 import { NewAppointmentModal } from "@/components/dashboard/NewAppointmentModal";
 import { SourceBadge } from "@/components/dashboard/SourceBadge";
-import { Search, Filter, AlertCircle, CalendarDays, Plus } from "lucide-react";
+import { Search, Filter, AlertCircle, CalendarDays, Plus, Download, Globe, PenLine, Bot, Phone, DollarSign } from "lucide-react";
+import { exportToCSV } from "@/utils/exportUtils";
+import {
+  triggerAutomationEvent,
+  buildAppointmentPayload,
+  AUTOMATION_EVENTS,
+} from "@/services/automationService";
 
 const filterTabs: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todas" },
@@ -24,10 +30,10 @@ const filterTabs: { value: StatusFilter; label: string }[] = [
   { value: "unpaid", label: "Sin pagar" },
 ];
 
-const sourceTabs: { value: StatusFilter; label: string }[] = [
-  { value: "source_web", label: "🌐 Web" },
-  { value: "source_manual", label: "✏️ Manual" },
-  { value: "source_ai", label: "🤖 IA WhatsApp" },
+const sourceTabs: { value: StatusFilter; label: string; icon: React.ElementType }[] = [
+  { value: "source_web",    label: "Web",        icon: Globe   },
+  { value: "source_manual", label: "Manual",     icon: PenLine },
+  { value: "source_ai",     label: "IA WhatsApp", icon: Bot    },
 ];
 
 export default function CitasPage() {
@@ -44,8 +50,8 @@ export default function CitasPage() {
   const list = filterAppointments(apts, filter, search);
 
   function applyStatus(id: string, status: AppointmentStatus) {
-    setApts((prev) =>
-      prev.map((a) =>
+    setApts((prev) => {
+      const next = prev.map((a) =>
         a.id !== id
           ? a
           : {
@@ -62,8 +68,22 @@ export default function CitasPage() {
                 },
               ],
             }
-      )
-    );
+      );
+      const updated = next.find((a) => a.id === id);
+      if (updated) {
+        const eventMap: Partial<Record<AppointmentStatus, string>> = {
+          confirmed: AUTOMATION_EVENTS.APPOINTMENT_CONFIRMED,
+          rejected: AUTOMATION_EVENTS.APPOINTMENT_REJECTED,
+          cancelled: AUTOMATION_EVENTS.APPOINTMENT_CANCELLED,
+          rescheduled: AUTOMATION_EVENTS.APPOINTMENT_RESCHEDULED,
+          completed: AUTOMATION_EVENTS.APPOINTMENT_COMPLETED,
+          no_show: AUTOMATION_EVENTS.APPOINTMENT_NO_SHOW,
+        };
+        const ev = eventMap[status];
+        if (ev) void triggerAutomationEvent(ev as Parameters<typeof triggerAutomationEvent>[0], buildAppointmentPayload(updated));
+      }
+      return next;
+    });
   }
 
   function requestStatus(apt: Appointment, status: AppointmentStatus) {
@@ -79,13 +99,23 @@ export default function CitasPage() {
   }
 
   function updatePayment(id: string, paymentStatus: PaymentStatus) {
-    setApts((prev) =>
-      prev.map((a) =>
+    setApts((prev) => {
+      const next = prev.map((a) =>
         a.id !== id
           ? a
           : { ...a, paymentStatus, paidAt: paymentStatus === "paid" ? DEMO_TODAY : a.paidAt }
-      )
-    );
+      );
+      const updated = next.find((a) => a.id === id);
+      if (updated) {
+        const ev = paymentStatus === "paid"
+          ? AUTOMATION_EVENTS.PAYMENT_MARKED_PAID
+          : paymentStatus === "partial"
+          ? AUTOMATION_EVENTS.PAYMENT_MARKED_PARTIAL
+          : null;
+        if (ev) void triggerAutomationEvent(ev, buildAppointmentPayload(updated));
+      }
+      return next;
+    });
   }
 
   function handleAddAppointment(apt: Appointment) {
@@ -96,32 +126,44 @@ export default function CitasPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Citas</h1>
-          <p className="text-gray-500 text-sm">{apts.length} citas registradas</p>
+          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Citas</h1>
+          <p className="text-[var(--color-muted-text)] text-sm">Organiza tu agenda diaria y da seguimiento a cada paciente.</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-sky-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-sky-700 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar cita
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportToCSV("citas", [
+              ["Paciente", "Servicio", "Fecha", "Hora", "Estado", "Pago", "Monto"],
+              ...apts.map((a) => [a.patientName, a.serviceName, a.desiredDate, a.desiredTime, STATUS_LABELS[a.status], PAYMENT_LABELS[a.paymentStatus], a.chargedAmount ?? a.estimatedAmount ?? 0]),
+            ])}
+            className="inline-flex items-center gap-2 border border-[var(--color-border)] text-[var(--color-muted-text)] px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-[var(--color-background)] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            CSV
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Agregar cita
+          </button>
+        </div>
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
+      <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-4 mb-5">
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-text)]/50" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por paciente, servicio o teléfono..."
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+              className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] bg-[var(--color-background)] transition-colors"
             />
           </div>
-          <div className="flex items-center gap-1 text-sm text-gray-500 flex-shrink-0">
+          <div className="flex items-center gap-1 text-sm text-[var(--color-muted-text)] flex-shrink-0">
             <Filter className="w-4 h-4" />
             <span>{list.length} resultado{list.length !== 1 ? "s" : ""}</span>
           </div>
@@ -134,7 +176,9 @@ export default function CitasPage() {
               key={t.value}
               onClick={() => setFilter(t.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                filter === t.value ? "bg-sky-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filter === t.value
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "bg-[#F0F4F5] text-[var(--color-muted-text)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
               }`}
             >
               {t.label}
@@ -143,18 +187,19 @@ export default function CitasPage() {
         </div>
 
         {/* Filtros de origen */}
-        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-50">
-          <span className="text-[11px] text-gray-400 font-medium self-center mr-1">Por origen:</span>
+        <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-[#F0F4F5]">
+          <span className="text-[11px] text-[var(--color-muted-text)]/60 font-medium self-center mr-1">Por origen:</span>
           {sourceTabs.map((t) => (
             <button
               key={t.value}
               onClick={() => setFilter(filter === t.value ? "all" : t.value)}
-              className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
                 filter === t.value
-                  ? "bg-violet-600 text-white"
-                  : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100"
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-muted-text)] hover:bg-[#F0F4F5]"
               }`}
             >
+              <t.icon className="w-3 h-3" />
               {t.label}
             </button>
           ))}
@@ -172,7 +217,7 @@ export default function CitasPage() {
           {list.map((apt) => (
             <div
               key={apt.id}
-              className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 hover:shadow-md transition-shadow"
+              className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm p-5 hover:shadow-md hover:border-[var(--color-accent)]/30 transition-all"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -198,10 +243,10 @@ export default function CitasPage() {
                   </div>
                   <p className="text-sm text-gray-500 mb-1">{apt.serviceName}</p>
                   <div className="flex flex-wrap gap-3 text-xs text-gray-400">
-                    <span>{formatShortDate(apt.desiredDate)} · {formatTime(apt.desiredTime)}</span>
-                    <span>📞 {apt.patientPhone}</span>
+                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{formatShortDate(apt.desiredDate)} · {formatTime(apt.desiredTime)}</span>
+                    <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{apt.patientPhone}</span>
                     {apt.estimatedAmount && (
-                      <span>💰 {formatCurrency(apt.estimatedAmount)}</span>
+                      <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{formatCurrency(apt.estimatedAmount)}</span>
                     )}
                   </div>
                 </div>

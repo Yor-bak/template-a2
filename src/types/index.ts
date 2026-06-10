@@ -19,8 +19,19 @@ export type AppointmentSource = "public_web" | "manual" | "ai_whatsapp";
 /** Quién creó la cita */
 export type AppointmentCreatedBy = "patient" | "dentist" | "ai";
 
-/** Plan del consultorio */
-export type ClinicPlan = "manual" | "ai_whatsapp";
+/** Plan comercial del consultorio */
+export type ClinicPlan = "manual" | "automation";
+
+/** Paleta visual del consultorio */
+export type ThemePaletteKey =
+  | "dental_premium"
+  | "beige_boutique"
+  | "soft_rose"
+  | "luxury_navy"
+  | "fresh_sky";
+
+/** Modo de automatización activo */
+export type AutomationMode = "none" | "n8n" | "ai_whatsapp";
 
 /** Metadata de conversación IA (solo para source = ai_whatsapp) */
 export interface AIMetadata {
@@ -43,7 +54,9 @@ export interface Service {
   whenRecommended?: string;
   isEmergency: boolean;
   isActive: boolean;
-  icon: string;
+  icon?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Patient {
@@ -115,8 +128,20 @@ export interface Clinic {
   parkingAvailable: boolean;
   parkingNotes?: string;
   locationReferences?: string;
-  /** Plan activo del consultorio */
+  /** Plan comercial activo */
   plan: ClinicPlan;
+  /** Si la automatización (n8n / IA) está habilitada */
+  automationEnabled: boolean;
+  /** Qué modo de automatización está activo */
+  automationMode: AutomationMode;
+  /**
+   * URL del webhook de n8n.
+   * null = no configurada.
+   * Se cambia aquí cuando el cliente compra automatización; la app no expone este campo al dentista.
+   */
+  n8nWebhookUrl: string | null;
+  /** Paleta visual activa del consultorio */
+  themePalette?: ThemePaletteKey;
 }
 
 export interface OpeningHours {

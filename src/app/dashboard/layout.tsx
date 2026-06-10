@@ -11,32 +11,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
 
   useEffect(() => {
-    // TODO: cuando haya backend real, validar token/sesión aquí también
     if (!isLoading && !user) router.replace("/login");
   }, [user, isLoading, router]);
 
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-[var(--color-accent-soft)] border-t-[var(--color-primary)] rounded-full animate-spin" />
+          <p className="text-[var(--color-muted-text)] text-xs font-medium">Cargando panel…</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-[var(--color-background)] overflow-hidden">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="md:hidden flex items-center gap-3 px-4 h-14 bg-white border-b border-gray-100 flex-shrink-0">
+        {/* Mobile header */}
+        <header className="md:hidden flex items-center gap-3 px-4 h-14 bg-white border-b border-[var(--color-border)] flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="p-2 rounded-lg text-[var(--color-muted-text)] hover:bg-[var(--color-background)] transition-colors"
             aria-label="Abrir menú"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <p className="font-bold text-gray-800 text-sm">Panel dental</p>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-[var(--color-accent)] rounded-md flex items-center justify-center">
+              <span className="text-[var(--color-primary-dark)] text-[10px] font-extrabold">DS</span>
+            </div>
+            <p className="font-bold text-[var(--color-text)] text-sm">Panel dental</p>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">{children}</main>
