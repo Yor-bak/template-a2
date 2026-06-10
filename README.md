@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema Web para Consultorio Dental
 
-## Getting Started
+Sistema de captación de pacientes, gestión de citas e ingresos para consultorio dental. Construido con Next.js 16 + TypeScript + Tailwind CSS.
 
-First, run the development server:
+## Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Lenguaje:** TypeScript
+- **Estilos:** Tailwind CSS v4
+- **Íconos:** Lucide React
+- **Datos:** Hardcodeados (preparado para conectar backend / API)
+
+## Instalación
 
 ```bash
+# Clonar e instalar
+npm install
+
+# Copiar variables de entorno
+cp .env.example .env.local
+
+# Iniciar en desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Páginas públicas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Inicio con hero, servicios, testimonios |
+| `/servicios` | Lista de todos los servicios |
+| `/servicios/[slug]` | Detalle de cada servicio |
+| `/agendar` | Formulario de solicitud de cita |
+| `/ubicacion` | Mapa y datos del consultorio |
+| `/preguntas-frecuentes` | FAQ + políticas de cita |
 
-## Learn More
+## Panel privado (dentista)
 
-To learn more about Next.js, take a look at the following resources:
+| Ruta | Descripción |
+|------|-------------|
+| `/login` | Acceso al panel |
+| `/dashboard` | Resumen del día y mes |
+| `/dashboard/citas` | Lista de citas con filtros y acciones |
+| `/dashboard/citas/[id]` | Detalle completo de cita |
+| `/dashboard/pacientes` | Lista de pacientes |
+| `/dashboard/pacientes/[id]` | Historial del paciente |
+| `/dashboard/ingresos` | Registro de pagos y resumen |
+| `/dashboard/servicios` | Catálogo de servicios |
+| `/dashboard/configuracion` | Datos del consultorio y preferencias |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Credenciales demo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+Email: admin@clinicasonrisa.com
+Contraseña: demo1234
+```
 
-## Deploy on Vercel
+## Estructura del proyecto
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── (public)/          # Rutas públicas (con Navbar + Footer)
+│   │   ├── page.tsx       # Inicio
+│   │   ├── servicios/
+│   │   ├── agendar/
+│   │   ├── ubicacion/
+│   │   └── preguntas-frecuentes/
+│   ├── dashboard/         # Panel privado del dentista
+│   │   ├── citas/
+│   │   ├── pacientes/
+│   │   ├── ingresos/
+│   │   ├── servicios/
+│   │   └── configuracion/
+│   └── login/
+├── components/
+│   ├── ui/                # Componentes genéricos (Button, Card, Badge, StatCard)
+│   ├── public/            # Navbar, Footer
+│   └── dashboard/         # Sidebar
+├── data/                  # Datos hardcodeados (clinic, services, appointments, patients)
+├── lib/                   # Utilidades (formatters, helpers)
+└── types/                 # TypeScript types
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Datos demo
+
+Los datos están en `src/data/`:
+
+- `clinic.ts` — Datos de la clínica (Dra. Mariana López / Clínica Dental Sonrisa)
+- `services.ts` — 11 servicios dentales con descripciones completas
+- `appointments.ts` — 8 citas en distintos estados
+- `patients.ts` — 5 pacientes con historial
+- `testimonials.ts` — 5 testimonios
+- `faqs.ts` — 10 preguntas frecuentes
+
+## Conexión con n8n
+
+El sistema está preparado para enviar webhooks a n8n.
+
+Configura la variable en `.env.local`:
+```
+N8N_WEBHOOK_URL=https://tu-n8n.com/webhook/xxx
+```
+
+Eventos a implementar cuando se conecte el backend:
+- `appointment.created`
+- `appointment.confirmed`
+- `appointment.rejected`
+- `appointment.rescheduled`
+- `appointment.completed`
+- `appointment.reminder_24h`
+- `payment.marked_paid`
+
+## Variables de entorno
+
+Ver `.env.example` para todas las variables disponibles.
+
+## Roadmap
+
+- [ ] Backend con API routes (Next.js) o Express
+- [ ] Base de datos PostgreSQL con Prisma
+- [ ] Autenticación real (NextAuth / JWT)
+- [ ] Webhooks a n8n funcionales
+- [ ] Envío de correos (Resend / SendGrid)
+- [ ] Calendario visual de citas
+- [ ] Exportar reportes a CSV
+- [ ] Pagos en línea
+- [ ] Panel multi-dentista
+- [ ] App móvil
