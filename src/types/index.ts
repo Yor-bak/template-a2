@@ -13,6 +13,22 @@ export type PaymentStatus = "unpaid" | "paid" | "partial" | "courtesy";
 
 export type PreferredContact = "whatsapp" | "call" | "email";
 
+/** Cómo se originó la cita */
+export type AppointmentSource = "public_web" | "manual" | "ai_whatsapp";
+
+/** Quién creó la cita */
+export type AppointmentCreatedBy = "patient" | "dentist" | "ai";
+
+/** Plan del consultorio */
+export type ClinicPlan = "manual" | "ai_whatsapp";
+
+/** Metadata de conversación IA (solo para source = ai_whatsapp) */
+export interface AIMetadata {
+  conversationId?: string;
+  summary?: string;
+  confidence?: number;
+}
+
 export interface Service {
   id: string;
   slug: string;
@@ -49,6 +65,7 @@ export interface Appointment {
   patientEmail: string;
   serviceId: string;
   serviceName: string;
+  durationMinutes?: number;
   desiredDate: string;
   desiredTime: string;
   reason: string;
@@ -64,6 +81,12 @@ export interface Appointment {
   statusHistory: StatusHistoryEntry[];
   createdAt: string;
   additionalComments?: string;
+  /** Origen de la cita */
+  source: AppointmentSource;
+  /** Quién creó la cita */
+  createdBy: AppointmentCreatedBy;
+  /** Metadata de IA (solo cuando source = ai_whatsapp) */
+  aiMetadata?: AIMetadata;
 }
 
 export interface StatusHistoryEntry {
@@ -92,6 +115,8 @@ export interface Clinic {
   parkingAvailable: boolean;
   parkingNotes?: string;
   locationReferences?: string;
+  /** Plan activo del consultorio */
+  plan: ClinicPlan;
 }
 
 export interface OpeningHours {
@@ -135,4 +160,27 @@ export interface DashboardSummary {
   monthNewPatients: number;
   monthRecurringPatients: number;
   topServices: { name: string; count: number }[];
+}
+
+/** Payload que envía n8n / IA WhatsApp para crear una cita */
+export interface WhatsAppAIPayload {
+  patient: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  appointment: {
+    serviceId: string;
+    date: string;
+    time: string;
+    reason: string;
+    isEmergency: boolean;
+    isFirstVisit: boolean;
+    preferredContactMethod: PreferredContact;
+  };
+  aiMetadata?: {
+    conversationId?: string;
+    summary?: string;
+    confidence?: number;
+  };
 }

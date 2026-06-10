@@ -6,7 +6,9 @@ import type { Appointment, AppointmentStatus, PaymentStatus } from "@/types";
 import { formatShortDate, formatTime, formatCurrency } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS, PAYMENT_COLORS, PAYMENT_LABELS, DEMO_TODAY } from "@/lib/constants";
 import { filterAppointments, hasAppointmentPassed, type StatusFilter } from "@/modules/appointments/utils/filters";
-import { Search, Filter, AlertCircle, CalendarDays } from "lucide-react";
+import { NewAppointmentModal } from "@/components/dashboard/NewAppointmentModal";
+import { SourceBadge } from "@/components/dashboard/SourceBadge";
+import { Search, Filter, AlertCircle, CalendarDays, Plus } from "lucide-react";
 
 const filterTabs: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todas" },
@@ -22,10 +24,17 @@ const filterTabs: { value: StatusFilter; label: string }[] = [
   { value: "unpaid", label: "Sin pagar" },
 ];
 
+const sourceTabs: { value: StatusFilter; label: string }[] = [
+  { value: "source_web", label: "🌐 Web" },
+  { value: "source_manual", label: "✏️ Manual" },
+  { value: "source_ai", label: "🤖 IA WhatsApp" },
+];
+
 export default function CitasPage() {
   const [apts, setApts] = useState<Appointment[]>(seed);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     id: string;
     status: AppointmentStatus;
@@ -79,14 +88,27 @@ export default function CitasPage() {
     );
   }
 
+  function handleAddAppointment(apt: Appointment) {
+    setApts((prev) => [apt, ...prev]);
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-gray-900">Citas</h1>
-        <p className="text-gray-500 text-sm">{apts.length} citas registradas</p>
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">Citas</h1>
+          <p className="text-gray-500 text-sm">{apts.length} citas registradas</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="inline-flex items-center gap-2 bg-sky-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-sky-700 transition-colors shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Agregar cita
+        </button>
       </div>
 
-      {/* Barra de búsqueda y filtros */}
+      {/* Barra de búsqueda */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
@@ -104,15 +126,33 @@ export default function CitasPage() {
             <span>{list.length} resultado{list.length !== 1 ? "s" : ""}</span>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        {/* Filtros de estado */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {filterTabs.map((t) => (
             <button
               key={t.value}
               onClick={() => setFilter(t.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filter === t.value ? "bg-sky-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Filtros de origen */}
+        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-50">
+          <span className="text-[11px] text-gray-400 font-medium self-center mr-1">Por origen:</span>
+          {sourceTabs.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setFilter(filter === t.value ? "all" : t.value)}
+              className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
                 filter === t.value
-                  ? "bg-sky-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-violet-600 text-white"
+                  : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100"
               }`}
             >
               {t.label}
@@ -154,6 +194,7 @@ export default function CitasPage() {
                         Primera vez
                       </span>
                     )}
+                    <SourceBadge source={apt.source} />
                   </div>
                   <p className="text-sm text-gray-500 mb-1">{apt.serviceName}</p>
                   <div className="flex flex-wrap gap-3 text-xs text-gray-400">
@@ -209,7 +250,7 @@ export default function CitasPage() {
         </div>
       )}
 
-      {/* Modal de advertencia de tiempo */}
+      {/* Modal advertencia tiempo */}
       {confirmModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
           <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
@@ -238,6 +279,13 @@ export default function CitasPage() {
           </div>
         </div>
       )}
+
+      {/* Modal nueva cita manual */}
+      <NewAppointmentModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onAdd={handleAddAppointment}
+      />
     </div>
   );
 }

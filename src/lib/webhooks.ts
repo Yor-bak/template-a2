@@ -6,11 +6,15 @@
  */
 
 export type WebhookEventType =
-  | "appointment.created"
+  | "appointment.created_public_web"
+  | "appointment.created_manual"
+  | "appointment.created_by_ai_whatsapp"
   | "appointment.confirmed"
   | "appointment.rejected"
   | "appointment.rescheduled"
   | "appointment.completed"
+  | "appointment.cancelled"
+  | "appointment.no_show"
   | "appointment.reminder_24h"
   | "payment.marked_paid";
 
@@ -29,18 +33,24 @@ export interface WebhookPayload {
     date: string;
     time: string;
     status: string;
+    source: string;
     isEmergency: boolean;
   };
   payment?: {
     status: string;
     amount?: number;
   };
+  aiMetadata?: {
+    conversationId?: string;
+    summary?: string;
+    confidence?: number;
+  };
 }
 
 export async function triggerN8nWebhook(payload: WebhookPayload): Promise<void> {
   const webhookUrl =
     typeof window !== "undefined"
-      ? undefined // en el cliente no hay acceso a env, el hook iría server-side en el futuro
+      ? undefined // en el cliente no hay acceso a env; el hook iría server-side en el futuro
       : process.env.N8N_WEBHOOK_URL;
 
   if (!webhookUrl) {

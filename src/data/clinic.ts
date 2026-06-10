@@ -26,4 +26,5 @@ export const clinic: Clinic = {
   parkingAvailable: true,
   parkingNotes: "Estacionamiento disponible frente al consultorio",
   locationReferences: "A una cuadra del metro Del Valle, frente al parque central",
+  plan: "manual",
 };

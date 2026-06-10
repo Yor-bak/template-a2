@@ -6,7 +6,8 @@ import { appointments as initialData } from "@/data/appointments";
 import type { AppointmentStatus, PaymentStatus } from "@/types";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { STATUS_COLORS, STATUS_LABELS, PAYMENT_COLORS, PAYMENT_LABELS, DEMO_TODAY } from "@/lib/constants";
-import { ChevronLeft, AlertCircle, CheckCircle2 } from "lucide-react";
+import { SourceBadge, SOURCE_DESCRIPTIONS } from "@/components/dashboard/SourceBadge";
+import { ChevronLeft, AlertCircle, CheckCircle2, Bot } from "lucide-react";
 
 export default function CitaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -57,7 +58,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
           <ChevronLeft className="w-4 h-4" />
           Volver a citas
         </Link>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-extrabold text-gray-900">{apt.patientName}</h1>
           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[apt.status]}`}>
             {STATUS_LABELS[apt.status]}
@@ -71,7 +72,20 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
               Urgencia
             </span>
           )}
+          <SourceBadge source={apt.source} size="sm" />
         </div>
+      </div>
+
+      {/* Banner de origen */}
+      <div className={`rounded-xl p-3 mb-5 text-xs font-medium flex items-center gap-2 ${
+        apt.source === "ai_whatsapp"
+          ? "bg-violet-50 border border-violet-100 text-violet-700"
+          : apt.source === "manual"
+          ? "bg-gray-50 border border-gray-200 text-gray-600"
+          : "bg-blue-50 border border-blue-100 text-blue-700"
+      }`}>
+        {apt.source === "ai_whatsapp" && <Bot className="w-4 h-4 flex-shrink-0" />}
+        {SOURCE_DESCRIPTIONS[apt.source]}
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -83,7 +97,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <Info label="Nombre" value={apt.patientName} />
               <Info label="Teléfono" value={apt.patientPhone} />
-              <Info label="Correo" value={apt.patientEmail} />
+              {apt.patientEmail && <Info label="Correo" value={apt.patientEmail} />}
               <Info label="Contacto preferido" value={apt.preferredContact === "whatsapp" ? "WhatsApp" : apt.preferredContact === "call" ? "Llamada" : "Correo"} />
               <Info label="Primera vez" value={apt.isFirstVisit ? "Sí" : "No"} />
             </div>
@@ -96,12 +110,39 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
               <Info label="Servicio" value={apt.serviceName} />
               <Info label="Fecha" value={formatDate(apt.desiredDate)} />
               <Info label="Hora" value={formatTime(apt.desiredTime)} />
+              {apt.durationMinutes && <Info label="Duración" value={`${apt.durationMinutes} min`} />}
               <Info label="Motivo" value={apt.reason} />
               {apt.additionalComments && (
                 <Info label="Comentarios" value={apt.additionalComments} />
               )}
             </div>
           </div>
+
+          {/* Resumen IA (solo si es ai_whatsapp) */}
+          {apt.source === "ai_whatsapp" && apt.aiMetadata && (
+            <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5 shadow-sm">
+              <h2 className="font-bold text-violet-800 mb-3 text-sm uppercase tracking-wide flex items-center gap-2">
+                <Bot className="w-4 h-4" />
+                Metadata de IA WhatsApp
+              </h2>
+              <div className="space-y-2 text-sm">
+                {apt.aiMetadata.summary && (
+                  <div>
+                    <p className="text-xs text-violet-500 mb-1">Resumen de conversación</p>
+                    <p className="text-violet-800 leading-relaxed">&ldquo;{apt.aiMetadata.summary}&rdquo;</p>
+                  </div>
+                )}
+                {apt.aiMetadata.confidence !== undefined && (
+                  <p className="text-xs text-violet-500">
+                    Confianza del modelo: <strong className="text-violet-700">{Math.round(apt.aiMetadata.confidence * 100)}%</strong>
+                  </p>
+                )}
+                {apt.aiMetadata.conversationId && (
+                  <p className="text-xs text-violet-400">ID conversación: {apt.aiMetadata.conversationId}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Notas internas */}
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
@@ -155,7 +196,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* Sidebar acciones */}
         <div className="space-y-4">
-          {/* Acciones de estado */}
+          {/* Cambiar estado */}
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-3 text-sm">Cambiar estado</h2>
             <div className="space-y-2">
@@ -218,9 +259,7 @@ function Info({ label, value }: { label: string; value: string }) {
 }
 
 function ActionBtn({
-  children,
-  onClick,
-  color,
+  children, onClick, color,
 }: {
   children: React.ReactNode;
   onClick: () => void;

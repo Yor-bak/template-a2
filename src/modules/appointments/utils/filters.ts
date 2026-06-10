@@ -1,4 +1,4 @@
-import type { Appointment, AppointmentStatus, PaymentStatus } from "@/types";
+import type { Appointment, AppointmentStatus, AppointmentSource } from "@/types";
 import { DEMO_TODAY } from "@/lib/constants";
 
 export type StatusFilter =
@@ -8,7 +8,10 @@ export type StatusFilter =
   | "this_week"
   | "this_month"
   | "paid"
-  | "unpaid";
+  | "unpaid"
+  | "source_web"
+  | "source_manual"
+  | "source_ai";
 
 /** Returns the Monday of the week containing dateStr (YYYY-MM-DD) */
 function weekStart(dateStr: string): string {
@@ -23,6 +26,12 @@ function weekStart(dateStr: string): string {
 function sameMonth(a: string, b: string) {
   return a.slice(0, 7) === b.slice(0, 7);
 }
+
+const SOURCE_FILTER_MAP: Record<string, AppointmentSource> = {
+  source_web: "public_web",
+  source_manual: "manual",
+  source_ai: "ai_whatsapp",
+};
 
 export function filterAppointments(
   appointments: Appointment[],
@@ -48,6 +57,11 @@ export function filterAppointments(
       break;
     case "unpaid":
       list = list.filter((a) => a.paymentStatus === "unpaid");
+      break;
+    case "source_web":
+    case "source_manual":
+    case "source_ai":
+      list = list.filter((a) => a.source === SOURCE_FILTER_MAP[filter]);
       break;
     case "all":
       break;
