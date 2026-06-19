@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { ApiError } from "@/lib/api/client";
 import { Eye, EyeOff, Shield } from "lucide-react";
 
 export default function LoginPage() {
@@ -26,11 +27,21 @@ export default function LoginPage() {
       return;
     }
     setSubmitting(true);
-    const ok = await login(email, password);
-    if (ok) {
-      router.replace("/dashboard");
-    } else {
-      setError("Credenciales incorrectas. Revisa tu correo y contraseña.");
+    try {
+      const ok = await login(email, password);
+      if (ok) {
+        router.replace("/dashboard");
+      } else {
+        setError("Credenciales incorrectas. Revisa tu correo y contraseña.");
+        setSubmitting(false);
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 0) {
+        setError("No se pudo conectar con el backend. Verifica que FastAPI esté corriendo en localhost:8000.");
+      } else {
+        setError("Ocurrió un error inesperado. Intenta de nuevo.");
+        console.error("[Login] Error inesperado:", err);
+      }
       setSubmitting(false);
     }
   }

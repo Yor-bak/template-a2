@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useClinicConfig } from "@/contexts/ClinicConfigContext";
 import { whatsappLink } from "@/lib/utils";
 import { MapPin, Phone, Mail, CalendarDays, Stethoscope, MessageCircle } from "lucide-react";
-import { getShortHoursLabel } from "@/utils/clinicUtils";
+import { getShortHoursLabel } from "@/lib/clinicUtils";
 
 export function Footer() {
   const { config } = useClinicConfig();

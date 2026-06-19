@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import {
   type ThemePaletteKey,
   applyThemePalette,
-} from "@/theme/palettes";
+} from "@/config/themes";
 
 const STORAGE_KEY = "ds_theme_palette";
 const DEFAULT_PALETTE: ThemePaletteKey = "dental_premium";

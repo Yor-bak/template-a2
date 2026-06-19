@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { CheckCircle2, Palette } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { PALETTE_LIST, type ThemePaletteKey, type PaletteColors } from "@/theme/palettes";
+import { PALETTE_LIST, type ThemePaletteKey, type PaletteColors } from "@/config/themes";
 
 // ── Mini preview ──────────────────────────────────────────────────────────────
 

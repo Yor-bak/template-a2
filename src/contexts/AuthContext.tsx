@@ -1,15 +1,22 @@
 "use client";
-/**
- * Auth mockeada para MVP.
- * TODO: reemplazar DEMO_USERS y la lógica de login por una llamada real
- * a /api/auth/login que devuelva un JWT o session cookie.
- */
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
+import { login as apiLogin, logout as apiLogout, getMe } from "@/lib/api/authApi";
+import { getAuthToken, clearAuthToken, ApiError } from "@/lib/api/client";
 
-interface AuthUser {
+export interface AuthUser {
+  id: string;
   name: string;
   email: string;
-  role: "dentist" | "admin";
+  role: string;
+  clinicId: string;
+  isPremium: boolean;
 }
 
 interface AuthContextType {
@@ -19,56 +26,53 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// ── Demo credentials ──────────────────────────────────────────────────────────
-// TODO: eliminar cuando haya backend real
-const DEMO_USERS: Array<{ email: string; password: string; user: AuthUser }> = [
-  {
-    email: "dentista@demo.com",
-    password: "demo123",
-    user: { name: "Dra. Mariana López", email: "dentista@demo.com", role: "dentist" },
-  },
-  {
-    email: "admin@clinicasonrisa.com",
-    password: "demo1234",
-    user: { name: "Dra. Mariana López", email: "admin@clinicasonrisa.com", role: "admin" },
-  },
-];
-// ─────────────────────────────────────────────────────────────────────────────
-
-const AUTH_KEY = "dental_auth_user";
-
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // On mount: if token exists, validate it with /auth/me
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(AUTH_KEY);
-      if (stored) setUser(JSON.parse(stored));
-    } catch {
-      localStorage.removeItem(AUTH_KEY);
-    } finally {
+    const token = getAuthToken();
+    if (!token) {
       setIsLoading(false);
+      return;
+    }
+    getMe()
+      .then(setUser)
+      .catch(() => {
+        clearAuthToken();
+        setUser(null);
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  // Listen for 401 events dispatched by the client
+  useEffect(() => {
+    function handle() {
+      setUser(null);
+      clearAuthToken();
+    }
+    window.addEventListener("ds:unauthorized", handle);
+    return () => window.removeEventListener("ds:unauthorized", handle);
+  }, []);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      const me = await apiLogin(email, password);
+      setUser(me);
+      return true;
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return false;
+      throw err;
     }
   }, []);
 
-  async function login(email: string, password: string): Promise<boolean> {
-    // TODO: reemplazar por fetch("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
-    const match = DEMO_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (!match) return false;
-    setUser(match.user);
-    localStorage.setItem(AUTH_KEY, JSON.stringify(match.user));
-    return true;
-  }
-
-  function logout() {
+  const logout = useCallback(async () => {
+    await apiLogout();
     setUser(null);
-    localStorage.removeItem(AUTH_KEY);
-  }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout }}>

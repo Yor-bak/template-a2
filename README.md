@@ -10,16 +10,98 @@ Sistema de captación de pacientes, gestión de citas e ingresos para consultori
 - **Íconos:** Lucide React
 - **Datos:** Hardcodeados (preparado para conectar backend / API)
 
-## Instalación
+## Cómo conectar frontend con backend
+
+### 1. Levanta PostgreSQL
 
 ```bash
-# Clonar e instalar
+# Con Docker (recomendado):
+docker run --name dental-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=dental -p 5432:5432 -d postgres:16
+```
+
+### 2. Corre el backend
+
+```bash
+cd "Dentista Backend"
+python -m venv venv && source venv/bin/activate   # (Windows: venv\Scripts\activate)
+pip install -r requirements.txt
+
+# Crea las tablas con Alembic
+alembic upgrade head
+
+# Inserta datos demo
+python -m scripts.seed
+```
+
+El seed imprime algo así:
+
+```
+✓ Seed completado exitosamente
+───────────────────────────────────────────────────────
+  dentista@demo.com / demo123  → Premium  (clinic_id=<uuid>)
+  basico@demo.com   / demo123  → Basic    (clinic_id=<uuid>)
+───────────────────────────────────────────────────────
+
+📋 Configura el frontend — agrega esto a Dentista Front/.env.local:
+
+  NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+  NEXT_PUBLIC_DEMO_CLINIC_ID=<uuid>
+```
+
+Luego inicia FastAPI:
+
+```bash
+uvicorn app.main:app --reload
+# Corre en http://localhost:8000
+# Docs en http://localhost:8000/docs
+```
+
+### 3. Configura el frontend
+
+Copia el `clinic_id` que imprimió el seed y crea `.env.local`:
+
+```bash
+# Dentista Front/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_DEMO_CLINIC_ID=<clinic_id_copiado_del_seed>
+```
+
+### 4. Corre el frontend
+
+```bash
+cd "Dentista Front"
 npm install
+npm run dev
+# Abre http://localhost:3000
+```
 
-# Copiar variables de entorno
-cp .env.example .env.local
+### 5. Prueba login real
 
-# Iniciar en desarrollo
+- Abre `http://localhost:3000/login`
+- Email: `dentista@demo.com` / Contraseña: `demo123`
+- Verás los datos reales del backend en el dashboard
+
+### Credenciales demo
+
+| Usuario | Contraseña | Plan |
+|---------|-----------|------|
+| `dentista@demo.com` | `demo123` | Premium |
+| `basico@demo.com` | `demo123` | Basic (sin historial clínico) |
+
+### Modo sin backend (fallback)
+
+Si el backend no está corriendo:
+- La página pública usa datos mock hardcodeados
+- El login muestra un error visual claro (no crash)
+- La consola advierte qué variable falta
+
+---
+
+## Instalación (solo frontend)
+
+```bash
+npm install
+cp .env.local.example .env.local  # edita con tu clinic_id
 npm run dev
 ```
 

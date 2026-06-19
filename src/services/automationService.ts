@@ -14,7 +14,7 @@
  *   4. Listo — todos los eventos empiezan a llegar a n8n sin tocar más código.
  */
 
-import { clinic } from "@/data/clinic";
+import { DEFAULT_CLINIC_CONFIG as clinic } from "@/config/defaultClinicData";
 import type { Appointment } from "@/types";
 
 // ── Catálogo de eventos ──────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ export function buildAppointmentPayload(
       ...(appointment.patientEmail ? { email: appointment.patientEmail } : {}),
     },
     clinic: {
-      name: clinic.name,
+      name: clinic.clinicName,
       dentistName: clinic.dentistName,
       professionalLicense: clinic.professionalLicense,
       address: clinic.address,
