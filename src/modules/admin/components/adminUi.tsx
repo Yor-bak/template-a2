@@ -2,6 +2,7 @@
 import type {
   PaymentStatus, ClientStatus, MonthlyPaymentStatus,
   OnboardingStatus, PublicPageStatus, UserPlan,
+  CommissionStatus, ContractDocStatus, TransferStatus, TransferType,
 } from "@/types/user";
 
 // ── Design tokens — Midnight Ink ──────────────────────────────────────────────
@@ -120,6 +121,34 @@ export const PAGE_META: Record<PublicPageStatus, { label: string; cls: string }>
 export const PLAN_META: Record<UserPlan, { label: string; cls: string }> = {
   pro:      { label: "Pro",      cls: B_ACCENT },
   standard: { label: "Standard", cls: B_MUTED  },
+};
+
+const B_PAID = `bg-[var(--accent)] text-[var(--bg-base)] border-[var(--accent)]`;
+
+export const COMMISSION_META: Record<CommissionStatus, { label: string; cls: string }> = {
+  pending:    { label: "Pendiente",  cls: B_MUTED  },
+  authorized: { label: "Autorizada", cls: B_ACCENT },
+  paid:       { label: "Pagada",     cls: B_PAID   },
+  cancelled:  { label: "Cancelada",  cls: B_DANGER },
+};
+
+export const TRANSFER_STATUS_META: Record<TransferStatus, { label: string; cls: string }> = {
+  pending:  { label: "Pendiente",   cls: B_MUTED  },
+  verified: { label: "Verificada",  cls: B_ACCENT },
+  rejected: { label: "Rechazada",   cls: B_DANGER },
+  refunded: { label: "Reembolsada", cls: B_DANGER },
+};
+
+export const TRANSFER_TYPE_META: Record<TransferType, { label: string; cls: string }> = {
+  opening: { label: "Apertura",    cls: B_ACCENT },
+  monthly: { label: "Mensualidad", cls: B_MUTED  },
+};
+
+export const CONTRACT_DOC_META: Record<ContractDocStatus, { label: string; cls: string }> = {
+  pending_signature: { label: "Pend. firma", cls: B_MUTED  },
+  signed:            { label: "Firmado",     cls: B_ACCENT },
+  expired:           { label: "Vencido",     cls: B_DANGER },
+  cancelled:         { label: "Cancelado",   cls: B_DANGER },
 };
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

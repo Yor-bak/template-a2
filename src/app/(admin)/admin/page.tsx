@@ -3,12 +3,19 @@ import { useState, useMemo } from "react";
 import { useAdminStore, useAdminAuth } from "@/store/adminStore";
 import type { AdminClient } from "@/types/user";
 import {
-  S, C, BadgeEl, PlanBadge, AccessBadge, Th,
+  S, BadgeEl, PlanBadge, AccessBadge, Th,
   PAYMENT_META, CLIENT_META, ONBOARDING_META,
   fmtDate,
 } from "@/modules/admin/components/adminUi";
-import { NewClientModal } from "@/modules/admin/components/NewClientModal";
 import { ClientDrawer } from "@/modules/admin/components/ClientDrawer";
+import { SalesRepView } from "@/modules/admin/components/SalesRepView";
+import { FortnightView } from "@/modules/admin/components/FortnightView";
+import { CommissionsView } from "@/modules/admin/components/CommissionsView";
+import { TransfersView } from "@/modules/admin/components/TransfersView";
+
+// Suppress unused import warning
+void fmtDate;
+void ONBOARDING_META;
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -144,7 +151,7 @@ function applyFilter(clients: AdminClient[], filter: FilterKey, search: string):
   if (search.trim()) {
     const q = search.toLowerCase();
     result = result.filter((c) =>
-      c.clinic.name.toLowerCase().includes(q) ||
+      c.business.name.toLowerCase().includes(q) ||
       c.specialist.publicName.toLowerCase().includes(q) ||
       c.specialist.firstName.toLowerCase().includes(q) ||
       c.specialist.lastNamePaternal.toLowerCase().includes(q) ||
@@ -240,107 +247,193 @@ function StatCards({ clients }: { clients: AdminClient[] }) {
   );
 }
 
-// ── Vendedores modal ──────────────────────────────────────────────────────────
+// ── Clients tab ───────────────────────────────────────────────────────────────
 
-function VendedoresModal({ onClose }: { onClose: () => void }) {
-  const { salesReps, addSalesRep, toggleSalesRep } = useAdminStore();
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+type MainTab = "clients" | "transfers" | "vendors" | "fortnights" | "commissions";
 
-  function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) { setError("El nombre es obligatorio."); return; }
-    addSalesRep({ name: name.trim(), phone: phone.trim() || undefined, email: email.trim() || undefined, active: true });
-    setName(""); setPhone(""); setEmail(""); setError("");
-  }
+const MAIN_TABS: { key: MainTab; label: string }[] = [
+  { key: "clients",      label: "Clientes"        },
+  { key: "transfers",    label: "Transferencias"  },
+  { key: "vendors",      label: "Vendedores"      },
+  { key: "fortnights",   label: "Quincenas"       },
+  { key: "commissions",  label: "Comisiones"      },
+];
+
+function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
+  const { clients } = useAdminStore();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const filtered = useMemo(() => applyFilter(clients, filter, search), [clients, filter, search]);
+  const hasActiveFilter = filter !== "all" || search.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-lg rounded-2xl flex flex-col max-h-[90vh] bg-[var(--bg-base)] border-[0.5px] border-[var(--border)]">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b-[0.5px] border-[var(--border)] shrink-0">
-          <div>
-            <h2 className="text-[var(--text-primary)] font-semibold">Vendedores</h2>
-            <p className="text-[var(--text-muted)] text-xs mt-0.5">Gestión del equipo de ventas</p>
-          </div>
-          <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors text-lg">
-            ×
+    <>
+      <AlertsBar clients={clients} />
+      <StatCards clients={clients} />
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 mb-4">
+        <input
+          className={`${S.input} max-w-xs`}
+          placeholder="Buscar negocio, doctor, teléfono…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          className={showFilters || filter !== "all"
+            ? "px-3 py-1.5 rounded-md bg-[var(--accent-muted)] text-[var(--accent)] border-[0.5px] border-[var(--accent)] text-xs font-medium transition-colors whitespace-nowrap"
+            : S.btnGhost}
+        >
+          {showFilters ? "Ocultar filtros" : "Filtros"}
+          {filter !== "all" && (
+            <span className="ml-1.5 w-1.5 h-1.5 rounded-full inline-block bg-[var(--accent)]" />
+          )}
+        </button>
+        {hasActiveFilter && (
+          <button
+            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            onClick={() => { setFilter("all"); setSearch(""); }}
+          >
+            Limpiar
           </button>
-        </div>
+        )}
+      </div>
 
-        <div className="flex-1 overflow-y-auto adm-scroll px-6 py-5 space-y-5">
-          <section>
-            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.14em] mb-3">Agregar vendedor</p>
-            <form onSubmit={handleAdd} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={S.label}>Nombre *</label>
-                  <input className={S.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Pedro González" />
-                </div>
-                <div>
-                  <label className={S.label}>Teléfono</label>
-                  <input className={S.input} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="5512340001" />
-                </div>
-              </div>
-              <div>
-                <label className={S.label}>Correo</label>
-                <input className={S.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="pedro@empresa.com" />
-              </div>
-              {error && (
-                <p className="text-[var(--danger)] text-xs bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-lg px-3 py-2">
-                  {error}
-                </p>
-              )}
-              <button type="submit" className={S.btnPrimary}>Agregar</button>
-            </form>
-          </section>
-
-          <div className="border-t-[0.5px] border-[var(--border)]" />
-
-          <section>
-            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.14em] mb-3">
-              Vendedores ({salesReps.length})
-            </p>
-            <div className="space-y-2">
-              {salesReps.map((rep) => (
-                <div key={rep.id}
-                  className={`flex items-center justify-between gap-3 rounded-lg px-4 py-3 border-[0.5px] border-[var(--border)] transition-opacity ${rep.active ? "bg-[var(--bg-elevated)]" : "bg-[var(--bg-surface)] opacity-50"}`}>
-                  <div className="min-w-0">
-                    <p className="text-sm text-[var(--text-primary)] font-medium">{rep.name}</p>
-                    <div className="flex gap-3 mt-0.5">
-                      {rep.phone && <span className="text-[10px] text-[var(--text-muted)]">{rep.phone}</span>}
-                      {rep.email && <span className="text-[10px] text-[var(--text-muted)]">{rep.email}</span>}
-                    </div>
-                  </div>
-                  <button onClick={() => toggleSalesRep(rep.id)} className={S.btnGhost}>
-                    {rep.active ? "Desactivar" : "Activar"}
+      {/* Filter panel */}
+      {showFilters && (
+        <div className="rounded-xl p-4 mb-4 space-y-3 bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
+          {FILTER_GROUPS.map((g) => (
+            <div key={g.label} className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wide w-16 shrink-0">
+                {g.label}
+              </span>
+              {g.filters.map((f) => {
+                const active = filter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setFilter(f.key === filter ? "all" : f.key)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border-[0.5px] ${
+                      active
+                        ? "bg-[var(--accent)] text-[var(--bg-base)] border-[var(--accent)]"
+                        : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent)]"
+                    }`}
+                  >
+                    {f.label}
                   </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </section>
+          ))}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="rounded-xl overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
+        <div className="px-5 py-3.5 border-b-[0.5px] border-[var(--border)] flex items-center justify-between">
+          <p className="text-[11px] text-[var(--text-muted)]">
+            {filtered.length} {filtered.length === 1 ? "cliente" : "clientes"}
+            {hasActiveFilter ? " · filtrados" : ""}
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-[0.5px] border-[var(--border)]">
+                <Th>N°</Th>
+                <Th>Negocio</Th>
+                <Th>Especialista</Th>
+                <Th>Teléfono</Th>
+                <Th>Subdominio</Th>
+                <Th>Plan</Th>
+                <Th>Pago</Th>
+                <Th>Acceso</Th>
+                <Th>Vendedor</Th>
+                <Th>{""}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={10} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
+                    Sin resultados
+                  </td>
+                </tr>
+              )}
+              {filtered.map((c) => (
+                <tr
+                  key={c.id}
+                  className="group border-b-[0.5px] border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-elevated)]"
+                  onClick={() => onOpenClient(c.id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <td className="px-5 py-3.5">
+                    <span className="font-mono text-[11px] text-[var(--text-muted)]">{c.clientNumber}</span>
+                  </td>
+                  <td className="px-5 py-3.5 min-w-[160px]">
+                    <p className="text-xs font-medium text-[var(--text-primary)] leading-snug">{c.business.name}</p>
+                    {c.business.city && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{c.business.city}</p>}
+                  </td>
+                  <td className="px-5 py-3.5 min-w-[140px]">
+                    <p className="text-xs text-[var(--text-primary)]">{c.specialist.publicName}</p>
+                    <BadgeEl meta={CLIENT_META[c.clientStatus]} />
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {c.specialist.phone ? (
+                      <a href={`tel:${c.specialist.phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors font-mono">
+                        {c.specialist.phone}
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[var(--border)]">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span className="font-mono text-[10px] text-[var(--text-muted)]">{c.subdomain}</span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <PlanBadge plan={c.plan} />
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <BadgeEl meta={PAYMENT_META[c.paymentStatus]} />
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <AccessBadge active={c.accessActive} />
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div>
+                      <span className="text-[11px] text-[var(--text-muted)]">{c.salesRepName || "—"}</span>
+                      {c.sellerNumber && (
+                        <p className="text-[10px] font-mono text-[var(--accent)]">{c.sellerNumber}</p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-[var(--accent)]">
+                      Ver →
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
+
+    </>
   );
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 function AdminDashboard() {
-  const { clients } = useAdminStore();
   const { logout } = useAdminAuth();
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [showModal, setShowModal] = useState(false);
-  const [showVendedores, setShowVendedores] = useState(false);
+  const [mainTab, setMainTab] = useState<MainTab>("clients");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-
-  const filtered = useMemo(() => applyFilter(clients, filter, search), [clients, filter, search]);
-  const hasActiveFilter = filter !== "all" || search.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
@@ -356,168 +449,33 @@ function AdminDashboard() {
               <span className="text-[var(--text-muted)] text-sm"> / Admin</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowVendedores(true)} className={S.btnGhost}>Vendedores</button>
-            <button onClick={() => setShowModal(true)}      className={S.btnPrimary}>+ Nuevo cliente</button>
-            <button onClick={logout}                        className={S.btnGhost}>Salir</button>
-          </div>
+          <button onClick={logout} className={S.btnGhost}>Salir</button>
+        </div>
+
+        {/* Tab nav */}
+        <div className="max-w-[1440px] mx-auto px-6 flex border-t-[0.5px] border-[var(--border)]">
+          {MAIN_TABS.map((t) => (
+            <button key={t.key} onClick={() => setMainTab(t.key)}
+              className={`px-4 py-3 text-[11px] font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                mainTab === t.key
+                  ? "text-[var(--accent)] border-[var(--accent)]"
+                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]"
+              }`}>
+              {t.label}
+            </button>
+          ))}
         </div>
       </header>
 
       <main className="max-w-[1440px] mx-auto px-6 py-7">
-        <AlertsBar clients={clients} />
-        <StatCards clients={clients} />
-
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            className={`${S.input} max-w-xs`}
-            placeholder="Buscar clínica, doctor, teléfono…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={showFilters || filter !== "all"
-              ? "px-3 py-1.5 rounded-md bg-[var(--accent-muted)] text-[var(--accent)] border-[0.5px] border-[var(--accent)] text-xs font-medium transition-colors whitespace-nowrap"
-              : S.btnGhost}
-          >
-            {showFilters ? "Ocultar filtros" : "Filtros"}
-            {filter !== "all" && (
-              <span className="ml-1.5 w-1.5 h-1.5 rounded-full inline-block bg-[var(--accent)]" />
-            )}
-          </button>
-          {hasActiveFilter && (
-            <button
-              className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              onClick={() => { setFilter("all"); setSearch(""); }}
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
-
-        {/* Filter panel */}
-        {showFilters && (
-          <div className="rounded-xl p-4 mb-4 space-y-3 bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
-            {FILTER_GROUPS.map((g) => (
-              <div key={g.label} className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wide w-16 shrink-0">
-                  {g.label}
-                </span>
-                {g.filters.map((f) => {
-                  const active = filter === f.key;
-                  return (
-                    <button
-                      key={f.key}
-                      onClick={() => setFilter(f.key === filter ? "all" : f.key)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border-[0.5px] ${
-                        active
-                          ? "bg-[var(--accent)] text-[var(--bg-base)] border-[var(--accent)]"
-                          : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent)]"
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Table */}
-        <div className="rounded-xl overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
-          <div className="px-5 py-3.5 border-b-[0.5px] border-[var(--border)] flex items-center justify-between">
-            <p className="text-[11px] text-[var(--text-muted)]">
-              {filtered.length} {filtered.length === 1 ? "cliente" : "clientes"}
-              {hasActiveFilter ? " · filtrados" : ""}
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-[0.5px] border-[var(--border)]">
-                  <Th>N°</Th>
-                  <Th>Clínica</Th>
-                  <Th>Especialista</Th>
-                  <Th>Teléfono</Th>
-                  <Th>Subdominio</Th>
-                  <Th>Plan</Th>
-                  <Th>Pago</Th>
-                  <Th>Acceso</Th>
-                  <Th>Vendedor</Th>
-                  <Th>{""}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={10} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
-                      Sin resultados
-                    </td>
-                  </tr>
-                )}
-                {filtered.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="group border-b-[0.5px] border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-elevated)]"
-                    onClick={() => setSelectedId(c.id)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td className="px-5 py-3.5">
-                      <span className="font-mono text-[11px] text-[var(--text-muted)]">{c.clientNumber}</span>
-                    </td>
-                    <td className="px-5 py-3.5 min-w-[160px]">
-                      <p className="text-xs font-medium text-[var(--text-primary)] leading-snug">{c.clinic.name}</p>
-                      {c.clinic.city && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{c.clinic.city}</p>}
-                    </td>
-                    <td className="px-5 py-3.5 min-w-[140px]">
-                      <p className="text-xs text-[var(--text-primary)]">{c.specialist.publicName}</p>
-                      <BadgeEl meta={CLIENT_META[c.clientStatus]} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {c.specialist.phone ? (
-                        <a href={`tel:${c.specialist.phone}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors font-mono">
-                          {c.specialist.phone}
-                        </a>
-                      ) : (
-                        <span className="text-[11px] text-[var(--border)]">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="font-mono text-[10px] text-[var(--text-muted)]">{c.subdomain}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <PlanBadge plan={c.plan} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <BadgeEl meta={PAYMENT_META[c.paymentStatus]} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <AccessBadge active={c.accessActive} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="text-[11px] text-[var(--text-muted)]">{c.salesRepName || "—"}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-[var(--accent)]">
-                        Ver →
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {mainTab === "clients"     && <ClientsTab onOpenClient={setSelectedId} />}
+        {mainTab === "transfers"   && <TransfersView />}
+        {mainTab === "vendors"     && <SalesRepView />}
+        {mainTab === "fortnights"  && <FortnightView />}
+        {mainTab === "commissions" && <CommissionsView />}
       </main>
 
-      {showModal      && <NewClientModal  onClose={() => setShowModal(false)}      />}
-      {showVendedores && <VendedoresModal onClose={() => setShowVendedores(false)} />}
-      {selectedId     && <ClientDrawer   clientId={selectedId} onClose={() => setSelectedId(null)} />}
+      {selectedId && <ClientDrawer clientId={selectedId} onClose={() => setSelectedId(null)} />}
     </div>
   );
 }

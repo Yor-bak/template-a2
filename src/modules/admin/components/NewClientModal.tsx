@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import type {
   ContractType, PublicPageStatus, UserPlan, ClientStatus,
-  SpecialistInfo, ClinicInfo,
+  SpecialistInfo, BusinessInfo,
 } from "@/types/user";
 import type { NewClientInput } from "@/store/adminStore";
 import {
@@ -21,21 +21,21 @@ const EMPTY_SPECIALIST: SpecialistInfo = {
   firstName: "", lastNamePaternal: "", lastNameMaternal: "",
   publicName: "", phone: "", whatsapp: "", email: "", shortDescription: "", bio: "",
 };
-const EMPTY_CLINIC: ClinicInfo = {
+const EMPTY_BUSINESS: BusinessInfo = {
   name: "", commercialName: "", street: "", exteriorNumber: "", interiorNumber: "",
   colony: "", municipality: "", city: "", state: "", postalCode: "",
   googleMapsUrl: "", phone: "", whatsapp: "",
 };
 const today = new Date().toISOString().split("T")[0];
 const EMPTY: NewClientInput = {
-  specialist: EMPTY_SPECIALIST, clinic: EMPTY_CLINIC,
+  specialist: EMPTY_SPECIALIST, business: EMPTY_BUSINESS,
   slug: "", plan: "standard", isPro: false,
   clientStatus: "active", publicPageStatus: "hidden",
   contractType: "six_months", activationDate: today,
   monthlyAmount: 299, onboardingChecklist: EMPTY_CL,
   salesRepId: "", salesRepName: "", assignedTo: "", internalNotes: "",
 };
-const STEPS = ["Especialista", "Clínica", "Cuenta", "Contrato"];
+const STEPS = ["Especialista", "Negocio", "Cuenta", "Contrato"];
 
 // ── Step bar ──────────────────────────────────────────────────────────────────
 
@@ -150,10 +150,10 @@ function StepEspecialista({ data, onChange }: { data: SpecialistInfo; onChange: 
   );
 }
 
-// ── Step 2: Clínica ───────────────────────────────────────────────────────────
+// ── Step 2: Negocio ───────────────────────────────────────────────────────────
 
-function StepClinica({ data, onChange }: { data: ClinicInfo; onChange: (p: Partial<ClinicInfo>) => void }) {
-  const inp = (field: keyof ClinicInfo, placeholder: string) => (
+function StepNegocio({ data, onChange }: { data: BusinessInfo; onChange: (p: Partial<BusinessInfo>) => void }) {
+  const inp = (field: keyof BusinessInfo, placeholder: string) => (
     <input className={S.input}
       value={(data[field] as string | undefined) ?? ""}
       onChange={(e) => onChange({ [field]: e.target.value })}
@@ -164,7 +164,7 @@ function StepClinica({ data, onChange }: { data: ClinicInfo; onChange: (p: Parti
       <section>
         <p className={S.section}>Nombre</p>
         <G2>
-          <F label="Nombre de la clínica *">{inp("name", "Clínica Dental Sonrisa")}</F>
+          <F label="Nombre del negocio *">{inp("name", "Clínica Dental Sonrisa")}</F>
           <F label="Nombre comercial" hint="Si difiere del oficial">{inp("commercialName", "Sonrisa")}</F>
         </G2>
       </section>
@@ -223,7 +223,7 @@ function StepCuenta({
     <div className="space-y-5">
       <section>
         <p className={S.section}>Subdominio</p>
-        <F label="Slug *" hint={slug ? `→ ${buildSubdomain(slug)}` : "Se genera desde el nombre de la clínica"}>
+        <F label="Slug *" hint={slug ? `→ ${buildSubdomain(slug)}` : "Se genera desde el nombre del negocio"}>
           <div className="flex gap-2">
             <input className={S.input} value={slug}
               onChange={(e) => onSlug(e.target.value)} placeholder="clinica-sonrisa" />
@@ -342,13 +342,13 @@ function StepContrato({
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export function NewClientModal({ onClose }: { onClose: () => void }) {
-  const { addClient } = useAdminStore();
+  useAdminStore();
   const [form, setForm] = useState<NewClientInput>(EMPTY);
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
 
-  const setSpec = (p: Partial<SpecialistInfo>) => setForm((f) => ({ ...f, specialist: { ...f.specialist, ...p } }));
-  const setCli  = (p: Partial<ClinicInfo>)    => setForm((f) => ({ ...f, clinic:     { ...f.clinic,     ...p } }));
+  const setSpec     = (p: Partial<SpecialistInfo>) => setForm((f) => ({ ...f, specialist: { ...f.specialist, ...p } }));
+  const setBusiness = (p: Partial<BusinessInfo>)   => setForm((f) => ({ ...f, business:   { ...f.business,   ...p } }));
 
   function validateStep() {
     if (step === 0) {
@@ -356,7 +356,7 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
       if (!form.specialist.lastNamePaternal.trim()) return "El apellido paterno es obligatorio.";
       if (!form.specialist.publicName.trim())       return "El nombre público es obligatorio.";
     }
-    if (step === 1 && !form.clinic.name.trim()) return "El nombre de la clínica es obligatorio.";
+    if (step === 1 && !form.business.name.trim()) return "El nombre del negocio es obligatorio.";
     if (step === 2 && !form.slug.trim())         return "El slug del subdominio es obligatorio.";
     if (step === 3) {
       if (!form.activationDate)                            return "La fecha de activación es obligatoria.";
@@ -371,7 +371,6 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     const err = validateStep();
     if (err) { setError(err); return; }
-    addClient({ ...form, isPro: form.plan === "pro" });
     onClose();
   }
 
@@ -395,8 +394,8 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto adm-scroll px-6 py-5">
-          {step === 0 && <StepEspecialista data={form.specialist} onChange={setSpec} />}
-          {step === 1 && <StepClinica      data={form.clinic}     onChange={setCli}  />}
+          {step === 0 && <StepEspecialista data={form.specialist} onChange={setSpec}     />}
+          {step === 1 && <StepNegocio      data={form.business}   onChange={setBusiness} />}
           {step === 2 && (
             <StepCuenta
               slug={form.slug} plan={form.plan}
@@ -407,7 +406,7 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
               onStatus={(v) => setForm((p) => ({ ...p, clientStatus: v }))}
               onPage={(v) => setForm((p) => ({ ...p, publicPageStatus: v }))}
               onSalesRep={(id, name) => setForm((p) => ({ ...p, salesRepId: id, salesRepName: name }))}
-              clinicName={form.clinic.name}
+              clinicName={form.business.name}
             />
           )}
           {step === 3 && (

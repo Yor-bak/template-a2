@@ -9,18 +9,20 @@ import {
   PAYMENT_STATUS_LABELS, DOC_TYPE_LABELS,
 } from "@/store/adminStore";
 import {
-  S, C, BadgeEl, PlanBadge, AccessBadge, SectionTitle, Divider, DRow,
+  S, BadgeEl, PlanBadge, AccessBadge, SectionTitle, Divider, DRow,
   PAYMENT_META, CLIENT_META, MONTH_META, ONBOARDING_META, PAGE_META,
   fmtDate, fmtDateTime,
 } from "./adminUi";
+import { ContractsTab } from "./ContractsTab";
 
-type Tab = "general" | "datos" | "pagos" | "config";
+type Tab = "general" | "datos" | "pagos" | "contratos" | "config";
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "general", label: "General"              },
-  { key: "datos",   label: "Especialista y Clínica" },
-  { key: "pagos",   label: "Pagos"                },
-  { key: "config",  label: "Config"               },
+  { key: "general",   label: "General"          },
+  { key: "datos",     label: "Negocio"          },
+  { key: "pagos",     label: "Pagos"            },
+  { key: "contratos", label: "Contratos"        },
+  { key: "config",    label: "Config"           },
 ];
 
 const CHECKLIST_LABELS: Record<keyof OnboardingChecklist, string> = {
@@ -110,15 +112,18 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
         <section>
           <SectionTitle>Vendedor</SectionTitle>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-[var(--text-primary)]">{c.salesRepName || "—"}</span>
+            <div>
+              <p className="text-sm text-[var(--text-primary)]">{c.salesRepName || "—"}</p>
+              {c.sellerNumber && <p className="font-mono text-[10px] text-[var(--text-muted)]">{c.sellerNumber}</p>}
+            </div>
             <select className={`${S.select} w-44 text-xs`} value={c.salesRepId ?? ""}
               onChange={(e) => {
                 const rep = store.salesReps.find((r) => r.id === e.target.value);
-                store.assignSalesRep(c.id, e.target.value, rep?.name ?? "");
+                store.assignSalesRep(c.id, e.target.value, rep?.name ?? "", rep?.sellerNumber ?? "");
               }}>
               <option value="">Sin asignar</option>
               {store.salesReps.filter((r) => r.active).map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
+                <option key={r.id} value={r.id}>{r.sellerNumber} — {r.name}</option>
               ))}
             </select>
           </div>
@@ -161,22 +166,29 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
 
         <Divider />
 
+        <FieldGroup title="Fechas de pago">
+          {c.lastPaymentAt    && <DataRow label="Último pago"        value={fmtDate(c.lastPaymentAt)} />}
+          {c.nextPaymentDueAt && <DataRow label="Próximo vencimiento" value={fmtDate(c.nextPaymentDueAt)} />}
+          <DataRow label="Activación"  value={fmtDate(c.activationDate)} />
+          <DataRow label="Fin contrato" value={fmtDate(c.contractEndDate)} />
+        </FieldGroup>
+
+        <Divider />
+
         <FieldGroup title="Metadatos">
           <DataRow label="N° de cliente" value={c.clientNumber} />
           <DataRow label="Creado"        value={fmtDate(c.createdAt)} />
-          {c.updatedAt        && <DataRow label="Actualizado"  value={fmtDateTime(c.updatedAt)} />}
-          {c.lastPaymentAt    && <DataRow label="Último pago"  value={fmtDate(c.lastPaymentAt)} />}
-          {c.nextPaymentDueAt && <DataRow label="Próximo pago" value={fmtDate(c.nextPaymentDueAt)} />}
+          {c.updatedAt && <DataRow label="Actualizado" value={fmtDateTime(c.updatedAt)} />}
         </FieldGroup>
       </div>
     );
   }
 
-  // ── Tab: Datos ──────────────────────────────────────────────────────────────
+  // ── Tab: Datos (Negocio) ────────────────────────────────────────────────────
 
   function DatosTab() {
     const s  = c.specialist;
-    const cl = c.clinic;
+    const b  = c.business;
     return (
       <div className="space-y-6">
         <section>
@@ -222,38 +234,38 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
         )}
         <Divider />
         <section>
-          <SectionTitle>Clínica / Consultorio</SectionTitle>
+          <SectionTitle>Negocio / Consultorio</SectionTitle>
           <div className="space-y-1.5">
-            <DataRow label="Nombre" value={cl.name} />
-            {cl.commercialName && <DataRow label="Nombre comercial" value={cl.commercialName} />}
+            <DataRow label="Nombre" value={b.name} />
+            {b.commercialName && <DataRow label="Nombre comercial" value={b.commercialName} />}
           </div>
         </section>
         <FieldGroup title="Dirección">
-          {cl.street && (
+          {b.street && (
             <DataRow label="Calle"
-              value={`${cl.street}${cl.exteriorNumber ? " " + cl.exteriorNumber : ""}${cl.interiorNumber ? " int. " + cl.interiorNumber : ""}`} />
+              value={`${b.street}${b.exteriorNumber ? " " + b.exteriorNumber : ""}${b.interiorNumber ? " int. " + b.interiorNumber : ""}`} />
           )}
-          {cl.colony      && <DataRow label="Colonia"             value={cl.colony} />}
-          {cl.municipality && <DataRow label="Alcaldía / Municipio" value={cl.municipality} />}
-          {cl.city        && <DataRow label="Ciudad"              value={`${cl.city}${cl.state ? ", " + cl.state : ""}`} />}
-          {cl.postalCode  && <DataRow label="CP"                  value={cl.postalCode} />}
-          {cl.googleMapsUrl && (
+          {b.colony       && <DataRow label="Colonia"              value={b.colony} />}
+          {b.municipality && <DataRow label="Alcaldía / Municipio" value={b.municipality} />}
+          {b.city         && <DataRow label="Ciudad"               value={`${b.city}${b.state ? ", " + b.state : ""}`} />}
+          {b.postalCode   && <DataRow label="CP"                   value={b.postalCode} />}
+          {b.googleMapsUrl && (
             <DRow label="Maps">
-              <a href={cl.googleMapsUrl} target="_blank" rel="noopener noreferrer"
+              <a href={b.googleMapsUrl} target="_blank" rel="noopener noreferrer"
                 className="text-[var(--accent)] hover:underline text-xs">Ver en Maps</a>
             </DRow>
           )}
         </FieldGroup>
-        <FieldGroup title="Contacto del consultorio">
-          {cl.phone && (
+        <FieldGroup title="Contacto del negocio">
+          {b.phone && (
             <DRow label="Teléfono">
-              <a href={`tel:${cl.phone}`} className="text-[var(--accent)] hover:underline">{cl.phone}</a>
+              <a href={`tel:${b.phone}`} className="text-[var(--accent)] hover:underline">{b.phone}</a>
             </DRow>
           )}
-          {cl.whatsapp && (
+          {b.whatsapp && (
             <DRow label="WhatsApp">
-              <a href={`https://wa.me/${cl.whatsapp}`} target="_blank" rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline">{cl.whatsapp}</a>
+              <a href={`https://wa.me/${b.whatsapp}`} target="_blank" rel="noopener noreferrer"
+                className="text-[var(--accent)] hover:underline">{b.whatsapp}</a>
             </DRow>
           )}
         </FieldGroup>
@@ -266,9 +278,10 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
   function PagosTab() {
     const [editActiv, setEditActiv] = useState(c.activationDate);
     const [editType, setEditType]   = useState<ContractType>(c.contractType);
-    const paidCount  = c.paymentHistory.filter((p) => p.status === "paid").length;
+    const [transferEdit, setTransferEdit] = useState<{ monthId: string; ref: string; date: string } | null>(null);
+    const paidCount   = c.paymentHistory.filter((p) => p.status === "paid").length;
     const totalMonths = c.paymentHistory.length;
-    const isExpired  = new Date(c.contractEndDate) < new Date();
+    const isExpired   = new Date(c.contractEndDate) < new Date();
 
     return (
       <div className="space-y-5">
@@ -284,6 +297,12 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
             <DataRow label="Monto mensual" value={`$${c.monthlyAmount.toLocaleString("es-MX")} MXN`} />
           )}
         </FieldGroup>
+
+        {/* Fechas de pago resumen */}
+        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1.5">
+          {c.lastPaymentAt    && <DataRow label="Último pago real"     value={fmtDate(c.lastPaymentAt)} />}
+          {c.nextPaymentDueAt && <DataRow label="Próximo vencimiento"  value={fmtDate(c.nextPaymentDueAt)} />}
+        </div>
 
         <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl p-4 space-y-3">
           <p className="text-[var(--text-muted)] text-xs font-medium">Renovar contrato desde hoy</p>
@@ -348,27 +367,72 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
           <SectionTitle>Historial mensual</SectionTitle>
           <div className="space-y-0">
             {c.paymentHistory.map((p) => (
-              <div key={p.id}
-                className="flex items-center justify-between gap-2 py-2 border-b-[0.5px] border-[var(--border)] last:border-b-0">
-                <div className="min-w-0">
-                  <p className="text-xs text-[var(--text-primary)] capitalize">{p.monthLabel}</p>
-                  {p.paidAt && <p className="text-[10px] text-[var(--text-muted)]">Pagado: {fmtDate(p.paidAt)}</p>}
+              <div key={p.id} className="py-2.5 border-b-[0.5px] border-[var(--border)] last:border-b-0 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs text-[var(--text-primary)] capitalize">{p.monthLabel}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">
+                      Vence: {fmtDate(p.dueDate)}
+                    </p>
+                    {p.paidAt && (
+                      <p className="text-[10px] text-[var(--text-muted)]">Pagado: {fmtDate(p.paidAt)}</p>
+                    )}
+                    {p.transferReference && (
+                      <p className="text-[10px] font-mono text-[var(--text-muted)]">
+                        Ref: {p.transferReference}
+                        {p.transferDate && ` · ${fmtDate(p.transferDate)}`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {p.amount !== undefined && (
+                      <span className="text-[10px] text-[var(--text-muted)]">${p.amount.toLocaleString("es-MX")}</span>
+                    )}
+                    <select
+                      className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] px-2 py-1 focus:outline-none focus:border-[var(--accent)]"
+                      value={p.status}
+                      onChange={(e) => store.setMonthStatus(c.id, p.id, e.target.value as MonthlyPaymentStatus)}>
+                      <option value="paid">Pagado</option>
+                      <option value="pending">Pendiente</option>
+                      <option value="overdue">Vencido</option>
+                      <option value="unpaid">No pagado</option>
+                    </select>
+                    <BadgeEl meta={MONTH_META[p.status]} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {p.amount !== undefined && (
-                    <span className="text-[10px] text-[var(--text-muted)]">${p.amount.toLocaleString("es-MX")}</span>
-                  )}
-                  <select
-                    className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] px-2 py-1 focus:outline-none focus:border-[var(--accent)]"
-                    value={p.status}
-                    onChange={(e) => store.setMonthStatus(c.id, p.id, e.target.value as MonthlyPaymentStatus)}>
-                    <option value="paid">Pagado</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="overdue">Vencido</option>
-                    <option value="unpaid">No pagado</option>
-                  </select>
-                  <BadgeEl meta={MONTH_META[p.status]} />
-                </div>
+                {/* Transfer reference mini-form */}
+                {p.status === "paid" && (
+                  <>
+                    {transferEdit?.monthId === p.id ? (
+                      <div className="flex gap-2 items-center">
+                        <input
+                          className="flex-1 bg-[var(--bg-base)] border-[0.5px] border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] px-2 py-1 focus:outline-none focus:border-[var(--accent)] placeholder-[var(--text-muted)]"
+                          placeholder="Referencia TRF-…"
+                          value={transferEdit.ref}
+                          onChange={(e) => setTransferEdit((t) => t && { ...t, ref: e.target.value })}
+                        />
+                        <input
+                          type="date"
+                          className="bg-[var(--bg-base)] border-[0.5px] border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] px-2 py-1 focus:outline-none focus:border-[var(--accent)]"
+                          value={transferEdit.date}
+                          onChange={(e) => setTransferEdit((t) => t && { ...t, date: e.target.value })}
+                        />
+                        <button className={S.btnGhost + " !text-[10px]"}
+                          onClick={() => {
+                            store.setMonthStatus(c.id, p.id, "paid", transferEdit.ref || undefined, transferEdit.date || undefined);
+                            setTransferEdit(null);
+                          }}>OK</button>
+                        <button className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                          onClick={() => setTransferEdit(null)}>✕</button>
+                      </div>
+                    ) : (
+                      <button className="text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
+                        onClick={() => setTransferEdit({ monthId: p.id, ref: p.transferReference ?? "", date: p.transferDate ?? "" })}>
+                        {p.transferReference ? "Editar referencia" : "+ Agregar referencia"}
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -467,9 +531,9 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
             <p className="text-[var(--text-muted)] text-xs">Sin actividad registrada.</p>
           ) : (
             <div>
-              {c.activityLog.slice(0, 10).map((log, i) => (
+              {c.activityLog.slice(0, 15).map((log, i) => (
                 <div key={log.id} className="flex gap-3 pb-4 relative">
-                  {i < Math.min(c.activityLog.length - 1, 9) && (
+                  {i < Math.min(c.activityLog.length - 1, 14) && (
                     <div className="absolute left-[7px] top-5 bottom-0 w-px bg-[var(--border)]" />
                   )}
                   <div className="w-3.5 h-3.5 rounded-full bg-[var(--bg-elevated)] border-[0.5px] border-[var(--accent)] shrink-0 mt-0.5" />
@@ -511,11 +575,12 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
                 {c.salesRepName && (
                   <>
                     <span className="text-[var(--border)]">·</span>
+                    <span className="text-[10px] font-mono text-[var(--accent)]">{c.sellerNumber}</span>
                     <span className="text-[10px] text-[var(--text-muted)]">{c.salesRepName}</span>
                   </>
                 )}
               </div>
-              <h2 className="text-[var(--text-primary)] font-semibold text-sm leading-tight truncate">{c.clinic.name}</h2>
+              <h2 className="text-[var(--text-primary)] font-semibold text-sm leading-tight truncate">{c.business.name}</h2>
               <p className="text-[var(--text-muted)] text-xs mt-0.5">{c.specialist.publicName}</p>
             </div>
             <button onClick={onClose}
@@ -534,7 +599,7 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b-[0.5px] border-[var(--border)] shrink-0 px-1 bg-[var(--bg-surface)]">
+        <div className="flex border-b-[0.5px] border-[var(--border)] shrink-0 px-1 bg-[var(--bg-surface)] overflow-x-auto">
           {TABS.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-3 py-3 text-[11px] font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
@@ -549,10 +614,11 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto adm-scroll px-5 py-5">
-          {tab === "general" && <GeneralTab />}
-          {tab === "datos"   && <DatosTab   />}
-          {tab === "pagos"   && <PagosTab   />}
-          {tab === "config"  && <ConfigTab  />}
+          {tab === "general"   && <GeneralTab />}
+          {tab === "datos"     && <DatosTab   />}
+          {tab === "pagos"     && <PagosTab   />}
+          {tab === "contratos" && <ContractsTab client={c} />}
+          {tab === "config"    && <ConfigTab  />}
         </div>
       </div>
     </div>

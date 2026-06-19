@@ -21,6 +21,14 @@ export type PublicPageStatus = "published" | "hidden";
 
 export type OnboardingStatus = "not_started" | "in_progress" | "ready";
 
+export type CommissionStatus = "pending" | "authorized" | "paid" | "cancelled";
+
+export type ContractDocStatus = "pending_signature" | "signed" | "expired" | "cancelled";
+
+export type TransferType = "opening" | "monthly";
+
+export type TransferStatus = "pending" | "verified" | "rejected" | "refunded";
+
 /** Kept for future use; not exposed in admin forms yet. */
 export type ClientType =
   | "dentist"
@@ -30,7 +38,7 @@ export type ClientType =
   | "veterinarian"
   | "other";
 
-// ── Nested entities (future DB tables) ───────────────────────────────────────
+// ── Nested entities ───────────────────────────────────────────────────────────
 
 export interface SpecialistInfo {
   firstName: string;
@@ -45,7 +53,7 @@ export interface SpecialistInfo {
   bio?: string;
 }
 
-export interface ClinicInfo {
+export interface BusinessInfo {
   name: string;
   commercialName?: string;
   street?: string;
@@ -61,13 +69,97 @@ export interface ClinicInfo {
   whatsapp?: string;
 }
 
+/** @deprecated Use BusinessInfo — kept for legacy imports */
+export type ClinicInfo = BusinessInfo;
+
 export interface SalesRep {
   id: string;
+  sellerNumber: string;          // VEN-0001, VEN-0002, …
   name: string;
   phone?: string;
-  email?: string;
   active: boolean;
+  fixedCommissionAmount: number; // fixed amount per verified opening (not percentage)
   createdAt: string;
+}
+
+/** @deprecated Use CommissionRecord — kept for data migration compatibility */
+export interface SaleRecord {
+  id: string;
+  clientId: string;
+  clientNumber: string;
+  businessName: string;
+  salesRepId: string;
+  sellerNumber: string;
+  saleDate: string;
+  contractAmount: number;
+  commissionStatus: CommissionStatus;
+  paymentStatus: PaymentStatus;
+  fortnightId: string;
+  transferReference?: string;
+  transferDate?: string;
+  createdAt: string;
+}
+
+export interface CommissionRecord {
+  id: string;
+  salesRepId: string;
+  sellerNumber: string;
+  transferId: string;
+  clientId: string;
+  clientNumber: string;
+  businessName: string;     // denormalized for display
+  amount: number;           // fixed amount from SalesRep.fixedCommissionAmount
+  status: CommissionStatus;
+  generatedAt: string;
+  authorizedAt?: string;
+  paidAt?: string;
+  paidTransferRef?: string;
+  paidTransferDate?: string;
+  fortnightId: string;
+}
+
+export interface TransferRecord {
+  id: string;
+  referenceNumber: string;   // unique bank reference
+  transferDate: string;      // YYYY-MM-DD
+  amount: number;
+  type: TransferType;
+  status: TransferStatus;
+
+  // Opening transfer fields
+  sellerId?: string;
+  sellerNumber?: string;
+  sellerName?: string;              // denormalized for display
+  fixedCommissionAmount?: number;   // captured at registration time from SalesRep
+  prospectName?: string;
+  prospectPhone?: string;
+  prospectiveBusinessName?: string;
+
+  // Set after verification (opening)
+  clientId?: string;
+  clientNumber?: string;
+
+  // Monthly transfer fields
+  specialistId?: string;    // AdminClient.id
+  paymentMonth?: string;    // matches MonthlyPayment.monthLabel
+
+  // Common
+  receiptUrl?: string;
+  internalNotes?: string;
+  createdAt: string;
+  verifiedAt?: string;
+  rejectedAt?: string;
+}
+
+export interface Fortnight {
+  id: string;             // "YYYY-MM-H" e.g. "2026-06-1"
+  year: number;
+  month: number;          // 1–12
+  half: 1 | 2;           // 1 = days 1–15, 2 = days 16–lastDay
+  label: string;
+  closed: boolean;
+  closedAt?: string;
+  closedBy?: string;
 }
 
 export interface MonthlyPayment {
@@ -77,6 +169,9 @@ export interface MonthlyPayment {
   status: MonthlyPaymentStatus;
   paidAt?: string;
   amount?: number;
+  transferReference?: string;
+  transferDate?: string;
+  transferId?: string;           // links to TransferRecord
 }
 
 export interface OnboardingChecklist {
@@ -103,11 +198,25 @@ export interface ClientDocument {
   type:
     | "payment_receipt"
     | "signed_contract"
-    | "clinic_logo"
+    | "business_logo"
     | "professional_license"
     | "other";
   url?: string;
   uploadedAt?: string;
+}
+
+export interface ClientContractDocument {
+  id: string;
+  clientId: string;
+  fileName: string;
+  fileType: string;
+  fileUrl?: string;
+  status: ContractDocStatus;
+  signedAt?: string;
+  startDate: string;
+  endDate: string;
+  version: number;
+  uploadedAt: string;
 }
 
 // ── Main entity ───────────────────────────────────────────────────────────────
@@ -116,10 +225,9 @@ export interface AdminClient {
   id: string;
   clientNumber: string;
 
-  /** Future: specialists table */
   specialist: SpecialistInfo;
-  /** Future: clinics table */
-  clinic: ClinicInfo;
+  /** Business/consultorio data (formerly "clinic") */
+  business: BusinessInfo;
 
   slug: string;
   subdomain: string;
@@ -133,8 +241,10 @@ export interface AdminClient {
 
   /** FK to SalesRep.id */
   salesRepId?: string;
-  /** Denormalized for display without joins */
+  /** Denormalized for display */
   salesRepName?: string;
+  /** Denormalized seller number */
+  sellerNumber?: string;
   /** Internal support/account owner (free text) */
   assignedTo?: string;
 
@@ -150,6 +260,7 @@ export interface AdminClient {
   internalNotes?: string;
   activityLog: ActivityLogItem[];
   documents: ClientDocument[];
+  contracts: ClientContractDocument[];
 
   createdAt: string;
   updatedAt?: string;
