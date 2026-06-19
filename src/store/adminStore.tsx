@@ -17,9 +17,11 @@ import type {
   PublicPageStatus,
   OnboardingChecklist,
   OnboardingStatus,
-  ClientType,
   ActivityLogItem,
   ClientDocument,
+  SpecialistInfo,
+  ClinicInfo,
+  SalesRep,
 } from "@/types/user";
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -75,19 +77,13 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
   active: "Activo",
-  inactive: "Inactivo",
-  trial: "Trial",
   suspended: "Suspendido",
   cancelled: "Cancelado",
 };
 
-export const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
-  dentist: "Dentista",
-  physiotherapist: "Fisioterapeuta",
-  nutritionist: "Nutriólogo",
-  psychologist: "Psicólogo",
-  veterinarian: "Veterinario",
-  other: "Otro",
+export const PLAN_LABELS: Record<UserPlan, string> = {
+  standard: "Standard",
+  pro: "Pro",
 };
 
 export const ONBOARDING_STATUS_LABELS: Record<OnboardingStatus, string> = {
@@ -103,6 +99,16 @@ export const DOC_TYPE_LABELS: Record<ClientDocument["type"], string> = {
   professional_license: "Cédula profesional",
   other: "Otro",
 };
+
+export const MX_STATES = [
+  "Aguascalientes", "Baja California", "Baja California Sur", "Campeche",
+  "Chiapas", "Chihuahua", "Ciudad de México", "Coahuila", "Colima",
+  "Durango", "Estado de México", "Guanajuato", "Guerrero", "Hidalgo",
+  "Jalisco", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca",
+  "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa",
+  "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán",
+  "Zacatecas",
+];
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -225,7 +231,15 @@ function withLog(
   );
 }
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Mock sales reps ───────────────────────────────────────────────────────────
+
+const MOCK_SALES_REPS: SalesRep[] = [
+  { id: "rep1", name: "Pedro González", phone: "5512340001", email: "pedro@templatea2.com", active: true, createdAt: "2025-11-01T00:00:00Z" },
+  { id: "rep2", name: "Lucía Ramírez", phone: "5512340002", email: "lucia@templatea2.com", active: true, createdAt: "2025-11-15T00:00:00Z" },
+  { id: "rep3", name: "Carlos Vega", phone: "5512340003", email: "carlos@templatea2.com", active: false, createdAt: "2025-12-01T00:00:00Z" },
+];
+
+// ── Mock clients ──────────────────────────────────────────────────────────────
 
 const EMPTY_CL: OnboardingChecklist = {
   basicData: false, services: false, address: false,
@@ -261,10 +275,7 @@ function mockHistory(
     const status: MonthlyPaymentStatus = isPaid ? "paid" : isPast ? "overdue" : "pending";
     return {
       id: `mock-${activationDate}-${i}`,
-      monthLabel,
-      dueDate,
-      status,
-      amount,
+      monthLabel, dueDate, status, amount,
       paidAt: isPaid
         ? new Date(d.getFullYear(), d.getMonth(), 5).toISOString().split("T")[0]
         : undefined,
@@ -272,13 +283,76 @@ function mockHistory(
   });
 }
 
+const spec1: SpecialistInfo = {
+  firstName: "Mariana", lastNamePaternal: "López", lastNameMaternal: "Fernández",
+  publicName: "Dra. Mariana López",
+  phone: "5512345678", whatsapp: "5512345678",
+  email: "mariana.lopez@clinicasonrisa.mx",
+  shortDescription: "Especialista en ortodoncia y odontología cosmética.",
+  bio: "Egresada de la UNAM con especialidad en Ortodoncia. Comprometida con la salud bucal integral.",
+};
+
+const clinic1: ClinicInfo = {
+  name: "Clínica Dental Sonrisa", commercialName: "Sonrisa",
+  street: "Av. Insurgentes Sur", exteriorNumber: "1234",
+  colony: "Del Valle", municipality: "Benito Juárez",
+  city: "Ciudad de México", state: "Ciudad de México", postalCode: "03100",
+  googleMapsUrl: "https://maps.google.com/?q=Av.+Insurgentes+Sur+1234",
+  phone: "5512345678", whatsapp: "5512345678",
+};
+
+const spec2: SpecialistInfo = {
+  firstName: "Carlos", lastNamePaternal: "Mendoza", lastNameMaternal: "Vega",
+  publicName: "Dr. Carlos Mendoza",
+  phone: "5598765432", whatsapp: "5598765432",
+  email: "carlos.mendoza@fisio.mx",
+  shortDescription: "Fisioterapeuta especializado en rehabilitación deportiva.",
+};
+
+const clinic2: ClinicInfo = {
+  name: "Consultorio Dr. Mendoza",
+  street: "Calle Durango", exteriorNumber: "88",
+  colony: "Roma Norte", municipality: "Cuauhtémoc",
+  city: "Ciudad de México", state: "Ciudad de México", postalCode: "06700",
+  phone: "5598765432", whatsapp: "5598765432",
+};
+
+const spec3: SpecialistInfo = {
+  firstName: "Sofía", lastNamePaternal: "Ríos", lastNameMaternal: "Castillo",
+  publicName: "Dra. Sofía Ríos",
+  phone: "5511223344", whatsapp: "5511223344",
+  email: "sofia.rios@dentalfamiliar.mx",
+  shortDescription: "Odontóloga con 12 años de experiencia en atención familiar.",
+};
+
+const clinic3: ClinicInfo = {
+  name: "Centro Dental Familiar",
+  street: "Av. Universidad", exteriorNumber: "450",
+  colony: "Copilco", municipality: "Coyoacán",
+  city: "Ciudad de México", state: "Ciudad de México", postalCode: "04360",
+  phone: "5511223344",
+};
+
+const spec4: SpecialistInfo = {
+  firstName: "Jorge", lastNamePaternal: "Salinas", lastNameMaternal: "Herrera",
+  publicName: "Lic. Jorge Salinas",
+  phone: "5566778899", whatsapp: "5566778899",
+  email: "jorge.salinas@fisiomovimiento.mx",
+  shortDescription: "Fisioterapeuta con enfoque en neurorrehabilitación.",
+};
+
+const clinic4: ClinicInfo = {
+  name: "Fisioterapia Movimiento",
+  street: "Blvd. Ávila Camacho", exteriorNumber: "32",
+  colony: "Industrial", municipality: "Naucalpan",
+  city: "Naucalpan de Juárez", state: "Estado de México", postalCode: "53370",
+  phone: "5566778899", whatsapp: "5566778899",
+};
+
 const MOCK_CLIENTS: AdminClient[] = [
   {
     id: "c1", clientNumber: "TA2-0001",
-    clinicName: "Clínica Dental Sonrisa", specialistName: "Dra. Mariana López",
-    clientType: "dentist",
-    phone: "5512345678", clinicAddress: "Av. Insurgentes Sur 1234, Col. Del Valle, CDMX",
-    googleMapsUrl: "https://maps.google.com/?q=Av.+Insurgentes+Sur+1234",
+    specialist: spec1, clinic: clinic1,
     slug: "clinica-sonrisa", subdomain: "clinica-sonrisa.templatea2.com",
     plan: "pro", isPro: true,
     paymentStatus: "paid", clientStatus: "active", accessActive: true,
@@ -287,10 +361,11 @@ const MOCK_CLIENTS: AdminClient[] = [
     monthlyAmount: 599,
     paymentHistory: mockHistory("2026-01-01", "one_year", 599, 5),
     onboardingStatus: "ready", onboardingChecklist: FULL_CL,
-    assignedTo: "Pedro",
+    salesRepId: "rep1", salesRepName: "Pedro González",
+    assignedTo: "Soporte A",
     internalNotes: "Cliente premium. Pago puntual. Quiere módulo de reseñas en julio.",
     activityLog: [
-      { id: "a1", date: "2026-06-01T10:00:00Z", action: "Pago registrado", detail: "Mayo 2026 — $599 MXN", actor: "Pedro" },
+      { id: "a1", date: "2026-06-01T10:00:00Z", action: "Pago registrado", detail: "Mayo 2026 — $599 MXN", actor: "Pedro González" },
       { id: "a2", date: "2026-01-15T09:00:00Z", action: "Página publicada", actor: "Admin" },
       { id: "a3", date: "2026-01-01T08:00:00Z", action: "Cliente creado", detail: "Contrato 1 año", actor: "Admin" },
     ],
@@ -303,21 +378,20 @@ const MOCK_CLIENTS: AdminClient[] = [
   },
   {
     id: "c2", clientNumber: "TA2-0002",
-    clinicName: "Consultorio Dr. Mendoza", specialistName: "Dr. Carlos Mendoza",
-    clientType: "physiotherapist",
-    phone: "5598765432", clinicAddress: "Calle Durango 88, Col. Roma Norte, CDMX",
+    specialist: spec2, clinic: clinic2,
     slug: "doctor-mendoza", subdomain: "doctor-mendoza.templatea2.com",
-    plan: "free", isPro: false,
-    paymentStatus: "pending", clientStatus: "trial", accessActive: true,
+    plan: "standard", isPro: false,
+    paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2026-05-01", contractEndDate: "2026-10-31",
     monthlyAmount: 299,
     paymentHistory: mockHistory("2026-05-01", "six_months", 299, 1),
     onboardingStatus: "in_progress", onboardingChecklist: PARTIAL_CL,
-    assignedTo: "Soporte",
+    salesRepId: "rep2", salesRepName: "Lucía Ramírez",
+    assignedTo: "Soporte B",
     internalNotes: "Interesado en Pro. Pendiente configurar template y métodos de pago.",
     activityLog: [
-      { id: "a4", date: "2026-05-01T11:00:00Z", action: "Cliente creado", detail: "Contrato 6 meses — Trial", actor: "Admin" },
+      { id: "a4", date: "2026-05-01T11:00:00Z", action: "Cliente creado", detail: "Contrato 6 meses", actor: "Admin" },
     ],
     documents: [
       { id: "d3", name: "Logo consultorio", type: "clinic_logo", uploadedAt: "2026-05-10" },
@@ -326,9 +400,7 @@ const MOCK_CLIENTS: AdminClient[] = [
   },
   {
     id: "c3", clientNumber: "TA2-0003",
-    clinicName: "Centro Dental Familiar", specialistName: "Dra. Sofía Ríos",
-    clientType: "dentist",
-    phone: "5511223344", clinicAddress: "Av. Universidad 450, Coyoacán, CDMX",
+    specialist: spec3, clinic: clinic3,
     slug: "dental-familiar", subdomain: "dental-familiar.templatea2.com",
     plan: "pro", isPro: true,
     paymentStatus: "overdue", clientStatus: "suspended", accessActive: false,
@@ -337,7 +409,8 @@ const MOCK_CLIENTS: AdminClient[] = [
     monthlyAmount: 599,
     paymentHistory: mockHistory("2025-12-01", "six_months", 599, 2),
     onboardingStatus: "not_started", onboardingChecklist: EMPTY_CL,
-    assignedTo: "Ventas",
+    salesRepId: "rep1", salesRepName: "Pedro González",
+    assignedTo: "Cobranza",
     internalNotes: "4 meses sin pagar. Acceso bloqueado. Contactar esta semana.",
     activityLog: [
       { id: "a5", date: "2026-05-01T09:00:00Z", action: "Acceso bloqueado", detail: "Pago vencido — 4 meses", actor: "Sistema" },
@@ -352,21 +425,20 @@ const MOCK_CLIENTS: AdminClient[] = [
   },
   {
     id: "c4", clientNumber: "TA2-0004",
-    clinicName: "Fisioterapia Movimiento", specialistName: "Lic. Jorge Salinas",
-    clientType: "physiotherapist",
-    phone: "5566778899", clinicAddress: "Blvd. Ávila Camacho 32, Naucalpan, EdoMex",
+    specialist: spec4, clinic: clinic4,
     slug: "fisio-movimiento", subdomain: "fisio-movimiento.templatea2.com",
-    plan: "free", isPro: false,
+    plan: "standard", isPro: false,
     paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "published",
     contractType: "six_months", activationDate: "2026-01-01", contractEndDate: "2026-06-30",
     monthlyAmount: 299,
     paymentHistory: mockHistory("2026-01-01", "six_months", 299, 5),
     onboardingStatus: "ready", onboardingChecklist: FULL_CL,
-    assignedTo: "Pedro",
+    salesRepId: "rep2", salesRepName: "Lucía Ramírez",
+    assignedTo: "Soporte A",
     internalNotes: "Contrato vence fin de junio. Ofrecer renovación urgente.",
     activityLog: [
-      { id: "a8", date: "2026-06-01T10:00:00Z", action: "Pago registrado", detail: "Mayo 2026 — $299 MXN", actor: "Pedro" },
+      { id: "a8", date: "2026-06-01T10:00:00Z", action: "Pago registrado", detail: "Mayo 2026 — $299 MXN", actor: "Lucía Ramírez" },
       { id: "a9", date: "2026-01-10T08:00:00Z", action: "Página publicada", actor: "Admin" },
       { id: "a10", date: "2026-01-01T08:00:00Z", action: "Cliente creado", detail: "Contrato 6 meses", actor: "Admin" },
     ],
@@ -380,32 +452,24 @@ const MOCK_CLIENTS: AdminClient[] = [
 
 export type NewClientInput = Omit<
   AdminClient,
-  | "id"
-  | "clientNumber"
-  | "createdAt"
-  | "updatedAt"
-  | "subdomain"
-  | "accessActive"
-  | "paymentStatus"
-  | "paymentHistory"
-  | "contractEndDate"
-  | "onboardingStatus"
-  | "activityLog"
-  | "documents"
-  | "lastPaymentAt"
-  | "nextPaymentDueAt"
+  | "id" | "clientNumber" | "createdAt" | "updatedAt"
+  | "subdomain" | "accessActive" | "paymentStatus"
+  | "paymentHistory" | "contractEndDate" | "onboardingStatus"
+  | "activityLog" | "documents" | "lastPaymentAt" | "nextPaymentDueAt"
 >;
 
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 interface AdminStoreValue {
   clients: AdminClient[];
+  salesReps: SalesRep[];
+
+  // Clients
   addClient: (data: NewClientInput) => void;
   updateClient: (id: string, patch: Partial<AdminClient>) => void;
   setPaymentStatus: (id: string, status: PaymentStatus) => void;
   setClientStatus: (id: string, status: ClientStatus) => void;
   setPlan: (id: string, plan: UserPlan) => void;
-  setPro: (id: string, isPro: boolean) => void;
   setAccess: (id: string, active: boolean) => void;
   setPublicPageStatus: (id: string, status: PublicPageStatus) => void;
   setMonthStatus: (clientId: string, monthId: string, status: MonthlyPaymentStatus) => void;
@@ -416,7 +480,15 @@ interface AdminStoreValue {
   setNotes: (id: string, notes: string) => void;
   setSlug: (id: string, slug: string) => void;
   setAssignedTo: (id: string, assignedTo: string) => void;
+  assignSalesRep: (clientId: string, repId: string, repName: string) => void;
+  updateSpecialist: (id: string, patch: Partial<SpecialistInfo>) => void;
+  updateClinic: (id: string, patch: Partial<ClinicInfo>) => void;
   addDocument: (clientId: string, doc: Omit<ClientDocument, "id">) => void;
+
+  // Sales reps
+  addSalesRep: (data: Omit<SalesRep, "id" | "createdAt">) => void;
+  toggleSalesRep: (repId: string) => void;
+
   // Legacy aliases
   users: AdminClient[];
   updateUser: (id: string, patch: Partial<AdminClient>) => void;
@@ -427,6 +499,9 @@ const AdminStoreCtx = createContext<AdminStoreValue | null>(null);
 
 export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<AdminClient[]>(MOCK_CLIENTS);
+  const [salesReps, setSalesReps] = useState<SalesRep[]>(MOCK_SALES_REPS);
+
+  // ── Client actions ──────────────────────────────────────────────────────────
 
   const addClient = useCallback((data: NewClientInput) => {
     setClients((prev) => {
@@ -434,25 +509,15 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       const clientNumber = generateClientNumber(prev);
       const subdomain = buildSubdomain(data.slug);
       const paymentHistory = generatePaymentHistory(
-        data.activationDate,
-        data.contractType,
-        data.monthlyAmount
+        data.activationDate, data.contractType, data.monthlyAmount
       );
       const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
       const contractEndDate = generateContractEndDate(data.activationDate, data.contractType);
       const onboardingStatus = calcOnboardingStatus(data.onboardingChecklist);
       const newClient: AdminClient = {
-        ...data,
-        id: crypto.randomUUID(),
-        clientNumber,
-        createdAt: now,
-        updatedAt: now,
-        subdomain,
-        paymentStatus,
-        accessActive,
-        paymentHistory,
-        contractEndDate,
-        onboardingStatus,
+        ...data, id: crypto.randomUUID(), clientNumber,
+        createdAt: now, updatedAt: now, subdomain,
+        paymentStatus, accessActive, paymentHistory, contractEndDate, onboardingStatus,
         activityLog: [mkLog("Cliente creado", CONTRACT_TYPE_LABELS[data.contractType])],
         documents: [],
       };
@@ -473,9 +538,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, paymentStatus: status, accessActive })),
-        id,
-        "Estado de pago cambiado",
-        PAYMENT_STATUS_LABELS[status]
+        id, "Estado de pago cambiado", PAYMENT_STATUS_LABELS[status]
       )
     );
   }, []);
@@ -484,9 +547,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, clientStatus: status })),
-        id,
-        "Estado del cliente cambiado",
-        CLIENT_STATUS_LABELS[status]
+        id, "Estado del cliente cambiado", CLIENT_STATUS_LABELS[status]
       )
     );
   }, []);
@@ -495,20 +556,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, plan, isPro: plan === "pro" })),
-        id,
-        `Plan cambiado a ${plan === "pro" ? "Pro" : "Free"}`
-      )
-    );
-  }, []);
-
-  const setPro = useCallback((id: string, isPro: boolean) => {
-    setClients((prev) =>
-      withLog(
-        prev.map((c) =>
-          c.id !== id ? c : { ...c, isPro, plan: isPro ? "pro" : "free" }
-        ),
-        id,
-        isPro ? "Pro activado" : "Pro desactivado"
+        id, `Plan cambiado a ${PLAN_LABELS[plan]}`
       )
     );
   }, []);
@@ -517,24 +565,19 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, accessActive: active })),
-        id,
-        active ? "Acceso activado" : "Acceso bloqueado"
+        id, active ? "Acceso activado" : "Acceso bloqueado"
       )
     );
   }, []);
 
-  const setPublicPageStatus = useCallback(
-    (id: string, status: PublicPageStatus) => {
-      setClients((prev) =>
-        withLog(
-          prev.map((c) => (c.id !== id ? c : { ...c, publicPageStatus: status })),
-          id,
-          status === "published" ? "Página publicada" : "Página oculta"
-        )
-      );
-    },
-    []
-  );
+  const setPublicPageStatus = useCallback((id: string, status: PublicPageStatus) => {
+    setClients((prev) =>
+      withLog(
+        prev.map((c) => (c.id !== id ? c : { ...c, publicPageStatus: status })),
+        id, status === "published" ? "Página publicada" : "Página oculta"
+      )
+    );
+  }, []);
 
   const setMonthStatus = useCallback(
     (clientId: string, monthId: string, status: MonthlyPaymentStatus) => {
@@ -546,20 +589,15 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             if (p.id !== monthId) return p;
             monthLabel = p.monthLabel;
             return {
-              ...p,
-              status,
-              paidAt:
-                status === "paid"
-                  ? new Date().toISOString().split("T")[0]
-                  : undefined,
+              ...p, status,
+              paidAt: status === "paid" ? new Date().toISOString().split("T")[0] : undefined,
             };
           });
           const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
           return { ...c, paymentHistory, paymentStatus, accessActive };
         });
         return withLog(
-          mapped,
-          clientId,
+          mapped, clientId,
           status === "paid" ? "Pago registrado" : "Estado de pago actualizado",
           monthLabel || undefined
         );
@@ -569,8 +607,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const markMonthPaid = useCallback(
-    (clientId: string, monthId: string) =>
-      setMonthStatus(clientId, monthId, "paid"),
+    (clientId: string, monthId: string) => setMonthStatus(clientId, monthId, "paid"),
     [setMonthStatus]
   );
 
@@ -580,63 +617,31 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
         const mapped = prev.map((c) => {
           if (c.id !== clientId) return c;
           const paymentHistory = generatePaymentHistory(
-            activationDate,
-            contractType,
-            c.monthlyAmount,
-            c.paymentHistory
+            activationDate, contractType, c.monthlyAmount, c.paymentHistory
           );
           const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
           const contractEndDate = generateContractEndDate(activationDate, contractType);
-          return {
-            ...c,
-            activationDate,
-            contractType,
-            paymentHistory,
-            paymentStatus,
-            accessActive,
-            contractEndDate,
-          };
+          return { ...c, activationDate, contractType, paymentHistory, paymentStatus, accessActive, contractEndDate };
         });
-        return withLog(
-          mapped,
-          clientId,
-          "Contrato actualizado",
-          CONTRACT_TYPE_LABELS[contractType]
-        );
+        return withLog(mapped, clientId, "Contrato actualizado", CONTRACT_TYPE_LABELS[contractType]);
       });
     },
     []
   );
 
-  const renewContract = useCallback(
-    (clientId: string, contractType: ContractType) => {
-      setClients((prev) => {
-        const today = new Date().toISOString().split("T")[0];
-        const mapped = prev.map((c) => {
-          if (c.id !== clientId) return c;
-          const paymentHistory = generatePaymentHistory(today, contractType, c.monthlyAmount);
-          const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
-          const contractEndDate = generateContractEndDate(today, contractType);
-          return {
-            ...c,
-            activationDate: today,
-            contractType,
-            contractEndDate,
-            paymentHistory,
-            paymentStatus,
-            accessActive,
-          };
-        });
-        return withLog(
-          mapped,
-          clientId,
-          "Contrato renovado",
-          `${CONTRACT_TYPE_LABELS[contractType]} desde hoy`
-        );
+  const renewContract = useCallback((clientId: string, contractType: ContractType) => {
+    setClients((prev) => {
+      const today = new Date().toISOString().split("T")[0];
+      const mapped = prev.map((c) => {
+        if (c.id !== clientId) return c;
+        const paymentHistory = generatePaymentHistory(today, contractType, c.monthlyAmount);
+        const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
+        const contractEndDate = generateContractEndDate(today, contractType);
+        return { ...c, activationDate: today, contractType, contractEndDate, paymentHistory, paymentStatus, accessActive };
       });
-    },
-    []
-  );
+      return withLog(mapped, clientId, "Contrato renovado", `${CONTRACT_TYPE_LABELS[contractType]} desde hoy`);
+    });
+  }, []);
 
   const updateOnboardingChecklist = useCallback(
     (id: string, patch: Partial<OnboardingChecklist>) => {
@@ -645,12 +650,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
           if (c.id !== id) return c;
           const onboardingChecklist = { ...c.onboardingChecklist, ...patch };
           const onboardingStatus = calcOnboardingStatus(onboardingChecklist);
-          return {
-            ...c,
-            onboardingChecklist,
-            onboardingStatus,
-            updatedAt: new Date().toISOString(),
-          };
+          return { ...c, onboardingChecklist, onboardingStatus, updatedAt: new Date().toISOString() };
         })
       );
     },
@@ -661,8 +661,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, internalNotes: notes })),
-        id,
-        "Notas internas actualizadas"
+        id, "Notas internas actualizadas"
       )
     );
   }, []);
@@ -672,9 +671,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, slug, subdomain })),
-        id,
-        "Subdominio actualizado",
-        subdomain
+        id, "Subdominio actualizado", subdomain
       )
     );
   }, []);
@@ -683,71 +680,93 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setClients((prev) =>
       withLog(
         prev.map((c) => (c.id !== id ? c : { ...c, assignedTo })),
-        id,
-        "Responsable asignado",
-        assignedTo
+        id, "Responsable interno asignado", assignedTo
       )
     );
   }, []);
 
-  const addDocument = useCallback(
-    (clientId: string, doc: Omit<ClientDocument, "id">) => {
+  const assignSalesRep = useCallback(
+    (clientId: string, repId: string, repName: string) => {
       setClients((prev) =>
-        prev.map((c) => {
-          if (c.id !== clientId) return c;
-          const newDoc: ClientDocument = {
-            ...doc,
-            id: crypto.randomUUID(),
-            uploadedAt: new Date().toISOString().split("T")[0],
-          };
-          return {
-            ...c,
-            documents: [...c.documents, newDoc],
-            updatedAt: new Date().toISOString(),
-          };
-        })
+        withLog(
+          prev.map((c) =>
+            c.id !== clientId ? c : { ...c, salesRepId: repId, salesRepName: repName }
+          ),
+          clientId, "Vendedor asignado", repName
+        )
       );
     },
     []
   );
 
-  const togglePro = useCallback((id: string) => {
+  const updateSpecialist = useCallback((id: string, patch: Partial<SpecialistInfo>) => {
     setClients((prev) =>
       prev.map((c) =>
         c.id !== id
           ? c
-          : { ...c, isPro: !c.isPro, plan: !c.isPro ? "pro" : "free" }
+          : { ...c, specialist: { ...c.specialist, ...patch }, updatedAt: new Date().toISOString() }
+      )
+    );
+  }, []);
+
+  const updateClinic = useCallback((id: string, patch: Partial<ClinicInfo>) => {
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id !== id
+          ? c
+          : { ...c, clinic: { ...c.clinic, ...patch }, updatedAt: new Date().toISOString() }
+      )
+    );
+  }, []);
+
+  const addDocument = useCallback((clientId: string, doc: Omit<ClientDocument, "id">) => {
+    setClients((prev) =>
+      prev.map((c) => {
+        if (c.id !== clientId) return c;
+        const newDoc: ClientDocument = {
+          ...doc, id: crypto.randomUUID(),
+          uploadedAt: new Date().toISOString().split("T")[0],
+        };
+        return { ...c, documents: [...c.documents, newDoc], updatedAt: new Date().toISOString() };
+      })
+    );
+  }, []);
+
+  // ── Sales rep actions ───────────────────────────────────────────────────────
+
+  const addSalesRep = useCallback((data: Omit<SalesRep, "id" | "createdAt">) => {
+    setSalesReps((prev) => [
+      ...prev,
+      { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+    ]);
+  }, []);
+
+  const toggleSalesRep = useCallback((repId: string) => {
+    setSalesReps((prev) =>
+      prev.map((r) => (r.id !== repId ? r : { ...r, active: !r.active }))
+    );
+  }, []);
+
+  const togglePro = useCallback((id: string) => {
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id !== id ? c : { ...c, isPro: !c.isPro, plan: !c.isPro ? "pro" : "standard" }
       )
     );
   }, []);
 
   const value: AdminStoreValue = {
-    clients,
-    addClient,
-    updateClient,
-    setPaymentStatus,
-    setClientStatus,
-    setPlan,
-    setPro,
-    setAccess,
-    setPublicPageStatus,
-    setMonthStatus,
-    markMonthPaid,
-    regenerateHistory,
-    renewContract,
-    updateOnboardingChecklist,
-    setNotes,
-    setSlug,
-    setAssignedTo,
-    addDocument,
-    users: clients,
-    updateUser: updateClient,
-    togglePro,
+    clients, salesReps,
+    addClient, updateClient,
+    setPaymentStatus, setClientStatus, setPlan, setAccess, setPublicPageStatus,
+    setMonthStatus, markMonthPaid, regenerateHistory, renewContract,
+    updateOnboardingChecklist, setNotes, setSlug, setAssignedTo, assignSalesRep,
+    updateSpecialist, updateClinic, addDocument,
+    addSalesRep, toggleSalesRep,
+    users: clients, updateUser: updateClient, togglePro,
   };
 
-  return (
-    <AdminStoreCtx.Provider value={value}>{children}</AdminStoreCtx.Provider>
-  );
+  return <AdminStoreCtx.Provider value={value}>{children}</AdminStoreCtx.Provider>;
 }
 
 export function useAdminStore() {

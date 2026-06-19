@@ -1,6 +1,7 @@
 export type UserRole = "admin" | "specialist";
 
-export type UserPlan = "free" | "pro";
+/** All plans are paid. "standard" = base, "pro" = premium. */
+export type UserPlan = "standard" | "pro";
 
 export type PaymentStatus =
   | "paid"
@@ -10,12 +11,7 @@ export type PaymentStatus =
   | "overdue"
   | "cancelled";
 
-export type ClientStatus =
-  | "active"
-  | "inactive"
-  | "trial"
-  | "suspended"
-  | "cancelled";
+export type ClientStatus = "active" | "suspended" | "cancelled";
 
 export type ContractType = "six_months" | "one_year";
 
@@ -25,6 +21,7 @@ export type PublicPageStatus = "published" | "hidden";
 
 export type OnboardingStatus = "not_started" | "in_progress" | "ready";
 
+/** Kept for future use; not exposed in admin forms yet. */
 export type ClientType =
   | "dentist"
   | "physiotherapist"
@@ -32,6 +29,46 @@ export type ClientType =
   | "psychologist"
   | "veterinarian"
   | "other";
+
+// ── Nested entities (future DB tables) ───────────────────────────────────────
+
+export interface SpecialistInfo {
+  firstName: string;
+  lastNamePaternal: string;
+  lastNameMaternal?: string;
+  /** Display name shown publicly, e.g. "Dra. Mariana López" */
+  publicName: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  shortDescription?: string;
+  bio?: string;
+}
+
+export interface ClinicInfo {
+  name: string;
+  commercialName?: string;
+  street?: string;
+  exteriorNumber?: string;
+  interiorNumber?: string;
+  colony?: string;
+  municipality?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  googleMapsUrl?: string;
+  phone?: string;
+  whatsapp?: string;
+}
+
+export interface SalesRep {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  active: boolean;
+  createdAt: string;
+}
 
 export interface MonthlyPayment {
   id: string;
@@ -73,43 +110,44 @@ export interface ClientDocument {
   uploadedAt?: string;
 }
 
+// ── Main entity ───────────────────────────────────────────────────────────────
+
 export interface AdminClient {
   id: string;
   clientNumber: string;
 
-  clinicName: string;
-  specialistName: string;
-  clientType: ClientType;
-
-  phone: string;
-  clinicAddress: string;
-  googleMapsUrl?: string;
+  /** Future: specialists table */
+  specialist: SpecialistInfo;
+  /** Future: clinics table */
+  clinic: ClinicInfo;
 
   slug: string;
   subdomain: string;
 
   plan: UserPlan;
   isPro: boolean;
-
   paymentStatus: PaymentStatus;
   clientStatus: ClientStatus;
   accessActive: boolean;
-
   publicPageStatus: PublicPageStatus;
+
+  /** FK to SalesRep.id */
+  salesRepId?: string;
+  /** Denormalized for display without joins */
+  salesRepName?: string;
+  /** Internal support/account owner (free text) */
+  assignedTo?: string;
 
   contractType: ContractType;
   activationDate: string;
   contractEndDate: string;
-
   monthlyAmount?: number;
   paymentHistory: MonthlyPayment[];
 
   onboardingStatus: OnboardingStatus;
   onboardingChecklist: OnboardingChecklist;
 
-  assignedTo?: string;
   internalNotes?: string;
-
   activityLog: ActivityLogItem[];
   documents: ClientDocument[];
 
@@ -119,7 +157,8 @@ export interface AdminClient {
   nextPaymentDueAt?: string;
 }
 
-// Legacy — kept for contexts that still reference it
+// ── Legacy ────────────────────────────────────────────────────────────────────
+
 export interface User {
   id: string;
   name: string;

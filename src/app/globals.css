@@ -33,3 +33,21 @@ html {
   background: var(--color-accent);
   border-radius: 3px;
 }
+
+/* ── Admin panel design tokens — Midnight Ink ────────────────────────────── */
+:root {
+  --bg-base:     #0f0e17;
+  --bg-surface:  #1a1b1f;
+  --bg-elevated: #24262b;
+  --accent:      #c9a84c;
+  --accent-muted:#c9a84c44;
+  --text-primary:#f5f0e8;
+  --text-muted:  #9a9ca3;
+  --border:      #34373e;
+  --danger:      #e05a5a;
+}
+
+/* Admin-section scrollbar */
+.adm-scroll::-webkit-scrollbar { width: 4px; }
+.adm-scroll::-webkit-scrollbar-track { background: var(--bg-base); }
+.adm-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
