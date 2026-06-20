@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --color-ivory: #faf7f0;
+  --color-ink: #1b2430;
+  --color-meridian: #2f5d62;
+  --color-meridian-deep: #203f42;
+  --color-steel: #c7d1d3;
+  --color-steel-soft: #e7ebec;
+  --color-calibration: #bfa15a;
+  --color-urgent: #d85c3e;
+  --color-urgent-deep: #b6452d;
+}
+
+@theme inline {
+  --color-ivory: var(--color-ivory);
+  --color-ink: var(--color-ink);
+  --color-meridian: var(--color-meridian);
+  --color-meridian-deep: var(--color-meridian-deep);
+  --color-steel: var(--color-steel);
+  --color-steel-soft: var(--color-steel-soft);
+  --color-calibration: var(--color-calibration);
+  --color-urgent: var(--color-urgent);
+  --color-urgent-deep: var(--color-urgent-deep);
+
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-inter);
+  --font-data: var(--font-plex-mono);
+}
+
+body {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-body), sans-serif;
+}
+
+/* Calibration rule: the recurring tick-marked midline motif */
+.rule {
+  position: relative;
+  height: 1px;
+  background: var(--color-steel);
+}
+
+.rule::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-ink) 0,
+    var(--color-ink) 1px,
+    transparent 1px,
+    transparent 24px
+  );
+  opacity: 0.18;
+}
+
+.tick-label {
+  font-family: var(--font-data), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Suture stitch: a dashed cross-hatched divider, used where a clean rule would feel borrowed from another field */
+.suture {
+  position: relative;
+  height: 1px;
+}
+
+.suture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    115deg,
+    currentColor 0,
+    currentColor 2px,
+    transparent 2px,
+    transparent 10px
+  );
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    animation: reveal 0.7s ease-out both;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
