@@ -56,6 +56,56 @@ const palettes = [
       "--color-urgent-deep": "#b6402d",
     },
   },
+  // Paletas vibrantes (propuesta): el neón vive en steel-soft (bloques decorativos
+  // sin texto) y el acento de texto/botón es una versión oscura del tono, segura en AA.
+  {
+    name: "Lima fresca",
+    swatch: "#b6e84a",
+    surface: "#f7faf0",
+    ink: "#1c2410",
+    vars: {
+      "--color-ivory": "#f7faf0",
+      "--color-ink": "#1c2410",
+      "--color-meridian": "#0a6d86",
+      "--color-meridian-deep": "#07505f",
+      "--color-steel": "#cdd9c0",
+      "--color-steel-soft": "#b6e84a",
+      "--color-urgent": "#c0462b",
+      "--color-urgent-deep": "#9e3821",
+    },
+  },
+  {
+    name: "Menta cyan",
+    swatch: "#16e0e0",
+    surface: "#f0fbfb",
+    ink: "#0c2226",
+    vars: {
+      "--color-ivory": "#f0fbfb",
+      "--color-ink": "#0c2226",
+      "--color-meridian": "#08707a",
+      "--color-meridian-deep": "#05545c",
+      "--color-steel": "#bcdada",
+      "--color-steel-soft": "#16e0e0",
+      "--color-urgent": "#c0462b",
+      "--color-urgent-deep": "#9e3821",
+    },
+  },
+  {
+    name: "Azul eléctrico",
+    swatch: "#0a9dff",
+    surface: "#eff6fd",
+    ink: "#0a1830",
+    vars: {
+      "--color-ivory": "#eff6fd",
+      "--color-ink": "#0a1830",
+      "--color-meridian": "#0a5fb5",
+      "--color-meridian-deep": "#073a82",
+      "--color-steel": "#c2d2e6",
+      "--color-steel-soft": "#0a9dff",
+      "--color-urgent": "#c0462b",
+      "--color-urgent-deep": "#9e3821",
+    },
+  },
 ] as const;
 
 type PriceType = "fijo" | "desde" | "valoracion";

@@ -37,7 +37,7 @@ export function PaletteSwitcher({
   const { surface, ink } = palettes[active];
   return (
     <div
-      className="fixed bottom-4 left-4 z-40 flex items-center gap-1.5 rounded-full border px-3 py-2 shadow-lg sm:bottom-6 sm:left-6"
+      className="fixed bottom-4 left-4 z-40 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-1.5 rounded-3xl border px-3 py-2 shadow-lg sm:bottom-6 sm:left-6"
       style={{ backgroundColor: surface, borderColor: `${ink}26` }}
     >
       <PaletteIcon color={`${ink}99`} />
