@@ -188,11 +188,10 @@ export default function MedicoTemplate03() {
             <p className="mt-2 text-sm text-[#2c2620]/75">
               Fiebre alta, dolor agudo o malestar súbito no esperan turno.
             </p>
-            <a href={`tel:${doctor.phoneHref}`} className="mt-3 inline-block text-sm font-medium text-[#8c2f2f] underline-offset-4 hover:underline">
-              Llamar ahora →
+            <a href={`tel:${doctor.phoneHref}`} className="mt-4 inline-block rounded-full border border-[#8c2f2f] px-5 py-2 text-sm font-medium text-[#8c2f2f] transition hover:bg-[#8c2f2f] hover:text-[#f7f2ea]">
+              Llamar ahora
             </a>
-            <br />
-            <a href={doctor.whatsapp} className="mt-1 inline-block text-sm underline-offset-4 hover:underline">
+            <a href={doctor.whatsapp} className="mt-3 block text-sm underline-offset-4 hover:underline">
               WhatsApp de urgencias
             </a>
           </aside>
@@ -244,6 +243,12 @@ export default function MedicoTemplate03() {
               </div>
             </div>
           </div>
+          <a
+            href={doctor.whatsapp}
+            className="mt-8 inline-block rounded-full bg-[#94462f] px-7 py-3 text-sm font-medium text-[#f7f2ea] transition hover:bg-[#7e3c28]"
+          >
+            Agendar consulta
+          </a>
         </section>
       </main>
     </div>

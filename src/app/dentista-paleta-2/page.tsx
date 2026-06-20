@@ -191,7 +191,7 @@ export default function DentistaPaleta2() {
                 {milestones.map((m) => (
                   <div key={m.label}>
                     <div className="font-data text-2xl font-medium text-meridian-deep">{m.value}</div>
-                    <div className="tick-label mt-1 text-ink/55">{m.label}</div>
+                    <div className="tick-label mt-1 text-ink/70">{m.label}</div>
                   </div>
                 ))}
               </div>
@@ -200,7 +200,7 @@ export default function DentistaPaleta2() {
         </section>
 
         {/* AGENDAR */}
-        <section id="agendar" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="agendar" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto max-w-3xl">
             <p className="tick-label text-meridian">Agendar</p>
             <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Reserva tu cita</h2>
@@ -215,7 +215,7 @@ export default function DentistaPaleta2() {
         </section>
 
         {/* ESPECIALISTA */}
-        <section id="especialista" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="especialista" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-[1fr_1.4fr]">
             <div className="aspect-[4/5] w-full rounded-2xl bg-steel-soft" aria-hidden />
             <div>
@@ -228,19 +228,19 @@ export default function DentistaPaleta2() {
 
               <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-steel pt-6 sm:grid-cols-4">
                 <div>
-                  <dt className="tick-label text-ink/50">Experiencia</dt>
+                  <dt className="tick-label text-ink/70">Experiencia</dt>
                   <dd className="font-data mt-1 text-sm">12 años</dd>
                 </div>
                 <div>
-                  <dt className="tick-label text-ink/50">Cédula profesional</dt>
+                  <dt className="tick-label text-ink/70">Cédula profesional</dt>
                   <dd className="font-data mt-1 text-sm">6512345</dd>
                 </div>
                 <div>
-                  <dt className="tick-label text-ink/50">Cédula de especialidad</dt>
+                  <dt className="tick-label text-ink/70">Cédula de especialidad</dt>
                   <dd className="font-data mt-1 text-sm">9871234</dd>
                 </div>
                 <div>
-                  <dt className="tick-label text-ink/50">Pacientes atendidos</dt>
+                  <dt className="tick-label text-ink/70">Pacientes atendidos</dt>
                   <dd className="font-data mt-1 text-sm">1,840</dd>
                 </div>
               </dl>
@@ -280,11 +280,11 @@ export default function DentistaPaleta2() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-ink/60">{service.description}</p>
+                    <p className="mt-1 text-sm text-ink/70">{service.description}</p>
                   </div>
                   <div className="text-right">
                     <div className="font-data text-lg">{service.price}</div>
-                    <div className="tick-label text-ink/45">{priceTypeLabel[service.priceType]}</div>
+                    <div className="tick-label text-ink/70">{priceTypeLabel[service.priceType]}</div>
                   </div>
                 </div>
               ))}
@@ -293,7 +293,7 @@ export default function DentistaPaleta2() {
         </section>
 
         {/* UBICACIÓN, HORARIO, PAGOS */}
-        <section id="ubicacion" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="ubicacion" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2">
             <div>
               <p className="tick-label text-meridian">Ubicación</p>
@@ -305,7 +305,7 @@ export default function DentistaPaleta2() {
                 <br />
                 C.P. 03920, CDMX
               </address>
-              <p className="mt-3 text-sm text-ink/60">
+              <p className="mt-3 text-sm text-ink/70">
                 A dos cuadras del metro Mixcoac. Torre Cristal, planta baja, acceso directo desde la calle.
               </p>
               <a
@@ -335,7 +335,7 @@ export default function DentistaPaleta2() {
                   {schedule.map((row) => (
                     <div key={row.day} className="flex items-center justify-between py-2">
                       <span className="text-ink/70">{row.day}</span>
-                      <span className={row.hours === "Cerrado" ? "text-ink/40" : ""}>{row.hours}</span>
+                      <span className={row.hours === "Cerrado" ? "text-ink/70" : ""}>{row.hours}</span>
                     </div>
                   ))}
                 </div>
@@ -383,7 +383,7 @@ export default function DentistaPaleta2() {
               {testimonials.map((t) => (
                 <figure key={t.name} className="rounded-2xl border border-steel p-6">
                   <blockquote className="text-ink/80">&ldquo;{t.quote}&rdquo;</blockquote>
-                  <figcaption className="mt-4 font-data text-sm text-ink/50">
+                  <figcaption className="mt-4 font-data text-sm text-ink/70">
                     {t.name} · {t.treatment}
                   </figcaption>
                 </figure>
@@ -393,32 +393,32 @@ export default function DentistaPaleta2() {
         </section>
 
         {/* CONTACTO */}
-        <section id="contacto" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="contacto" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto max-w-6xl">
             <p className="tick-label text-meridian">Contacto</p>
             <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Hablemos de tu sonrisa</h2>
 
             <div className="mt-8 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
               <div>
-                <div className="tick-label text-ink/50">Teléfono</div>
+                <div className="tick-label text-ink/70">Teléfono</div>
                 <a href="tel:+525548213360" className="font-data mt-1 block">
                   (55) 4821 3360
                 </a>
               </div>
               <div>
-                <div className="tick-label text-ink/50">WhatsApp</div>
+                <div className="tick-label text-ink/70">WhatsApp</div>
                 <a href="https://wa.me/525548213360" className="font-data mt-1 block">
                   (55) 4821 3360
                 </a>
               </div>
               <div>
-                <div className="tick-label text-ink/50">Correo</div>
+                <div className="tick-label text-ink/70">Correo</div>
                 <a href="mailto:contacto@meridianodental.mx" className="font-data mt-1 block">
                   contacto@meridianodental.mx
                 </a>
               </div>
               <div>
-                <div className="tick-label text-ink/50">Redes</div>
+                <div className="tick-label text-ink/70">Redes</div>
                 <div className="mt-1 flex flex-col gap-1">
                   <a href="https://facebook.com/EstudioDentalMeridiano">Facebook</a>
                   <a href="https://instagram.com/meridiano.dental">Instagram @meridiano.dental</a>
@@ -429,7 +429,7 @@ export default function DentistaPaleta2() {
         </section>
       </main>
 
-      <footer className="border-t border-steel/60 px-6 py-8 text-center text-sm text-ink/50">
+      <footer className="border-t border-steel/60 px-6 py-8 text-center text-sm text-ink/70">
         Estudio Dental Meridiano · Dra. Renata Solís Vega · CDMX
       </footer>
     </div>

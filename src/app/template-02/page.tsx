@@ -45,7 +45,13 @@ export default function Template02() {
           </div>
 
           <div className="text-[#a8dadc]">
-            <div className="suture" />
+            <a
+              href={clinic.whatsapp}
+              className="block rounded-md bg-[#2d8b8b] px-5 py-2.5 text-center text-sm font-medium text-white transition hover:bg-[#246f6f]"
+            >
+              Agendar consulta
+            </a>
+            <div className="suture mt-6" />
             <div className="mt-4 text-xs text-[#f1faee]/60">
               <p>Cédula profesional {clinic.license}</p>
               <p className="mt-1">{clinic.experienceYears} años de práctica</p>

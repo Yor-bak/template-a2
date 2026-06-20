@@ -1,14 +1,13 @@
+// Una entrada por diseño. Las paletas de color ya no se listan como rutas aparte:
+// /medico trae el switch de paleta en vivo, y los archivos *-paleta-* siguen en disco
+// para reubicarlos más adelante.
 const specialties = [
-  { href: "/dentista", label: "Dentista — Paleta 1", status: "live" as const, note: "Diseño principal (verde meridiano)" },
-  { href: "/dentista-paleta-2", label: "Dentista — Paleta 2", status: "live" as const, note: "Mismo diseño, arena cálida (cobre)" },
-  { href: "/dentista-paleta-3", label: "Dentista — Paleta 3", status: "live" as const, note: "Mismo diseño, azul clínico" },
-  { href: "/medico", label: "Médico — Paleta 1", status: "live" as const, note: "Medicina interna · switch de paleta en vivo" },
-  { href: "/medico-paleta-2", label: "Médico — Paleta 2", status: "live" as const, note: "Mismo diseño, verde clínico" },
-  { href: "/medico-paleta-3", label: "Médico — Paleta 3", status: "live" as const, note: "Mismo diseño, vino cálido" },
-  { href: "/medico-template-02", label: "Médico (alterno B)", status: "live" as const, note: "Tablero clínico" },
-  { href: "/medico-template-03", label: "Médico (alterno C)", status: "live" as const, note: "Crónica de salud / editorial" },
+  { href: "/dentista", label: "Dentista", status: "live" as const, note: "Diseño principal (verde meridiano)" },
   { href: "/template-02", label: "Dentista (alterno B)", status: "live" as const, note: "Expediente clínico" },
   { href: "/template-03", label: "Dentista (alterno C)", status: "live" as const, note: "Marketing dental / acordeón y testimonios" },
+  { href: "/medico", label: "Médico", status: "live" as const, note: "Medicina interna · switch de paleta en vivo" },
+  { href: "/medico-template-02", label: "Médico (alterno B)", status: "live" as const, note: "Tablero clínico" },
+  { href: "/medico-template-03", label: "Médico (alterno C)", status: "live" as const, note: "Crónica de salud / editorial" },
   { href: "/veterinario", label: "Veterinario", status: "live" as const, note: "Mascotas pequeñas" },
   { href: "/psicologo", label: "Psicólogo", status: "live" as const, note: "Terapia de adultos" },
   { href: "/nutriologo", label: "Nutriólogo", status: "live" as const, note: "Nutrición clínica y deportiva" },

@@ -8,7 +8,7 @@ const paletteVars = {
   "--color-medico-accent": "#7c2d44",
   "--color-medico-accent-deep": "#5c2032",
   "--color-medico-accent-soft": "#d9a8b8",
-  "--color-medico-urgent": "#b8472f",
+  "--color-medico-urgent": "#a23d28",
 } as React.CSSProperties;
 
 const doctor = {

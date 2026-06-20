@@ -178,7 +178,7 @@ export default function Home() {
                 {milestones.map((m) => (
                   <div key={m.label}>
                     <div className="font-data text-2xl font-medium text-meridian-deep">{m.value}</div>
-                    <div className="tick-label mt-1 text-ink/55">{m.label}</div>
+                    <div className="tick-label mt-1 text-ink/70">{m.label}</div>
                   </div>
                 ))}
               </div>
@@ -215,19 +215,19 @@ export default function Home() {
 
               <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-steel pt-6 sm:grid-cols-4">
                 <div>
-                  <dt className="tick-label text-ink/50">Experiencia</dt>
+                  <dt className="tick-label text-ink/70">Experiencia</dt>
                   <dd className="font-data mt-1 text-sm">12 años</dd>
                 </div>
                 <div>
-                  <dt className="tick-label text-ink/50">Cédula profesional</dt>
+                  <dt className="tick-label text-ink/70">Cédula profesional</dt>
                   <dd className="font-data mt-1 text-sm">6512345</dd>
                 </div>
                 <div>
-                  <dt className="tick-label text-ink/50">Cédula de especialidad</dt>
+                  <dt className="tick-label text-ink/70">Cédula de especialidad</dt>
                   <dd className="font-data mt-1 text-sm">9871234</dd>
                 </div>
                 <div>
-                  <dt className="tick-label text-ink/50">Pacientes atendidos</dt>
+                  <dt className="tick-label text-ink/70">Pacientes atendidos</dt>
                   <dd className="font-data mt-1 text-sm">1,840</dd>
                 </div>
               </dl>
@@ -267,11 +267,11 @@ export default function Home() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-ink/60">{service.description}</p>
+                    <p className="mt-1 text-sm text-ink/70">{service.description}</p>
                   </div>
                   <div className="text-right">
                     <div className="font-data text-lg">{service.price}</div>
-                    <div className="tick-label text-ink/45">{priceTypeLabel[service.priceType]}</div>
+                    <div className="tick-label text-ink/70">{priceTypeLabel[service.priceType]}</div>
                   </div>
                 </div>
               ))}
@@ -292,7 +292,7 @@ export default function Home() {
                 <br />
                 C.P. 03920, CDMX
               </address>
-              <p className="mt-3 text-sm text-ink/60">
+              <p className="mt-3 text-sm text-ink/70">
                 A dos cuadras del metro Mixcoac. Torre Cristal, planta baja, acceso directo desde la calle.
               </p>
               <a
@@ -322,7 +322,7 @@ export default function Home() {
                   {schedule.map((row) => (
                     <div key={row.day} className="flex items-center justify-between py-2">
                       <span className="text-ink/70">{row.day}</span>
-                      <span className={row.hours === "Cerrado" ? "text-ink/40" : ""}>{row.hours}</span>
+                      <span className={row.hours === "Cerrado" ? "text-ink/70" : ""}>{row.hours}</span>
                     </div>
                   ))}
                 </div>
@@ -370,7 +370,7 @@ export default function Home() {
               {testimonials.map((t) => (
                 <figure key={t.name} className="rounded-2xl border border-steel p-6">
                   <blockquote className="text-ink/80">&ldquo;{t.quote}&rdquo;</blockquote>
-                  <figcaption className="mt-4 font-data text-sm text-ink/50">
+                  <figcaption className="mt-4 font-data text-sm text-ink/70">
                     {t.name} · {t.treatment}
                   </figcaption>
                 </figure>
@@ -387,25 +387,25 @@ export default function Home() {
 
             <div className="mt-8 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
               <div>
-                <div className="tick-label text-ink/50">Teléfono</div>
+                <div className="tick-label text-ink/70">Teléfono</div>
                 <a href="tel:+525548213360" className="font-data mt-1 block">
                   (55) 4821 3360
                 </a>
               </div>
               <div>
-                <div className="tick-label text-ink/50">WhatsApp</div>
+                <div className="tick-label text-ink/70">WhatsApp</div>
                 <a href="https://wa.me/525548213360" className="font-data mt-1 block">
                   (55) 4821 3360
                 </a>
               </div>
               <div>
-                <div className="tick-label text-ink/50">Correo</div>
+                <div className="tick-label text-ink/70">Correo</div>
                 <a href="mailto:contacto@meridianodental.mx" className="font-data mt-1 block">
                   contacto@meridianodental.mx
                 </a>
               </div>
               <div>
-                <div className="tick-label text-ink/50">Redes</div>
+                <div className="tick-label text-ink/70">Redes</div>
                 <div className="mt-1 flex flex-col gap-1">
                   <a href="https://facebook.com/EstudioDentalMeridiano">Facebook</a>
                   <a href="https://instagram.com/meridiano.dental">Instagram @meridiano.dental</a>
@@ -416,7 +416,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-steel/60 px-6 py-8 text-center text-sm text-ink/50">
+      <footer className="border-t border-steel/60 px-6 py-8 text-center text-sm text-ink/70">
         Estudio Dental Meridiano · Dra. Renata Solís Vega · CDMX
       </footer>
     </div>

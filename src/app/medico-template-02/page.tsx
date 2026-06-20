@@ -82,15 +82,15 @@ export default function MedicoTemplate02() {
       <header className="sticky top-0 z-30 border-b border-[#16202b]/10 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
           <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-[#0e7c86]">Tablero clínico</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#0a6670]">Tablero clínico</p>
             <h1 className="text-base font-semibold" style={{ fontFamily: "var(--f-outfit)" }}>{doctor.name}</h1>
           </div>
           <nav className="hidden items-center gap-6 text-sm text-[#16202b]/60 lg:flex">
             {navLinks.map((l) => (
-              <a key={l.href} href={l.href} className="transition hover:text-[#0e7c86]">{l.label}</a>
+              <a key={l.href} href={l.href} className="transition hover:text-[#0a6670]">{l.label}</a>
             ))}
           </nav>
-          <a href={doctor.whatsapp} className="rounded-md bg-[#0e7c86] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0b5e66]">
+          <a href={doctor.whatsapp} className="rounded-md bg-[#0a6670] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0b5e66]">
             Agendar consulta
           </a>
         </div>
@@ -100,13 +100,13 @@ export default function MedicoTemplate02() {
         {/* Hero: intro + a dashboard panel of stat tiles, side by side like a desk view */}
         <section className="grid gap-8 pb-12 md:grid-cols-[1.2fr_1fr] md:items-start">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0e7c86]">{doctor.specialty} · CDMX</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#0a6670]">{doctor.specialty} · CDMX</p>
             <h2 className="mt-4 max-w-xl text-4xl leading-[1.1] md:text-5xl" style={{ fontFamily: "var(--f-outfit)" }}>
               El panorama completo de tu salud, en un solo lugar.
             </h2>
             <p className="mt-5 max-w-lg text-[#16202b]/70">{doctor.welcomeMessage}</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href={doctor.whatsapp} className="rounded-md bg-[#0e7c86] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#0b5e66]">
+              <a href={doctor.whatsapp} className="rounded-md bg-[#0a6670] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#0b5e66]">
                 Agendar consulta
               </a>
               <a href={`tel:${doctor.phoneHref}`} className="rounded-md border border-[#16202b]/20 px-6 py-3 text-sm font-medium transition hover:border-[#16202b]/50">
@@ -116,12 +116,12 @@ export default function MedicoTemplate02() {
           </div>
 
           <div className="rounded-2xl border border-[#16202b]/10 bg-white p-5">
-            <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#16202b]/50">Panorama del consultorio</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#16202b]/50">Panorama del consultorio</p>
             <div className="mt-4 grid grid-cols-3 gap-3">
               {vitals.map((v) => (
-                <div key={v.label} className="rounded-xl border border-[#0e7c86]/15 bg-[#0e7c86]/5 p-3">
-                  <dd className="text-lg font-semibold text-[#0e7c86]" style={{ fontFamily: "var(--f-jetbrains)" }}>{v.value}</dd>
-                  <dt className="mt-1 text-[0.65rem] leading-tight text-[#16202b]/60">{v.label}</dt>
+                <div key={v.label} className="rounded-xl border border-[#0a6670]/15 bg-[#0a6670]/5 p-3">
+                  <dd className="text-lg font-semibold text-[#0a6670]" style={{ fontFamily: "var(--f-jetbrains)" }}>{v.value}</dd>
+                  <dt className="mt-1 text-xs leading-tight text-[#16202b]/60">{v.label}</dt>
                 </div>
               ))}
             </div>
@@ -130,9 +130,9 @@ export default function MedicoTemplate02() {
 
         {/* Especialista */}
         <section id="especialista" className="grid gap-10 border-t border-[#16202b]/10 py-12 md:grid-cols-[1fr_1.4fr]">
-          <div className="aspect-square rounded-2xl bg-[#0e7c86]/10" aria-hidden />
+          <div className="aspect-square rounded-2xl bg-[#0a6670]/10" aria-hidden />
           <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#0e7c86]">Perfil del médico</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#0a6670]">Perfil del médico</p>
             <h3 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-outfit)" }}>{doctor.doctor}</h3>
             <p className="mt-3 max-w-lg text-[#16202b]/70">
               Médico cirujano con especialidad en {doctor.specialty} por la {doctor.school}. Cédula de
@@ -148,7 +148,7 @@ export default function MedicoTemplate02() {
 
         {/* Servicios: módulos de tarjeta en vez de tabla */}
         <section id="servicios" className="border-t border-[#16202b]/10 py-12">
-          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#0e7c86]">Módulos disponibles</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#0a6670]">Módulos disponibles</p>
           <h3 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-outfit)" }}>Consultas y estudios</h3>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {services.map((s) => (
@@ -159,7 +159,7 @@ export default function MedicoTemplate02() {
                 <div className="flex items-start justify-between gap-4">
                   <h4 className="font-medium">{s.name}</h4>
                   <span
-                    className="whitespace-nowrap text-base font-semibold text-[#0e7c86]"
+                    className="whitespace-nowrap text-base font-semibold text-[#0a6670]"
                     style={{ fontFamily: "var(--f-jetbrains)" }}
                   >
                     {s.price}
@@ -169,7 +169,7 @@ export default function MedicoTemplate02() {
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-xs uppercase tracking-wide text-[#16202b]/40">{priceTypeLabel[s.priceType]}</span>
                   {s.isUrgency && (
-                    <span className="rounded-full bg-[#d64545]/15 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-[#d64545]">
+                    <span className="rounded-full bg-[#d64545]/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-[#d64545]">
                       Urgente
                     </span>
                   )}
@@ -182,7 +182,7 @@ export default function MedicoTemplate02() {
         {/* Ubicación */}
         <section id="ubicacion" className="grid gap-10 border-t border-[#16202b]/10 py-12 md:grid-cols-2">
           <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#0e7c86]">Acceso</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#0a6670]">Acceso</p>
             <h3 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-outfit)" }}>Ubicación y horario</h3>
             <address className="mt-4 not-italic text-[#16202b]/70">
               {doctor.address.street}<br />
@@ -190,7 +190,7 @@ export default function MedicoTemplate02() {
               {doctor.address.zip}
             </address>
             <p className="mt-2 text-sm text-[#16202b]/60">{doctor.address.reference}</p>
-            <a href={doctor.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[#0e7c86] underline-offset-4 hover:underline">
+            <a href={doctor.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[#0a6670] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-8 flex flex-wrap gap-2">
@@ -200,7 +200,7 @@ export default function MedicoTemplate02() {
             </div>
           </div>
           <div className="rounded-2xl border border-[#16202b]/10 bg-white p-5">
-            <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#16202b]/50">Disponibilidad</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#16202b]/50">Disponibilidad</p>
             <div className="mt-3 divide-y divide-[#16202b]/10 text-sm">
               {schedule.map((row) => (
                 <div key={row.day} className="flex justify-between py-2">
@@ -219,8 +219,8 @@ export default function MedicoTemplate02() {
 
         {/* Urgencias: alerta de panel, no bloque sólido */}
         <section id="urgencias" className="border-t border-[#16202b]/10 py-12">
-          <div className="rounded-xl border-l-4 border-[#d64545] bg-[#d64545]/5 px-6 py-6">
-            <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#d64545]">Alerta · Urgencia ambulatoria</p>
+          <div className="rounded-xl border-l-[6px] border-[#d64545] bg-[#d64545]/10 px-6 py-6">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#d64545]">Alerta · Urgencia ambulatoria</p>
             <h3 className="mt-2 max-w-md text-xl" style={{ fontFamily: "var(--f-outfit)" }}>
               Fiebre alta, dolor agudo o malestar súbito no esperan turno.
             </h3>
@@ -233,7 +233,7 @@ export default function MedicoTemplate02() {
 
         {/* Testimonios */}
         <section id="testimonios" className="border-t border-[#16202b]/10 py-12">
-          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#0e7c86]">Registro de pacientes</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#0a6670]">Registro de pacientes</p>
           <h3 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-outfit)" }}>Lo que cuentan los pacientes</h3>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {testimonials.map((t) => (
@@ -247,7 +247,7 @@ export default function MedicoTemplate02() {
 
         {/* Contacto: panel de cierre */}
         <section id="contacto" className="my-4 rounded-2xl bg-[#16202b] px-8 py-10 text-white">
-          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#7fc6cb]">Contacto</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#7fc6cb]">Contacto</p>
           <h3 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-outfit)" }}>Agenda tu consulta</h3>
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>

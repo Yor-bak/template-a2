@@ -76,7 +76,7 @@ const palettes = [
       "--color-medico-accent": "#2563a8",
       "--color-medico-accent-deep": "#1d4e88",
       "--color-medico-accent-soft": "#7fb1e0",
-      "--color-medico-urgent": "#d6453d",
+      "--color-medico-urgent": "#c23a32",
     },
   },
   {
@@ -98,7 +98,7 @@ const palettes = [
       "--color-medico-accent": "#7c2d44",
       "--color-medico-accent-deep": "#5c2032",
       "--color-medico-accent-soft": "#d9a8b8",
-      "--color-medico-urgent": "#b8472f",
+      "--color-medico-urgent": "#a23d28",
     },
   },
 ] as const;
@@ -118,20 +118,44 @@ function Pulse({ className = "" }: { className?: string }) {
   );
 }
 
-function PaletteSwitcher({ active, onSelect }: { active: number; onSelect: (i: number) => void }) {
+function PaletteIcon({ className = "" }: { className?: string }) {
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-medico-ink/10 bg-white px-3 py-2 shadow-lg">
-      <span className="hidden text-xs text-medico-ink/50 sm:inline">Paleta</span>
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M12 3a9 9 0 1 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.39-.61-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" />
+      <circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="16.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function PaletteSwitcher({ active, onSelect }: { active: number; onSelect: (i: number) => void }) {
+  const surface = palettes[active].vars["--color-medico-bg"];
+  return (
+    <div
+      className="fixed bottom-4 left-4 z-40 flex items-center gap-1.5 rounded-full border border-medico-ink/15 px-3 py-2 shadow-lg sm:bottom-6 sm:left-6"
+      style={{ backgroundColor: surface }}
+    >
+      <PaletteIcon className="h-4 w-4 text-medico-ink/60" />
+      <span className="hidden text-xs text-medico-ink/70 sm:inline">Paleta</span>
       {palettes.map((p, i) => (
         <button
           key={p.name}
           type="button"
+          title={`Ver paleta ${p.name}`}
           aria-label={`Ver paleta ${p.name}`}
           aria-pressed={active === i}
           onClick={() => onSelect(i)}
-          className={`h-6 w-6 rounded-full transition ${active === i ? "ring-2 ring-medico-ink ring-offset-2 ring-offset-white" : "opacity-70 hover:opacity-100"}`}
-          style={{ backgroundColor: p.vars["--color-medico-accent"] }}
-        />
+          className="grid h-11 w-11 place-items-center rounded-full transition"
+        >
+          <span
+            className={`block h-6 w-6 rounded-full transition ${active === i ? "ring-2 ring-medico-ink ring-offset-2" : "opacity-70 hover:opacity-100"}`}
+            style={{
+              backgroundColor: p.vars["--color-medico-accent"],
+              ...(active === i ? ({ "--tw-ring-offset-color": surface } as React.CSSProperties) : {}),
+            }}
+          />
+        </button>
       ))}
     </div>
   );
@@ -161,7 +185,7 @@ export default function MedicoTemplate() {
         <Pulse className="h-3 w-full text-medico-accent/30" />
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-14">
+      <main className="mx-auto max-w-6xl px-6 pt-14 pb-32">
         {/* Hero */}
         <section className="grid gap-10 pb-14 md:grid-cols-[1.3fr_1fr] md:items-center">
           <div>
