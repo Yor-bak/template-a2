@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { lora, nunitoSans } from "@/lib/fonts";
 
 // Signature motif for this specialty: an EKG/heartbeat trace used as the recurring
@@ -62,6 +65,44 @@ const testimonials = [
   { name: "Diana C.", quote: "El chequeo anual fue completo y me detectaron algo a tiempo gracias a sus estudios.", treatment: "Chequeo anual" },
 ];
 
+// Las 3 paletas también viven como rutas propias en /medico-paleta-2 y /medico-paleta-3.
+// Este switch solo cambia las variables CSS en el cliente para previsualizarlas aquí mismo.
+const palettes = [
+  {
+    name: "Azul clínico",
+    vars: {
+      "--color-medico-bg": "#f4f7f6",
+      "--color-medico-ink": "#15324a",
+      "--color-medico-accent": "#2563a8",
+      "--color-medico-accent-deep": "#1d4e88",
+      "--color-medico-accent-soft": "#7fb1e0",
+      "--color-medico-urgent": "#d6453d",
+    },
+  },
+  {
+    name: "Verde clínico",
+    vars: {
+      "--color-medico-bg": "#f4f7f3",
+      "--color-medico-ink": "#1b2e22",
+      "--color-medico-accent": "#21694a",
+      "--color-medico-accent-deep": "#184f37",
+      "--color-medico-accent-soft": "#9bcdae",
+      "--color-medico-urgent": "#c1442e",
+    },
+  },
+  {
+    name: "Vino cálido",
+    vars: {
+      "--color-medico-bg": "#f8f3ef",
+      "--color-medico-ink": "#2a1c20",
+      "--color-medico-accent": "#7c2d44",
+      "--color-medico-accent-deep": "#5c2032",
+      "--color-medico-accent-soft": "#d9a8b8",
+      "--color-medico-urgent": "#b8472f",
+    },
+  },
+] as const;
+
 function Pulse({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 400 40" className={className} preserveAspectRatio="none" aria-hidden>
@@ -77,12 +118,35 @@ function Pulse({ className = "" }: { className?: string }) {
   );
 }
 
+function PaletteSwitcher({ active, onSelect }: { active: number; onSelect: (i: number) => void }) {
+  return (
+    <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-medico-ink/10 bg-white px-3 py-2 shadow-lg">
+      <span className="hidden text-xs text-medico-ink/50 sm:inline">Paleta</span>
+      {palettes.map((p, i) => (
+        <button
+          key={p.name}
+          type="button"
+          aria-label={`Ver paleta ${p.name}`}
+          aria-pressed={active === i}
+          onClick={() => onSelect(i)}
+          className={`h-6 w-6 rounded-full transition ${active === i ? "ring-2 ring-medico-ink ring-offset-2 ring-offset-white" : "opacity-70 hover:opacity-100"}`}
+          style={{ backgroundColor: p.vars["--color-medico-accent"] }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function MedicoTemplate() {
+  const [active, setActive] = useState(0);
+
   return (
     <div
       className={`${lora.variable} ${nunitoSans.variable} min-h-screen bg-medico-bg text-medico-ink`}
-      style={{ fontFamily: "var(--f-nunito-sans)" }}
+      style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-nunito-sans)" }}
     >
+      <PaletteSwitcher active={active} onSelect={setActive} />
+
       {/* Header */}
       <header className="border-b border-medico-ink/10 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">

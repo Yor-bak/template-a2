@@ -19,6 +19,8 @@ import {
   Outfit,
   IBM_Plex_Sans,
   Figtree,
+  Bitter,
+  Plus_Jakarta_Sans,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -50,3 +52,6 @@ export const publicSans = Public_Sans({ subsets: ["latin"], variable: "--f-publi
 export const outfit = Outfit({ subsets: ["latin"], variable: "--f-outfit" });
 export const ibmPlexSans = IBM_Plex_Sans({ subsets: ["latin"], variable: "--f-ibm-plex-sans" });
 export const figtree = Figtree({ subsets: ["latin"], variable: "--f-figtree" });
+
+export const bitter = Bitter({ subsets: ["latin"], variable: "--f-bitter" });
+export const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--f-plus-jakarta" });
