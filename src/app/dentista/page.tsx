@@ -9,38 +9,6 @@ import { PaletteSwitcher } from "@/components/PaletteSwitcher";
 // propia para reubicarlas más adelante. swatch/surface/ink alimentan al PaletteSwitcher.
 const palettes = [
   {
-    name: "Verde meridiano",
-    swatch: "#2f5d62",
-    surface: "#faf7f0",
-    ink: "#1b2430",
-    vars: {
-      "--color-ivory": "#faf7f0",
-      "--color-ink": "#1b2430",
-      "--color-meridian": "#2f5d62",
-      "--color-meridian-deep": "#203f42",
-      "--color-steel": "#c7d1d3",
-      "--color-steel-soft": "#e7ebec",
-      "--color-urgent": "#d85c3e",
-      "--color-urgent-deep": "#b6452d",
-    },
-  },
-  {
-    name: "Arena cálida",
-    swatch: "#b3552f",
-    surface: "#fbf6ef",
-    ink: "#2b2118",
-    vars: {
-      "--color-ivory": "#fbf6ef",
-      "--color-ink": "#2b2118",
-      "--color-meridian": "#b3552f",
-      "--color-meridian-deep": "#8f3f20",
-      "--color-steel": "#ddd0bd",
-      "--color-steel-soft": "#f0e7d8",
-      "--color-urgent": "#b3302f",
-      "--color-urgent-deep": "#8f2420",
-    },
-  },
-  {
     name: "Azul clínico",
     swatch: "#2a5f96",
     surface: "#f4f8fb",
@@ -56,24 +24,8 @@ const palettes = [
       "--color-urgent-deep": "#b6402d",
     },
   },
-  // Paletas vibrantes (propuesta): el neón vive en steel-soft (bloques decorativos
-  // sin texto) y el acento de texto/botón es una versión oscura del tono, segura en AA.
-  {
-    name: "Lima fresca",
-    swatch: "#b6e84a",
-    surface: "#f7faf0",
-    ink: "#1c2410",
-    vars: {
-      "--color-ivory": "#f7faf0",
-      "--color-ink": "#1c2410",
-      "--color-meridian": "#0a6d86",
-      "--color-meridian-deep": "#07505f",
-      "--color-steel": "#cdd9c0",
-      "--color-steel-soft": "#b6e84a",
-      "--color-urgent": "#c0462b",
-      "--color-urgent-deep": "#9e3821",
-    },
-  },
+  // Menta cyan: el cyan neón vive en steel-soft (bloques decorativos sin texto) y el
+  // acento de texto/botón es un teal oscuro seguro en AA; urgent baja a ladrillo.
   {
     name: "Menta cyan",
     swatch: "#16e0e0",
@@ -91,19 +43,19 @@ const palettes = [
     },
   },
   {
-    name: "Azul eléctrico",
-    swatch: "#0a9dff",
-    surface: "#eff6fd",
-    ink: "#0a1830",
+    name: "Arena cálida",
+    swatch: "#b3552f",
+    surface: "#fbf6ef",
+    ink: "#2b2118",
     vars: {
-      "--color-ivory": "#eff6fd",
-      "--color-ink": "#0a1830",
-      "--color-meridian": "#0a5fb5",
-      "--color-meridian-deep": "#073a82",
-      "--color-steel": "#c2d2e6",
-      "--color-steel-soft": "#0a9dff",
-      "--color-urgent": "#c0462b",
-      "--color-urgent-deep": "#9e3821",
+      "--color-ivory": "#fbf6ef",
+      "--color-ink": "#2b2118",
+      "--color-meridian": "#b3552f",
+      "--color-meridian-deep": "#8f3f20",
+      "--color-steel": "#ddd0bd",
+      "--color-steel-soft": "#f0e7d8",
+      "--color-urgent": "#b3302f",
+      "--color-urgent-deep": "#8f2420",
     },
   },
 ] as const;
