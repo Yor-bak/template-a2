@@ -7,7 +7,7 @@ const specialties = [
   { href: "/template-03", label: "Dentista (alterno C)", status: "live" as const, note: "Marketing dental / acordeón y testimonios" },
   { href: "/medico", label: "Médico", status: "live" as const, note: "Medicina interna · switch de paleta en vivo" },
   { href: "/medico-template-02", label: "Médico (alterno B)", status: "live" as const, note: "Tablero clínico" },
-  { href: "/medico-template-03", label: "Médico (alterno C)", status: "live" as const, note: "Crónica de salud / editorial" },
+  { href: "/medico-template-03", label: "Médico (alterno C)", status: "live" as const, note: "Clínica institucional / servicios e instalaciones" },
   { href: "/veterinario", label: "Veterinario", status: "live" as const, note: "Mascotas pequeñas" },
   { href: "/psicologo", label: "Psicólogo", status: "live" as const, note: "Terapia de adultos" },
   { href: "/nutriologo", label: "Nutriólogo", status: "live" as const, note: "Nutrición clínica y deportiva" },
