@@ -5,6 +5,8 @@ const specialties = [
   { href: "/medico", label: "Médico — Paleta 1", status: "live" as const, note: "Medicina interna (azul clínico)" },
   { href: "/medico-paleta-2", label: "Médico — Paleta 2", status: "live" as const, note: "Mismo diseño, verde clínico" },
   { href: "/medico-paleta-3", label: "Médico — Paleta 3", status: "live" as const, note: "Mismo diseño, vino cálido" },
+  { href: "/medico-template-02", label: "Médico (alterno B)", status: "live" as const, note: "Tablero clínico" },
+  { href: "/medico-template-03", label: "Médico (alterno C)", status: "live" as const, note: "Crónica de salud / editorial" },
   { href: "/template-02", label: "Dentista (alterno B)", status: "live" as const, note: "Expediente clínico" },
   { href: "/template-03", label: "Dentista (alterno C)", status: "live" as const, note: "Revista / asimétrico" },
   { href: "/veterinario", label: "Veterinario", status: "live" as const, note: "Mascotas pequeñas" },

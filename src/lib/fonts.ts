@@ -16,6 +16,9 @@ import {
   JetBrains_Mono,
   Spectral,
   Public_Sans,
+  Outfit,
+  IBM_Plex_Sans,
+  Figtree,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -43,3 +46,7 @@ export const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--f
 
 export const spectral = Spectral({ subsets: ["latin"], variable: "--f-spectral", weight: ["400", "500", "600"] });
 export const publicSans = Public_Sans({ subsets: ["latin"], variable: "--f-public-sans" });
+
+export const outfit = Outfit({ subsets: ["latin"], variable: "--f-outfit" });
+export const ibmPlexSans = IBM_Plex_Sans({ subsets: ["latin"], variable: "--f-ibm-plex-sans" });
+export const figtree = Figtree({ subsets: ["latin"], variable: "--f-figtree" });
