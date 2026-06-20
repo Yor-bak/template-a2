@@ -2,7 +2,7 @@
 // /medico trae el switch de paleta en vivo, y los archivos *-paleta-* siguen en disco
 // para reubicarlos más adelante.
 const specialties = [
-  { href: "/dentista", label: "Dentista", status: "live" as const, note: "Diseño principal (verde meridiano)" },
+  { href: "/dentista", label: "Dentista", status: "live" as const, note: "Rehabilitación oral · switch de paleta en vivo" },
   { href: "/template-02", label: "Dentista (alterno B)", status: "live" as const, note: "Expediente clínico" },
   { href: "/template-03", label: "Dentista (alterno C)", status: "live" as const, note: "Marketing dental / acordeón y testimonios" },
   { href: "/medico", label: "Médico", status: "live" as const, note: "Medicina interna · switch de paleta en vivo" },

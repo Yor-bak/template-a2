@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { lora, nunitoSans } from "@/lib/fonts";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
 
 // Signature motif for this specialty: an EKG/heartbeat trace used as the recurring
 // section divider, and a "signos vitales" stat strip instead of a generic milestones row —
@@ -67,9 +68,13 @@ const testimonials = [
 
 // Las 3 paletas también viven como rutas propias en /medico-paleta-2 y /medico-paleta-3.
 // Este switch solo cambia las variables CSS en el cliente para previsualizarlas aquí mismo.
+// swatch/surface/ink son los colores que consume el PaletteSwitcher compartido.
 const palettes = [
   {
     name: "Azul clínico",
+    swatch: "#2563a8",
+    surface: "#f4f7f6",
+    ink: "#15324a",
     vars: {
       "--color-medico-bg": "#f4f7f6",
       "--color-medico-ink": "#15324a",
@@ -81,6 +86,9 @@ const palettes = [
   },
   {
     name: "Verde clínico",
+    swatch: "#21694a",
+    surface: "#f4f7f3",
+    ink: "#1b2e22",
     vars: {
       "--color-medico-bg": "#f4f7f3",
       "--color-medico-ink": "#1b2e22",
@@ -92,6 +100,9 @@ const palettes = [
   },
   {
     name: "Vino cálido",
+    swatch: "#7c2d44",
+    surface: "#f8f3ef",
+    ink: "#2a1c20",
     vars: {
       "--color-medico-bg": "#f8f3ef",
       "--color-medico-ink": "#2a1c20",
@@ -118,49 +129,6 @@ function Pulse({ className = "" }: { className?: string }) {
   );
 }
 
-function PaletteIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M12 3a9 9 0 1 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.39-.61-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" />
-      <circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
-      <circle cx="16.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function PaletteSwitcher({ active, onSelect }: { active: number; onSelect: (i: number) => void }) {
-  const surface = palettes[active].vars["--color-medico-bg"];
-  return (
-    <div
-      className="fixed bottom-4 left-4 z-40 flex items-center gap-1.5 rounded-full border border-medico-ink/15 px-3 py-2 shadow-lg sm:bottom-6 sm:left-6"
-      style={{ backgroundColor: surface }}
-    >
-      <PaletteIcon className="h-4 w-4 text-medico-ink/60" />
-      <span className="hidden text-xs text-medico-ink/70 sm:inline">Paleta</span>
-      {palettes.map((p, i) => (
-        <button
-          key={p.name}
-          type="button"
-          title={`Ver paleta ${p.name}`}
-          aria-label={`Ver paleta ${p.name}`}
-          aria-pressed={active === i}
-          onClick={() => onSelect(i)}
-          className="grid h-11 w-11 place-items-center rounded-full transition"
-        >
-          <span
-            className={`block h-6 w-6 rounded-full transition ${active === i ? "ring-2 ring-medico-ink ring-offset-2" : "opacity-70 hover:opacity-100"}`}
-            style={{
-              backgroundColor: p.vars["--color-medico-accent"],
-              ...(active === i ? ({ "--tw-ring-offset-color": surface } as React.CSSProperties) : {}),
-            }}
-          />
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function MedicoTemplate() {
   const [active, setActive] = useState(0);
 
@@ -169,7 +137,7 @@ export default function MedicoTemplate() {
       className={`${lora.variable} ${nunitoSans.variable} min-h-screen bg-medico-bg text-medico-ink`}
       style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-nunito-sans)" }}
     >
-      <PaletteSwitcher active={active} onSelect={setActive} />
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
 
       {/* Header */}
       <header className="border-b border-medico-ink/10 bg-white">

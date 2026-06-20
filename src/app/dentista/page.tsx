@@ -1,4 +1,62 @@
+"use client";
+
+import { useState } from "react";
 import BookingForm from "./BookingForm";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
+
+// Las 3 paletas se aplican en el cliente sobreescribiendo las variables CSS heredadas.
+// Los archivos /dentista-paleta-2 y /dentista-paleta-3 conservan cada paleta como ruta
+// propia para reubicarlas más adelante. swatch/surface/ink alimentan al PaletteSwitcher.
+const palettes = [
+  {
+    name: "Verde meridiano",
+    swatch: "#2f5d62",
+    surface: "#faf7f0",
+    ink: "#1b2430",
+    vars: {
+      "--color-ivory": "#faf7f0",
+      "--color-ink": "#1b2430",
+      "--color-meridian": "#2f5d62",
+      "--color-meridian-deep": "#203f42",
+      "--color-steel": "#c7d1d3",
+      "--color-steel-soft": "#e7ebec",
+      "--color-urgent": "#d85c3e",
+      "--color-urgent-deep": "#b6452d",
+    },
+  },
+  {
+    name: "Arena cálida",
+    swatch: "#b3552f",
+    surface: "#fbf6ef",
+    ink: "#2b2118",
+    vars: {
+      "--color-ivory": "#fbf6ef",
+      "--color-ink": "#2b2118",
+      "--color-meridian": "#b3552f",
+      "--color-meridian-deep": "#8f3f20",
+      "--color-steel": "#ddd0bd",
+      "--color-steel-soft": "#f0e7d8",
+      "--color-urgent": "#b3302f",
+      "--color-urgent-deep": "#8f2420",
+    },
+  },
+  {
+    name: "Azul clínico",
+    swatch: "#2a5f96",
+    surface: "#f4f8fb",
+    ink: "#15202c",
+    vars: {
+      "--color-ivory": "#f4f8fb",
+      "--color-ink": "#15202c",
+      "--color-meridian": "#2a5f96",
+      "--color-meridian-deep": "#1f4f80",
+      "--color-steel": "#c9d6e0",
+      "--color-steel-soft": "#e6edf3",
+      "--color-urgent": "#d8543e",
+      "--color-urgent-deep": "#b6402d",
+    },
+  },
+] as const;
 
 type PriceType = "fijo" | "desde" | "valoracion";
 
@@ -120,8 +178,11 @@ const navLinks = [
 ];
 
 export default function Home() {
+  const [active, setActive] = useState(0);
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" style={palettes[active].vars as React.CSSProperties}>
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
       <header className="sticky top-0 z-30 border-b border-steel/60 bg-ivory/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <a href="#top" className="font-display text-lg font-bold tracking-tight">
@@ -187,7 +248,7 @@ export default function Home() {
         </section>
 
         {/* AGENDAR */}
-        <section id="agendar" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="agendar" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto max-w-3xl">
             <p className="tick-label text-meridian">Agendar</p>
             <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Reserva tu cita</h2>
@@ -202,7 +263,7 @@ export default function Home() {
         </section>
 
         {/* ESPECIALISTA */}
-        <section id="especialista" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="especialista" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-[1fr_1.4fr]">
             <div className="aspect-[4/5] w-full rounded-2xl bg-steel-soft" aria-hidden />
             <div>
@@ -280,7 +341,7 @@ export default function Home() {
         </section>
 
         {/* UBICACIÓN, HORARIO, PAGOS */}
-        <section id="ubicacion" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="ubicacion" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2">
             <div>
               <p className="tick-label text-meridian">Ubicación</p>
@@ -380,7 +441,7 @@ export default function Home() {
         </section>
 
         {/* CONTACTO */}
-        <section id="contacto" className="border-t border-steel/60 bg-white px-6 py-20">
+        <section id="contacto" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto max-w-6xl">
             <p className="tick-label text-meridian">Contacto</p>
             <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Hablemos de tu sonrisa</h2>
@@ -416,7 +477,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-steel/60 px-6 py-8 text-center text-sm text-ink/70">
+      <footer className="border-t border-steel/60 px-6 pt-8 pb-28 text-center text-sm text-ink/70">
         Estudio Dental Meridiano · Dra. Renata Solís Vega · CDMX
       </footer>
     </div>
