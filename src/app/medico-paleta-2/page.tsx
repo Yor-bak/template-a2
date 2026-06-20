@@ -1,8 +1,16 @@
 import { lora, nunitoSans } from "@/lib/fonts";
 
-// Signature motif for this specialty: an EKG/heartbeat trace used as the recurring
-// section divider, and a "signos vitales" stat strip instead of a generic milestones row —
-// both read instantly as "consulta médica" rather than a reskinned dental layout.
+// Paleta 2 — "Verde clínico": mismo diseño que /medico, solo cambia la paleta de color
+// (verde esmeralda sobre blanco salvia) mediante variables CSS heredadas, sin duplicar el layout.
+const paletteVars = {
+  "--color-medico-bg": "#f4f7f3",
+  "--color-medico-ink": "#1b2e22",
+  "--color-medico-accent": "#21694a",
+  "--color-medico-accent-deep": "#184f37",
+  "--color-medico-accent-soft": "#9bcdae",
+  "--color-medico-urgent": "#c1442e",
+} as React.CSSProperties;
+
 const doctor = {
   name: "Centro Médico Altavista",
   doctor: "Dr. Joaquín Lemus Ortega",
@@ -77,11 +85,11 @@ function Pulse({ className = "" }: { className?: string }) {
   );
 }
 
-export default function MedicoTemplate() {
+export default function MedicoPaleta2() {
   return (
     <div
       className={`${lora.variable} ${nunitoSans.variable} min-h-screen bg-medico-bg text-medico-ink`}
-      style={{ fontFamily: "var(--f-nunito-sans)" }}
+      style={{ ...paletteVars, fontFamily: "var(--f-nunito-sans)" }}
     >
       {/* Header */}
       <header className="border-b border-medico-ink/10 bg-white">
