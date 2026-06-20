@@ -29,15 +29,18 @@ export function PaletteSwitcher({
   palettes,
   active,
   onSelect,
+  align = "left",
 }: {
   palettes: readonly SwitchablePalette[];
   active: number;
   onSelect: (index: number) => void;
+  align?: "left" | "right";
 }) {
   const { surface, ink } = palettes[active];
+  const side = align === "right" ? "right-4 sm:right-6" : "left-4 sm:left-6";
   return (
     <div
-      className="fixed bottom-4 left-4 z-40 flex items-center gap-1.5 rounded-full border px-3 py-2 shadow-lg sm:bottom-6 sm:left-6"
+      className={`fixed bottom-4 z-40 flex items-center gap-1.5 rounded-full border px-3 py-2 shadow-lg sm:bottom-6 ${side}`}
       style={{ backgroundColor: surface, borderColor: `${ink}26` }}
     >
       <PaletteIcon color={`${ink}99`} />
