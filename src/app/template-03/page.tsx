@@ -1,181 +1,239 @@
-import { bitter, plusJakarta } from "@/lib/fonts";
+import { outfit, plusJakarta } from "@/lib/fonts";
 import { clinic, services, priceTypeLabel, schedule, paymentMethods, testimonials, milestones } from "@/lib/mockClinic";
 
-// Alterno C — rediseño completo: panel dividido (split-screen), no revista diagonal.
-// El panel izquierdo es fijo en escritorio (identidad + contacto siempre visible)
-// mientras la columna derecha es la única que hace scroll, como un portafolio.
-// Paleta casi monocromática con un solo acento vivo, y tipografía propia
-// (Bitter + Plus Jakarta Sans), sin relación con ninguna otra plantilla.
+// Alterno C — rediseño inspirado en sitios de marketing dental tipo "clínica grande"
+// (hero con gradiente azul→violeta, antes/después, CTA amarillo de alto contraste,
+// servicios en acordeón, testimonios con estrellas y atribución social), pero con
+// nuestra paleta y datos propios. Sin JS de cliente: el acordeón usa <details> nativo.
+const highlights = [
+  { label: "Diagnóstico digital", detail: "Radiografía y fotos antes de proponer cualquier plan." },
+  { label: "Instrumental esterilizado", detail: "Un kit nuevo por paciente, sin excepciones." },
+  { label: "Urgencias el mismo día", detail: "Dolor agudo o golpe, respuesta en horas, no en días." },
+  { label: "Meses sin intereses", detail: "Planes de pago a 3 y 6 meses en tratamientos mayores." },
+];
+
+const stars = "★★★★★";
+
 export default function Template03() {
   return (
     <div
-      className={`${bitter.variable} ${plusJakarta.variable} min-h-screen bg-[#fafafa] text-[#111111] lg:flex`}
+      className={`${outfit.variable} ${plusJakarta.variable} min-h-screen bg-[#f7f6fb] text-[#1c1530]`}
       style={{ fontFamily: "var(--f-plus-jakarta)" }}
     >
-      {/* Panel izquierdo: identidad y contacto, fijo en escritorio */}
-      <aside className="flex flex-col justify-between bg-[#111111] px-8 py-10 text-[#fafafa] lg:sticky lg:top-0 lg:h-screen lg:w-[40%] lg:py-14">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#ff5a36]">Estudio dental</p>
-          <h1 className="mt-4 text-4xl leading-[1.05] md:text-5xl" style={{ fontFamily: "var(--f-bitter)" }}>
-            {clinic.doctor}
-          </h1>
-          <p className="mt-3 max-w-sm text-[#fafafa]/70">{clinic.specialty}</p>
+      {/* Header: fijo, con CTA de llamada de alto contraste como en la referencia */}
+      <header className="sticky top-0 z-30 border-b border-[#1c1530]/10 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+          <span className="text-base font-semibold" style={{ fontFamily: "var(--f-outfit)" }}>{clinic.name}</span>
+          <nav className="hidden items-center gap-6 text-sm text-[#1c1530]/60 lg:flex">
+            <a href="#especialista" className="hover:text-[#1c1530]">Especialista</a>
+            <a href="#servicios" className="hover:text-[#1c1530]">Servicios</a>
+            <a href="#testimonios" className="hover:text-[#1c1530]">Testimonios</a>
+            <a href="#ubicacion" className="hover:text-[#1c1530]">Ubicación</a>
+          </nav>
+          <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[#fbbf24] px-5 py-2.5 text-sm font-semibold text-[#1c1530] transition hover:bg-[#f3b30c]">
+            Llámanos
+          </a>
+        </div>
+      </header>
 
-          <div className="mt-10 aspect-[4/5] w-full max-w-xs rounded-2xl bg-[#ff5a36]/15" aria-hidden>
-            <div className="flex h-full items-center justify-center text-7xl" style={{ fontFamily: "var(--f-bitter)" }}>
-              <span className="text-[#ff5a36]">RS</span>
+      {/* Hero: gradiente azul→violeta, antes/después y CTA dual */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#16215c] via-[#3a2680] to-[#7c3aed] px-6 py-20 text-white md:px-16 md:py-28">
+        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[#fbbf24]">{clinic.specialty}</p>
+            <h1 className="mt-4 max-w-xl text-4xl leading-[1.1] md:text-5xl" style={{ fontFamily: "var(--f-outfit)" }}>
+              La sonrisa que evitabas mostrar, hoy con un plan claro.
+            </h1>
+            <p className="mt-5 max-w-lg text-white/80">{clinic.welcomeMessage}</p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a href={clinic.whatsapp} className="rounded-full bg-[#fbbf24] px-6 py-3 text-sm font-semibold text-[#1c1530] transition hover:bg-[#f3b30c]">
+                Agendar valoración
+              </a>
+              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-white/40 px-6 py-3 text-sm font-medium transition hover:border-white/70">
+                Llamar al consultorio
+              </a>
+            </div>
+            <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-white/15 pt-6">
+              {milestones.map((m) => (
+                <div key={m.label}>
+                  <dt className="text-2xl font-semibold text-[#fbbf24]" style={{ fontFamily: "var(--f-outfit)" }}>{m.value}</dt>
+                  <dd className="mt-1 text-xs uppercase tracking-wide text-white/60">{m.label}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          {/* "Antes / Después" simulado con bloques, sin foto real */}
+          <div className="grid grid-cols-2 gap-3 rounded-3xl bg-white/10 p-4 backdrop-blur">
+            <div className="rounded-2xl bg-[#1c1530]/30 p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/60">Antes</p>
+              <div className="mt-3 aspect-[3/4] rounded-xl bg-[#1c1530]/40" aria-hidden />
+            </div>
+            <div className="rounded-2xl bg-white/15 p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-[#fbbf24]">Después</p>
+              <div className="mt-3 aspect-[3/4] rounded-xl bg-white/25" aria-hidden />
             </div>
           </div>
         </div>
+      </section>
 
-        <div>
-          <div className="grid grid-cols-3 gap-4 border-t border-[#fafafa]/15 pt-6">
-            {milestones.map((m) => (
-              <div key={m.label}>
-                <div className="text-xl font-semibold text-[#ff5a36]" style={{ fontFamily: "var(--f-bitter)" }}>{m.value}</div>
-                <div className="mt-1 text-[0.65rem] uppercase tracking-wide text-[#fafafa]/55">{m.label}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a href={clinic.whatsapp} className="rounded-full bg-[#ff5a36] px-6 py-3 text-sm font-medium text-[#111111] transition hover:bg-[#d6431f] hover:text-[#fafafa]">
-              Agendar por WhatsApp
-            </a>
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[#fafafa]/30 px-6 py-3 text-sm font-medium transition hover:border-[#fafafa]/60">
-              Llamar
-            </a>
-          </div>
+      {/* Destacados: 4 chips, como los íconos de beneficio bajo el hero de la referencia */}
+      <section className="border-b border-[#1c1530]/10 bg-white px-6 py-10 md:px-16">
+        <div className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {highlights.map((h) => (
+            <div key={h.label} className="rounded-2xl border border-[#1c1530]/10 p-5">
+              <div className="h-2 w-8 rounded-full bg-gradient-to-r from-[#3a2680] to-[#7c3aed]" aria-hidden />
+              <p className="mt-3 font-semibold">{h.label}</p>
+              <p className="mt-1 text-sm text-[#1c1530]/60">{h.detail}</p>
+            </div>
+          ))}
         </div>
-      </aside>
+      </section>
 
-      {/* Columna derecha: la única que hace scroll */}
-      <main className="flex-1 lg:w-[60%]">
-        {/* Intro */}
-        <section className="border-b border-[#111111]/10 px-8 py-16 md:px-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#ff5a36]">Filosofía de consulta</p>
-          <h2 className="mt-4 max-w-xl text-3xl leading-[1.2] md:text-4xl" style={{ fontFamily: "var(--f-bitter)" }}>
-            Un diagnóstico medido, no una promesa de sonrisa perfecta.
-          </h2>
-          <p className="mt-5 max-w-lg text-[#111111]/70">{clinic.welcomeMessage}</p>
-        </section>
-
+      <main className="mx-auto max-w-6xl px-6 py-16 md:px-16">
         {/* Especialista */}
-        <section id="especialista" className="border-b border-[#111111]/10 px-8 py-16 md:px-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#ff5a36]">La especialista</p>
-          <h3 className="mt-4 text-2xl" style={{ fontFamily: "var(--f-bitter)" }}>{clinic.doctor}</h3>
-          <p className="mt-3 max-w-lg text-[#111111]/70">
-            Especialidad en {clinic.specialty} por la {clinic.school}. Cédula profesional {clinic.license},
-            cédula de especialidad {clinic.specialtyLicense}.
-          </p>
+        <section id="especialista" className="grid gap-10 border-b border-[#1c1530]/10 pb-16 md:grid-cols-[1fr_1.4fr]">
+          <div className="aspect-square rounded-3xl bg-gradient-to-br from-[#3a2680]/15 to-[#7c3aed]/15" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#7c3aed]">La especialista</p>
+            <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>{clinic.doctor}</h2>
+            <p className="mt-4 max-w-lg text-[#1c1530]/70">
+              Especialidad en {clinic.specialty} por la {clinic.school}. Cédula profesional {clinic.license},
+              cédula de especialidad {clinic.specialtyLicense}.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm text-[#1c1530]/70">
+              <li>· Plan de tratamiento por escrito, con precios desglosados antes de empezar.</li>
+              <li>· Un solo paciente por horario, sin sala de espera saturada.</li>
+              <li>· Seguimiento fotográfico del antes y después de cada caso.</li>
+            </ul>
+          </div>
         </section>
 
-        {/* Servicios: lista a gran escala con numeración tipográfica */}
-        <section id="servicios" className="border-b border-[#111111]/10 px-8 py-16 md:px-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#ff5a36]">Tratamientos</p>
-          <h3 className="mt-4 text-2xl" style={{ fontFamily: "var(--f-bitter)" }}>Tratamientos y precios</h3>
-          <ul className="mt-8 divide-y divide-[#111111]/10">
-            {services.map((s, i) => (
-              <li key={s.name} className="flex items-baseline gap-6 py-5">
-                <span
-                  className={`text-3xl ${s.isUrgency ? "text-[#c81e3a]" : "text-[#111111]/15"}`}
-                  style={{ fontFamily: "var(--f-bitter)" }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-baseline justify-between gap-3">
-                    <h4 className="font-medium">
-                      {s.name}
-                      {s.isUrgency && <span className="ml-2 text-xs uppercase tracking-wide text-[#c81e3a]">Urgencia</span>}
-                    </h4>
-                    <span className="whitespace-nowrap text-lg font-semibold text-[#ff5a36]">{s.price}</span>
+        {/* Servicios: acordeón con <details>, sin JS de cliente */}
+        <section id="servicios" className="border-b border-[#1c1530]/10 py-16">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#7c3aed]">Servicios</p>
+          <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>Tratamientos y precios</h2>
+          <div className="mt-8 divide-y divide-[#1c1530]/10 rounded-2xl border border-[#1c1530]/10 bg-white">
+            {services.map((s) => (
+              <details key={s.name} className="group p-5 open:bg-[#7c3aed]/[0.03]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+                  <div>
+                    <span className="font-medium">{s.name}</span>
+                    {s.isUrgency && (
+                      <span className="ml-2 rounded-full bg-[#dc2626]/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-[#dc2626]">
+                        Urgencia
+                      </span>
+                    )}
                   </div>
-                  <p className="mt-1 text-sm text-[#111111]/60">{s.description}</p>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-[#111111]/40">{priceTypeLabel[s.priceType]}</p>
-                </div>
-              </li>
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap text-sm font-semibold text-[#7c3aed]">{s.price}</span>
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-[#1c1530]/20 text-sm transition group-open:rotate-45">
+                      +
+                    </span>
+                  </div>
+                </summary>
+                <p className="mt-3 text-sm text-[#1c1530]/65">{s.description}</p>
+                <p className="mt-1 text-xs uppercase tracking-wide text-[#1c1530]/40">{priceTypeLabel[s.priceType]}</p>
+              </details>
             ))}
-          </ul>
+          </div>
         </section>
 
         {/* Ubicación */}
-        <section id="ubicacion" className="grid gap-10 border-b border-[#111111]/10 px-8 py-16 md:grid-cols-2 md:px-16">
+        <section id="ubicacion" className="grid gap-10 border-b border-[#1c1530]/10 py-16 md:grid-cols-2">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-[#ff5a36]">Visítanos</p>
-            <h3 className="mt-4 text-2xl" style={{ fontFamily: "var(--f-bitter)" }}>Ubicación y horario</h3>
-            <address className="mt-4 not-italic text-[#111111]/70">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#7c3aed]">Visítanos</p>
+            <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>Ubicación y horario</h2>
+            <address className="mt-4 not-italic text-[#1c1530]/70">
               {clinic.address.street}<br />
               {clinic.address.neighborhood}<br />
               {clinic.address.zip}
             </address>
-            <p className="mt-2 text-sm text-[#111111]/55">{clinic.address.reference}</p>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[#ff5a36] underline-offset-4 hover:underline">
+            <p className="mt-2 text-sm text-[#1c1530]/55">{clinic.address.reference}</p>
+            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[#7c3aed] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-8 flex flex-wrap gap-2">
               {paymentMethods.map((m) => (
-                <span key={m} className="rounded-full border border-[#111111]/15 px-3 py-1 text-xs text-[#111111]/65">{m}</span>
+                <span key={m} className="rounded-full border border-[#1c1530]/15 px-3 py-1 text-xs text-[#1c1530]/65">{m}</span>
               ))}
             </div>
           </div>
-          <div className="self-start rounded-2xl border border-[#111111]/10 p-6 text-sm">
+          <div className="self-start rounded-2xl border border-[#1c1530]/10 bg-white p-6 text-sm">
             {schedule.map((row) => (
-              <div key={row.day} className="flex justify-between border-b border-[#111111]/10 py-2 last:border-0">
-                <span className="text-[#111111]/70">{row.day}</span>
-                <span className={row.hours === "Cerrado" ? "text-[#111111]/35" : "font-medium"}>{row.hours}</span>
+              <div key={row.day} className="flex justify-between border-b border-[#1c1530]/10 py-2 last:border-0">
+                <span className="text-[#1c1530]/70">{row.day}</span>
+                <span className={row.hours === "Cerrado" ? "text-[#1c1530]/35" : "font-medium"}>{row.hours}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Urgencias: bloque de color sólido, no banner ancho */}
-        <section id="urgencias" className="bg-[#c81e3a] px-8 py-14 text-[#fafafa] md:px-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#fafafa]/70">Urgencias</p>
-          <h3 className="mt-3 max-w-md text-2xl" style={{ fontFamily: "var(--f-bitter)" }}>
+        {/* Urgencias */}
+        <section className="my-16 rounded-3xl bg-[#dc2626] px-8 py-10 text-white">
+          <p className="text-xs uppercase tracking-[0.2em] text-white/70">Urgencias</p>
+          <h2 className="mt-3 max-w-md text-2xl" style={{ fontFamily: "var(--f-outfit)" }}>
             Dolor agudo, fractura o golpe no esperan turno.
-          </h3>
+          </h2>
           <div className="mt-6 flex gap-4">
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[#fafafa] px-6 py-3 text-sm font-medium text-[#c81e3a]">
+            <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#dc2626]">
               Llamar ahora
             </a>
-            <a href={clinic.whatsapp} className="rounded-full border border-[#fafafa]/40 px-6 py-3 text-sm font-medium">
+            <a href={clinic.whatsapp} className="rounded-full border border-white/40 px-6 py-3 text-sm font-medium">
               WhatsApp
             </a>
           </div>
         </section>
 
-        {/* Testimonios: tipografía a gran tamaño, sin tarjetas */}
-        <section id="testimonios" className="border-b border-[#111111]/10 px-8 py-16 md:px-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#ff5a36]">Testimonios</p>
-          <div className="mt-8 space-y-10">
+        {/* Testimonios: estrellas + atribución, como reseñas de Google */}
+        <section id="testimonios" className="py-16">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#7c3aed]">Testimonios</p>
+          <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>Lo que dicen nuestros pacientes</h2>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
             {testimonials.map((t) => (
-              <figure key={t.name}>
-                <blockquote className="max-w-xl text-2xl leading-snug" style={{ fontFamily: "var(--f-bitter)" }}>
-                  &ldquo;{t.quote}&rdquo;
-                </blockquote>
-                <figcaption className="mt-2 text-sm text-[#111111]/50">{t.name} · {t.treatment}</figcaption>
+              <figure key={t.name} className="rounded-2xl border border-[#1c1530]/10 bg-white p-6">
+                <div className="text-sm tracking-wide text-[#fbbf24]" aria-hidden>{stars}</div>
+                <blockquote className="mt-3 text-[#1c1530]/80">&ldquo;{t.quote}&rdquo;</blockquote>
+                <figcaption className="mt-4 flex items-center justify-between text-xs text-[#1c1530]/50">
+                  <span>{t.name} · {t.treatment}</span>
+                  <span className="rounded-full bg-[#1c1530]/5 px-2 py-0.5">Google</span>
+                </figcaption>
               </figure>
             ))}
           </div>
         </section>
+      </main>
 
-        {/* Contacto */}
-        <section id="contacto" className="px-8 py-16 md:px-16">
-          <h3 className="text-2xl" style={{ fontFamily: "var(--f-bitter)" }}>Hablemos de tu sonrisa</h3>
+      {/* Contacto: cierre con el mismo gradiente del hero */}
+      <section id="contacto" className="bg-gradient-to-br from-[#16215c] via-[#3a2680] to-[#7c3aed] px-6 py-16 text-white md:px-16">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>Hablemos de tu sonrisa</h2>
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
-            <div><div className="text-[#111111]/50">Teléfono</div><a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-medium">{clinic.phone}</a></div>
-            <div><div className="text-[#111111]/50">WhatsApp</div><a href={clinic.whatsapp} className="mt-1 block font-medium">{clinic.phone}</a></div>
-            <div><div className="text-[#111111]/50">Correo</div><a href={`mailto:${clinic.email}`} className="mt-1 block font-medium">{clinic.email}</a></div>
             <div>
-              <div className="text-[#111111]/50">Redes</div>
+              <div className="text-white/60">Teléfono</div>
+              <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-medium">{clinic.phone}</a>
+            </div>
+            <div>
+              <div className="text-white/60">WhatsApp</div>
+              <a href={clinic.whatsapp} className="mt-1 block font-medium">{clinic.phone}</a>
+            </div>
+            <div>
+              <div className="text-white/60">Correo</div>
+              <a href={`mailto:${clinic.email}`} className="mt-1 block font-medium">{clinic.email}</a>
+            </div>
+            <div>
+              <div className="text-white/60">Redes</div>
               <div className="mt-1 flex flex-col gap-1">
                 <a href={clinic.social.facebook}>Facebook</a>
                 <a href={clinic.social.instagram}>Instagram {clinic.social.instagramHandle}</a>
               </div>
             </div>
           </div>
-        </section>
-      </main>
+          <a href={clinic.whatsapp} className="mt-8 inline-block rounded-full bg-[#fbbf24] px-7 py-3 text-sm font-semibold text-[#1c1530] transition hover:bg-[#f3b30c]">
+            Agendar valoración
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
