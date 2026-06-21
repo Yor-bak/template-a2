@@ -24,6 +24,8 @@ import {
   Mulish,
   Libre_Franklin,
   Hanken_Grotesk,
+  Newsreader,
+  Instrument_Sans,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -63,3 +65,6 @@ export const mulish = Mulish({ subsets: ["latin"], variable: "--f-mulish" });
 
 export const libreFranklin = Libre_Franklin({ subsets: ["latin"], variable: "--f-libre" });
 export const hankenGrotesk = Hanken_Grotesk({ subsets: ["latin"], variable: "--f-hanken" });
+
+export const newsreader = Newsreader({ subsets: ["latin"], variable: "--f-newsreader", style: ["italic", "normal"] });
+export const instrumentSans = Instrument_Sans({ subsets: ["latin"], variable: "--f-instrument" });
