@@ -1,4 +1,53 @@
+"use client";
+
+import { useState } from "react";
 import { dmSerifDisplay, dmSans } from "@/lib/fonts";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
+
+// 3 paletas food-fresh propias de nutriólogo (familias distintas): Huerto (verde+naranja,
+// la original), Frutos rojos y Cítrico. --c-accent2 es el secundario cálido (tile ubicación,
+// urgencia); en las paletas nuevas se oscurece para pasar AA como texto.
+const palettes = [
+  {
+    name: "Huerto",
+    swatch: "#3f7a52",
+    surface: "#fdf6ec",
+    ink: "#2c3a2e",
+    vars: {
+      "--c-bg": "#fdf6ec",
+      "--c-ink": "#2c3a2e",
+      "--c-accent": "#3f7a52",
+      "--c-accent-deep": "#326341",
+      "--c-accent2": "#e8754a",
+    },
+  },
+  {
+    name: "Frutos rojos",
+    swatch: "#a83253",
+    surface: "#fbf2ee",
+    ink: "#2f2329",
+    vars: {
+      "--c-bg": "#fbf2ee",
+      "--c-ink": "#2f2329",
+      "--c-accent": "#a83253",
+      "--c-accent-deep": "#87273f",
+      "--c-accent2": "#a9711c",
+    },
+  },
+  {
+    name: "Cítrico",
+    swatch: "#267567",
+    surface: "#f0f8f3",
+    ink: "#1f3029",
+    vars: {
+      "--c-bg": "#f0f8f3",
+      "--c-ink": "#1f3029",
+      "--c-accent": "#267567",
+      "--c-accent-deep": "#1d5a4f",
+      "--c-accent2": "#b9651f",
+    },
+  },
+] as const;
 
 // Structure for this specialty: a "tablero nutricional" bento grid — stats, schedule, location
 // and the plate graphic all live as tiles in one mixed grid instead of stacked full-width
@@ -55,34 +104,37 @@ const testimonials = [
 ];
 
 export default function NutriologoTemplate() {
+  const [active, setActive] = useState(0);
+
   return (
     <div
-      className={`${dmSerifDisplay.variable} ${dmSans.variable} min-h-screen bg-[#fdf6ec] text-[#2c3a2e]`}
-      style={{ fontFamily: "var(--f-dm-sans)" }}
+      className={`${dmSerifDisplay.variable} ${dmSans.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
+      style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-dm-sans)" }}
     >
-      <header className="border-b border-[#2c3a2e]/10">
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
+      <header className="border-b border-[var(--c-ink)]/10">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <h1 className="text-lg" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.name}</h1>
-          <a href={clinic.whatsapp} className="rounded-full bg-[#3f7a52] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#326341]">
+          <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-accent)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
             Agendar consulta
           </a>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-6xl px-6 pt-12 pb-28">
         {/* Hero */}
         <section className="pb-10">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#3f7a52]">{clinic.specialty}</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
             <h2 className="mt-4 max-w-xl text-4xl leading-[1.15] md:text-5xl" style={{ fontFamily: "var(--f-dm-serif)" }}>
               Comer bien, sin reglas imposibles de seguir.
             </h2>
-            <p className="mt-5 max-w-lg text-[#2c3a2e]/70">{clinic.welcomeMessage}</p>
+            <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href={clinic.whatsapp} className="rounded-full bg-[#3f7a52] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#326341]">
+              <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
                 Agendar consulta
               </a>
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[#2c3a2e]/20 px-6 py-3 text-sm font-medium transition hover:border-[#2c3a2e]/50">
+              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[var(--c-ink)]/20 px-6 py-3 text-sm font-medium transition hover:border-[var(--c-ink)]/50">
                 Llamar al consultorio
               </a>
             </div>
@@ -91,7 +143,7 @@ export default function NutriologoTemplate() {
 
         {/* Bento "tablero nutricional" — mixed grid of tiles, not stacked sections */}
         <section className="grid gap-5 py-10 md:grid-cols-4 md:grid-rows-2">
-          <div className="rounded-3xl bg-[#3f7a52] p-6 text-white md:col-span-2">
+          <div className="rounded-3xl bg-[var(--c-accent)] p-6 text-white md:col-span-2">
             <p className="text-xs uppercase tracking-[0.2em] text-white/70">Especialista</p>
             <h3 className="mt-2 text-xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.doctor}</h3>
             <p className="mt-2 text-sm text-white/80">
@@ -101,31 +153,31 @@ export default function NutriologoTemplate() {
 
           <div className="rounded-3xl bg-white p-6">
             <p className="text-3xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.experienceYears}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-[#2c3a2e]/50">Años de práctica</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Años de práctica</p>
           </div>
 
           <div className="rounded-3xl bg-white p-6">
             <p className="text-3xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.patients}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-[#2c3a2e]/50">Pacientes atendidos</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Pacientes atendidos</p>
           </div>
 
-          <div id="ubicacion" className="rounded-3xl bg-[#e8754a]/10 p-6 md:col-span-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#e8754a]">Ubicación</p>
-            <address className="mt-2 not-italic text-sm text-[#2c3a2e]/75">
+          <div id="ubicacion" className="rounded-3xl bg-[var(--c-accent2)]/10 p-6 md:col-span-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent2)]">Ubicación</p>
+            <address className="mt-2 not-italic text-sm text-[var(--c-ink)]/75">
               {clinic.address.street}, {clinic.address.neighborhood}, {clinic.address.zip}
             </address>
-            <a href={clinic.address.mapsUrl} className="mt-2 inline-block text-sm font-medium text-[#e8754a] underline-offset-4 hover:underline">
+            <a href={clinic.address.mapsUrl} className="mt-2 inline-block text-sm font-medium text-[var(--c-accent2)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
           </div>
 
           <div className="rounded-3xl bg-white p-6 md:col-span-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#3f7a52]">Horario</p>
-            <div className="mt-2 divide-y divide-[#2c3a2e]/10 text-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent)]">Horario</p>
+            <div className="mt-2 divide-y divide-[var(--c-ink)]/10 text-sm">
               {schedule.map((row) => (
                 <div key={row.day} className="flex justify-between py-1.5">
-                  <span className="text-[#2c3a2e]/70">{row.day}</span>
-                  <span className={row.hours === "Cerrado" ? "text-[#2c3a2e]/40" : "font-medium"}>{row.hours}</span>
+                  <span className="text-[var(--c-ink)]/70">{row.day}</span>
+                  <span className={row.hours === "Cerrado" ? "text-[var(--c-ink)]/40" : "font-medium"}>{row.hours}</span>
                 </div>
               ))}
             </div>
@@ -139,18 +191,18 @@ export default function NutriologoTemplate() {
             {services.map((s) => (
               <details
                 key={s.name}
-                className={`group rounded-2xl border ${s.isUrgency ? "border-[#e8754a] bg-[#e8754a]/5" : "border-[#2c3a2e]/10 bg-white"}`}
+                className={`group rounded-2xl border ${s.isUrgency ? "border-[var(--c-accent2)] bg-[var(--c-accent2)]/5" : "border-[var(--c-ink)]/10 bg-white"}`}
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
                   <span className="font-medium" style={{ fontFamily: "var(--f-dm-serif)" }}>{s.name}</span>
                   <span className="flex items-center gap-3">
-                    <span className="whitespace-nowrap font-semibold text-[#3f7a52]">{s.price}</span>
-                    <span className="text-[#2c3a2e]/40 transition group-open:rotate-45">+</span>
+                    <span className="whitespace-nowrap font-semibold text-[var(--c-accent)]">{s.price}</span>
+                    <span className="text-[var(--c-ink)]/40 transition group-open:rotate-45">+</span>
                   </span>
                 </summary>
-                <div className="px-6 pb-5 text-sm text-[#2c3a2e]/65">
+                <div className="px-6 pb-5 text-sm text-[var(--c-ink)]/65">
                   {s.description}
-                  <span className="ml-2 text-xs uppercase tracking-wide text-[#2c3a2e]/40">· {priceTypeLabel[s.priceType]}</span>
+                  <span className="ml-2 text-xs uppercase tracking-wide text-[var(--c-ink)]/40">· {priceTypeLabel[s.priceType]}</span>
                 </div>
               </details>
             ))}
@@ -158,42 +210,42 @@ export default function NutriologoTemplate() {
 
           <div className="mt-6 flex flex-wrap gap-2">
             {paymentMethods.map((m) => (
-              <span key={m} className="rounded-full border border-[#2c3a2e]/15 px-3 py-1 text-xs text-[#2c3a2e]/70">{m}</span>
+              <span key={m} className="rounded-full border border-[var(--c-ink)]/15 px-3 py-1 text-xs text-[var(--c-ink)]/70">{m}</span>
             ))}
           </div>
         </section>
 
         {/* Testimonios */}
-        <section id="testimonios" className="border-t border-[#2c3a2e]/10 py-10">
+        <section id="testimonios" className="border-t border-[var(--c-ink)]/10 py-10">
           <h3 className="text-2xl" style={{ fontFamily: "var(--f-dm-serif)" }}>Lo que cuentan los pacientes</h3>
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {testimonials.map((t) => (
-              <figure key={t.name} className="rounded-2xl border border-[#2c3a2e]/10 bg-white p-5">
-                <blockquote className="text-[#2c3a2e]/80">&ldquo;{t.quote}&rdquo;</blockquote>
-                <figcaption className="mt-3 text-xs text-[#2c3a2e]/50">{t.name} · {t.treatment}</figcaption>
+              <figure key={t.name} className="rounded-2xl border border-[var(--c-ink)]/10 bg-white p-5">
+                <blockquote className="text-[var(--c-ink)]/80">&ldquo;{t.quote}&rdquo;</blockquote>
+                <figcaption className="mt-3 text-xs text-[var(--c-ink)]/50">{t.name} · {t.treatment}</figcaption>
               </figure>
             ))}
           </div>
         </section>
 
         {/* Contacto */}
-        <section id="contacto" className="border-t border-[#2c3a2e]/10 py-10">
+        <section id="contacto" className="border-t border-[var(--c-ink)]/10 py-10">
           <h3 className="text-2xl" style={{ fontFamily: "var(--f-dm-serif)" }}>Agenda tu consulta</h3>
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <div className="text-[#2c3a2e]/50">Teléfono</div>
+              <div className="text-[var(--c-ink)]/50">Teléfono</div>
               <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-medium">{clinic.phone}</a>
             </div>
             <div>
-              <div className="text-[#2c3a2e]/50">WhatsApp</div>
+              <div className="text-[var(--c-ink)]/50">WhatsApp</div>
               <a href={clinic.whatsapp} className="mt-1 block font-medium">{clinic.phone}</a>
             </div>
             <div>
-              <div className="text-[#2c3a2e]/50">Correo</div>
+              <div className="text-[var(--c-ink)]/50">Correo</div>
               <a href={`mailto:${clinic.email}`} className="mt-1 block font-medium">{clinic.email}</a>
             </div>
             <div>
-              <div className="text-[#2c3a2e]/50">Redes</div>
+              <div className="text-[var(--c-ink)]/50">Redes</div>
               <div className="mt-1 flex flex-col gap-1">
                 <a href={clinic.social.facebook}>Facebook</a>
                 <a href={clinic.social.instagram}>Instagram {clinic.social.instagramHandle}</a>
