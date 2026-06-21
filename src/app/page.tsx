@@ -20,7 +20,7 @@ const specialties = [
   { href: "/fisioterapia", label: "Fisioterapia", status: "live" as const, note: "Rehabilitación · switch de paleta en vivo" },
   { href: "/fisioterapia-template-02", label: "Fisioterapia (alterno B)", status: "live" as const, note: "Mapa del cuerpo / zonas" },
   { href: "/fisioterapia-template-03", label: "Fisioterapia (alterno C)", status: "live" as const, note: "Programa tipo app de ejercicio" },
-  { href: "/estetica", label: "Estética", status: "live" as const, note: "Medicina estética facial y corporal" },
+  { href: "/estetica", label: "Estética", status: "live" as const, note: "Medicina estética · switch de paleta en vivo" },
 ];
 
 export default function Home() {
