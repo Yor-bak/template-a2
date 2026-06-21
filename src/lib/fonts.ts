@@ -33,6 +33,8 @@ import {
   Onest,
   Gabarito,
   Be_Vietnam_Pro,
+  Jost,
+  Bodoni_Moda,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -84,3 +86,6 @@ export const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--
 export const onest = Onest({ subsets: ["latin"], variable: "--f-onest" });
 export const gabarito = Gabarito({ subsets: ["latin"], variable: "--f-gabarito" });
 export const beVietnam = Be_Vietnam_Pro({ subsets: ["latin"], variable: "--f-bevietnam", weight: ["400", "500", "600", "700"] });
+
+export const jost = Jost({ subsets: ["latin"], variable: "--f-jost" });
+export const bodoniModa = Bodoni_Moda({ subsets: ["latin"], variable: "--f-bodoni", style: ["italic", "normal"] });

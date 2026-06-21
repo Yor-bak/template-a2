@@ -21,6 +21,8 @@ const specialties = [
   { href: "/fisioterapia-template-02", label: "Fisioterapia (alterno B)", status: "live" as const, note: "Mapa del cuerpo / zonas" },
   { href: "/fisioterapia-template-03", label: "Fisioterapia (alterno C)", status: "live" as const, note: "Programa tipo app de ejercicio" },
   { href: "/estetica", label: "Estética", status: "live" as const, note: "Medicina estética · switch de paleta en vivo" },
+  { href: "/estetica-template-02", label: "Estética (alterno B)", status: "live" as const, note: "Salón / catálogo con reserva e Instagram" },
+  { href: "/estetica-template-03", label: "Estética (alterno C)", status: "live" as const, note: "Lookbook editorial / galería" },
 ];
 
 export default function Home() {
