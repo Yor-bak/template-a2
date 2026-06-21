@@ -20,6 +20,8 @@ import {
   IBM_Plex_Sans,
   Figtree,
   Plus_Jakarta_Sans,
+  Baloo_2,
+  Mulish,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -53,3 +55,6 @@ export const ibmPlexSans = IBM_Plex_Sans({ subsets: ["latin"], variable: "--f-ib
 export const figtree = Figtree({ subsets: ["latin"], variable: "--f-figtree" });
 
 export const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--f-plus-jakarta" });
+
+export const baloo2 = Baloo_2({ subsets: ["latin"], variable: "--f-baloo" });
+export const mulish = Mulish({ subsets: ["latin"], variable: "--f-mulish" });
