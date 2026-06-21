@@ -22,6 +22,8 @@ import {
   Plus_Jakarta_Sans,
   Baloo_2,
   Mulish,
+  Libre_Franklin,
+  Hanken_Grotesk,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -58,3 +60,6 @@ export const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--
 
 export const baloo2 = Baloo_2({ subsets: ["latin"], variable: "--f-baloo" });
 export const mulish = Mulish({ subsets: ["latin"], variable: "--f-mulish" });
+
+export const libreFranklin = Libre_Franklin({ subsets: ["latin"], variable: "--f-libre" });
+export const hankenGrotesk = Hanken_Grotesk({ subsets: ["latin"], variable: "--f-hanken" });

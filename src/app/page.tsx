@@ -10,6 +10,7 @@ const specialties = [
   { href: "/medico-template-03", label: "Médico (alterno C)", status: "live" as const, note: "Clínica institucional / servicios e instalaciones" },
   { href: "/veterinario", label: "Veterinario", status: "live" as const, note: "Mascotas pequeñas · switch de paleta en vivo" },
   { href: "/veterinario-template-02", label: "Veterinario (alterno B)", status: "live" as const, note: "Bento grid / modular" },
+  { href: "/veterinario-template-03", label: "Veterinario (alterno C)", status: "live" as const, note: "Hospital institucional / especialidades" },
   { href: "/psicologo", label: "Psicólogo", status: "live" as const, note: "Terapia de adultos" },
   { href: "/nutriologo", label: "Nutriólogo", status: "live" as const, note: "Nutrición clínica y deportiva" },
   { href: "/fisioterapia", label: "Fisioterapia", status: "live" as const, note: "Ficha de rehabilitación" },
