@@ -26,6 +26,9 @@ import {
   Hanken_Grotesk,
   Newsreader,
   Instrument_Sans,
+  Marcellus,
+  Mukta,
+  Quicksand,
 } from "next/font/google";
 
 export const sourceSerif4 = Source_Serif_4({ subsets: ["latin"], variable: "--f-source-serif" });
@@ -68,3 +71,7 @@ export const hankenGrotesk = Hanken_Grotesk({ subsets: ["latin"], variable: "--f
 
 export const newsreader = Newsreader({ subsets: ["latin"], variable: "--f-newsreader", style: ["italic", "normal"] });
 export const instrumentSans = Instrument_Sans({ subsets: ["latin"], variable: "--f-instrument" });
+
+export const marcellus = Marcellus({ subsets: ["latin"], variable: "--f-marcellus", weight: "400" });
+export const mukta = Mukta({ subsets: ["latin"], variable: "--f-mukta", weight: ["400", "600", "700"] });
+export const quicksand = Quicksand({ subsets: ["latin"], variable: "--f-quicksand" });

@@ -1,0 +1,392 @@
+"use client";
+
+import { useState } from "react";
+import { quicksand, mulish } from "@/lib/fonts";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
+
+// Alterno 03 de nutriólogo — concepto ORIGINAL "cuaderno / planner semanal de hábitos": la
+// página parece una agenda o diario de nutrición amable, con la rejilla de 7 días (Lun–Dom) de
+// hábitos como pieza central, notas tipo sticky, stickers de metas y separadores punteados de
+// libreta. Ningún otro template usa esta metáfora de planner. Tema 100% por variables CSS; los
+// hex solo viven en `palettes`. Quicksand (redondeada, amigable) para títulos; Mulish para texto.
+const palettes = [
+  {
+    name: "Menta planner",
+    swatch: "#237a5d",
+    surface: "#eef6f1",
+    ink: "#1f2e27",
+    vars: {
+      "--c-bg": "#eef6f1",
+      "--c-surface": "#ffffff",
+      "--c-ink": "#1f2e27",
+      "--c-accent": "#237a5d",
+      "--c-accent-deep": "#1b5f48",
+      "--c-soft": "#d7ede3",
+    },
+  },
+  {
+    name: "Durazno planner",
+    swatch: "#b04f30",
+    surface: "#fcf2ec",
+    ink: "#33231c",
+    vars: {
+      "--c-bg": "#fcf2ec",
+      "--c-surface": "#ffffff",
+      "--c-ink": "#33231c",
+      "--c-accent": "#b04f30",
+      "--c-accent-deep": "#8f3f24",
+      "--c-soft": "#f7ddcf",
+    },
+  },
+  {
+    name: "Lavanda planner",
+    swatch: "#6a5ab0",
+    surface: "#f2f0f9",
+    ink: "#28243a",
+    vars: {
+      "--c-bg": "#f2f0f9",
+      "--c-surface": "#ffffff",
+      "--c-ink": "#28243a",
+      "--c-accent": "#6a5ab0",
+      "--c-accent-deep": "#53458f",
+      "--c-soft": "#e2def2",
+    },
+  },
+] as const;
+
+const clinic = {
+  name: "Plato Consciente",
+  doctor: "Nutr. Camila Reyes Aguilar",
+  specialty: "Nutrición clínica y deportiva",
+  school: "Escuela de Dietética y Nutrición, INCMNSZ",
+  license: "6190284",
+  experienceYears: "8",
+  patients: "1,250",
+  welcomeMessage:
+    "Planes de alimentación reales, hechos para tu rutina y tus gustos — no dietas genéricas de internet.",
+  address: {
+    street: "Calle Tamaulipas 66, piso 2",
+    neighborhood: "Condesa, Cuauhtémoc",
+    zip: "06140 CDMX",
+    reference: "Arriba del café Tamaulipas",
+    mapsUrl: "https://maps.google.com/?q=Tamaulipas+66+CDMX",
+  },
+  phone: "55 6671 2290",
+  phoneHref: "5566712290",
+  whatsapp: "https://wa.me/525566712290",
+  email: "hola@platoconsciente.mx",
+  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@platoconsciente" },
+};
+
+type PriceType = "fixed" | "from" | "consult";
+const priceTypeLabel: Record<PriceType, string> = { fixed: "sesión", from: "desde", consult: "a consulta" };
+
+const services: { name: string; description: string; price: string; priceType: PriceType; isUrgency?: boolean }[] = [
+  { name: "Primera consulta", description: "Historial, composición corporal y objetivos.", price: "$700", priceType: "fixed" },
+  { name: "Plan de alimentación personalizado", description: "Menú semanal ajustado a tu rutina.", price: "$1,100", priceType: "from" },
+  { name: "Seguimiento mensual", description: "Ajustes de plan y medición de avances.", price: "$550", priceType: "fixed" },
+  { name: "Nutrición deportiva", description: "Planes para rendimiento y composición corporal.", price: "$1,300", priceType: "from" },
+  { name: "Asesoría en línea", description: "Misma atención, por videollamada.", price: "$650", priceType: "fixed" },
+  { name: "Antropometría e Inbody", description: "Medición de % de grasa, músculo y agua.", price: "$450", priceType: "fixed" },
+  { name: "Plan para condiciones médicas", description: "Diabetes, hipertensión, SOP, entre otras.", price: "$1,200", priceType: "from" },
+  { name: "Orientación urgente prequirúrgica", description: "Ajuste nutricional antes de una cirugía próxima.", price: "Consulta", priceType: "consult", isUrgency: true },
+];
+
+const schedule = [
+  { day: "Lunes a viernes", hours: "9:00 – 18:00" },
+  { day: "Sábado", hours: "9:00 – 13:00" },
+  { day: "Domingo", hours: "Cerrado" },
+];
+
+const paymentMethods = ["Efectivo", "Tarjeta", "Transferencia"];
+
+const testimonials = [
+  { name: "Paola N.", quote: "El plan se adaptó a que como fuera de casa casi siempre, no a una dieta imposible.", treatment: "Plan personalizado" },
+  { name: "Iván S.", quote: "Bajé de peso sin pasar hambre y entendiendo por qué comía lo que comía.", treatment: "Seguimiento mensual" },
+];
+
+const round = { fontFamily: "var(--f-quicksand)" } as const;
+
+// La rejilla de la semana: cada día con un par de hábitos amables de ejemplo (ilustrativos).
+// El último (Domingo) es de descanso, para variar el tono. Los checks son glifos estáticos.
+const weekPlan: { day: string; short: string; habits: string[]; done: boolean[]; rest?: boolean }[] = [
+  { day: "Lunes", short: "Lun", habits: ["Desayuno con proteína", "2 L de agua", "Caminata 20 min"], done: [true, true, false] },
+  { day: "Martes", short: "Mar", habits: ["Verduras en la comida", "2 L de agua", "Dormir 7–8 h"], done: [true, false, true] },
+  { day: "Miércoles", short: "Mié", habits: ["Fruta de colación", "Comer sin pantallas", "Estirar 10 min"], done: [false, true, false] },
+  { day: "Jueves", short: "Jue", habits: ["Desayuno con proteína", "2 L de agua", "Caminata 20 min"], done: [true, true, true] },
+  { day: "Viernes", short: "Vie", habits: ["Plato mitad verduras", "Menos azúcar añadida", "Movimiento 30 min"], done: [true, false, false] },
+  { day: "Sábado", short: "Sáb", habits: ["Comida en familia", "Hidratación constante", "Paseo al aire libre"], done: [false, true, false] },
+  { day: "Domingo", short: "Dom", habits: ["Día flexible y consciente", "Preparar la semana", "Descanso activo"], done: [false, false, false], rest: true },
+];
+
+// Notas tipo sticky sobre cómo trabajamos (en Quicksand, voz cercana).
+const notes = [
+  { title: "Sin dietas imposibles", body: "Nada de listas de prohibidos. Ajustamos lo que ya comes para que lo puedas sostener." },
+  { title: "Comida de verdad", body: "Tortillas, frijoles, fruta, antojos incluidos con medida. Real, no de revista." },
+  { title: "A tu ritmo", body: "Metas chiquitas cada semana. Si una falla, la retomamos sin culpa el lunes." },
+];
+
+const regular = services.filter((s) => !s.isUrgency);
+const urgency = services.find((s) => s.isUrgency);
+
+// Check estático: círculo con palomita si done, círculo vacío punteado si pendiente.
+function HabitCheck({ done }: { done: boolean }) {
+  return done ? (
+    <span
+      className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--c-accent)] text-white"
+      aria-hidden
+    >
+      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 13l4 4L19 7" />
+      </svg>
+    </span>
+  ) : (
+    <span
+      className="block h-5 w-5 shrink-0 rounded-full border-2 border-dashed border-[var(--c-ink)]/30"
+      aria-hidden
+    />
+  );
+}
+
+export default function NutriologoTemplate03() {
+  const [active, setActive] = useState(0);
+
+  return (
+    <div
+      className={`${quicksand.variable} ${mulish.variable} min-h-screen bg-[var(--c-bg)] pb-28 text-[var(--c-ink)]`}
+      style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-mulish)" }}
+    >
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
+
+      {/* Header amable */}
+      <header className="mx-auto max-w-5xl px-5 pt-8 sm:px-6">
+        <div className="flex items-center justify-between gap-4 rounded-full bg-[var(--c-surface)] px-5 py-3 shadow-sm sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[var(--c-soft)] text-[var(--c-accent)]" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" /><path d="M5 4v13" /><path d="M11 9h5M11 13h5" />
+              </svg>
+            </span>
+            <span className="text-lg font-bold" style={round}>{clinic.name}</span>
+          </div>
+          <a
+            href={clinic.whatsapp}
+            className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-accent)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]"
+            style={round}
+          >
+            Agendar consulta
+          </a>
+        </div>
+      </header>
+
+      {/* Hero corto */}
+      <section className="mx-auto max-w-5xl px-5 pt-12 sm:px-6">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--c-accent)]" style={round}>
+          {clinic.specialty}
+        </p>
+        <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-[1.15] sm:text-4xl md:text-5xl" style={round}>
+          Tu semana, planeada con calma y comida de verdad.
+        </h1>
+        <p className="mt-4 max-w-xl text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+
+        {/* Stickers de metas */}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--c-soft)] px-4 py-2 text-sm font-semibold text-[var(--c-accent-deep)]" style={round}>
+            <span className="text-base" aria-hidden>✦</span> {clinic.experienceYears} años acompañando
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--c-soft)] px-4 py-2 text-sm font-semibold text-[var(--c-accent-deep)]" style={round}>
+            <span className="text-base" aria-hidden>♡</span> {clinic.patients} pacientes
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-dashed border-[var(--c-ink)]/25 px-4 py-2 text-sm font-semibold text-[var(--c-ink)]/70" style={round}>
+            {clinic.doctor}
+          </span>
+        </div>
+      </section>
+
+      {/* PLANNER SEMANAL — pieza central */}
+      <section className="mx-auto mt-12 max-w-5xl px-5 sm:px-6">
+        <div className="rounded-[2rem] bg-[var(--c-surface)] p-5 shadow-sm sm:p-7">
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b-2 border-dotted border-[var(--c-ink)]/15 pb-4">
+            <div>
+              <h2 className="text-2xl font-bold" style={round}>Mi semana de hábitos</h2>
+              <p className="mt-1 text-sm text-[var(--c-ink)]/60">
+                Así se ve un plan real: metas pequeñas, marcadas día con día.
+              </p>
+            </div>
+            <span className="rounded-full bg-[var(--c-soft)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--c-accent-deep)]" style={round}>
+              Ejemplo
+            </span>
+          </div>
+
+          {/* Desktop: 7 columnas; tablet: scroll horizontal; móvil: apilado */}
+          <div className="mt-5 flex gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible md:grid-cols-4 lg:grid-cols-7 lg:gap-3">
+            {weekPlan.map((d) => (
+              <article
+                key={d.day}
+                className={`flex w-60 shrink-0 flex-col rounded-2xl border p-3.5 sm:w-auto ${
+                  d.rest
+                    ? "border-dashed border-[var(--c-accent)]/40 bg-[var(--c-soft)]/50"
+                    : "border-[var(--c-ink)]/10 bg-[var(--c-bg)]"
+                }`}
+              >
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-bold text-[var(--c-accent)]" style={round}>{d.short}</span>
+                  <span className="text-[0.65rem] uppercase tracking-wide text-[var(--c-ink)]/40">{d.day}</span>
+                </div>
+                <ul className="mt-3 space-y-2.5">
+                  {d.habits.map((h, i) => (
+                    <li key={h} className="flex items-start gap-2">
+                      <HabitCheck done={d.done[i]} />
+                      <span className={`text-[0.8rem] leading-snug ${d.done[i] ? "text-[var(--c-ink)]/55 line-through" : "text-[var(--c-ink)]/80"}`}>
+                        {h}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tus planes */}
+      <section id="planes" className="mx-auto mt-14 max-w-5xl px-5 sm:px-6">
+        <h2 className="text-2xl font-bold" style={round}>Tus planes</h2>
+        <p className="mt-1 text-sm text-[var(--c-ink)]/60">Elige por dónde empezar. Todo es ajustable a tu vida.</p>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {regular.map((s) => (
+            <article key={s.name} className="flex flex-col rounded-2xl border border-[var(--c-ink)]/10 bg-[var(--c-surface)] p-5 shadow-sm">
+              <h3 className="font-bold leading-snug" style={round}>{s.name}</h3>
+              <p className="mt-2 flex-1 text-sm text-[var(--c-ink)]/65">{s.description}</p>
+              <div className="mt-4 flex items-end justify-between border-t border-dashed border-[var(--c-ink)]/15 pt-3">
+                <span className="text-lg font-bold text-[var(--c-accent)]" style={round}>{s.price}</span>
+                <span className="text-xs uppercase tracking-wide text-[var(--c-ink)]/45">{priceTypeLabel[s.priceType]}</span>
+              </div>
+            </article>
+          ))}
+
+          {urgency && (
+            <article className="flex flex-col rounded-2xl border border-[var(--c-accent)]/30 bg-[var(--c-accent)]/8 p-5 shadow-sm">
+              <span className="self-start rounded-full bg-[var(--c-accent)] px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white" style={round}>
+                Urgente
+              </span>
+              <h3 className="mt-3 font-bold leading-snug" style={round}>{urgency.name}</h3>
+              <p className="mt-2 flex-1 text-sm text-[var(--c-ink)]/70">{urgency.description}</p>
+              <div className="mt-4 flex items-end justify-between border-t border-dashed border-[var(--c-accent)]/30 pt-3">
+                <a href={`tel:${clinic.phoneHref}`} className="inline-flex min-h-[44px] items-center text-sm font-bold text-[var(--c-accent-deep)]" style={round}>
+                  Llamar ahora →
+                </a>
+                <span className="text-xs uppercase tracking-wide text-[var(--c-ink)]/45">{priceTypeLabel[urgency.priceType]}</span>
+              </div>
+            </article>
+          )}
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {paymentMethods.map((m) => (
+            <span key={m} className="rounded-full border border-[var(--c-ink)]/15 bg-[var(--c-surface)] px-3 py-1 text-xs font-semibold text-[var(--c-ink)]/70" style={round}>
+              {m}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* Notas / cómo trabajamos — bloque tipo libreta */}
+      <section className="mx-auto mt-14 max-w-5xl px-5 sm:px-6">
+        <div className="rounded-[2rem] bg-[var(--c-soft)] p-6 sm:p-8">
+          <div className="flex items-center gap-2">
+            <span className="text-[var(--c-accent)]" aria-hidden>✎</span>
+            <h2 className="text-xl font-bold" style={round}>Cómo trabajamos</h2>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            {notes.map((n) => (
+              <div key={n.title} className="rounded-2xl bg-[var(--c-surface)] p-4 shadow-sm">
+                <p className="text-sm font-bold text-[var(--c-accent-deep)]" style={round}>{n.title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--c-ink)]/70" style={round}>{n.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonios */}
+      <section className="mx-auto mt-14 max-w-5xl px-5 sm:px-6">
+        <h2 className="text-2xl font-bold" style={round}>Lo que cuentan</h2>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {testimonials.map((t) => (
+            <figure key={t.name} className="rounded-2xl border border-[var(--c-ink)]/10 bg-[var(--c-surface)] p-5 shadow-sm">
+              <span className="text-2xl leading-none text-[var(--c-accent)]/50" aria-hidden>“</span>
+              <blockquote className="mt-1 text-[var(--c-ink)]/80" style={round}>{t.quote}</blockquote>
+              <figcaption className="mt-3 text-xs font-semibold uppercase tracking-wide text-[var(--c-ink)]/50">
+                {t.name} · {t.treatment}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer estilo planner */}
+      <footer id="contacto" className="mx-auto mt-14 max-w-5xl px-5 sm:px-6">
+        <div className="rounded-[2rem] bg-[var(--c-surface)] p-6 shadow-sm sm:p-8">
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* Horario como tarjeta semanal */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[var(--c-accent)]" style={round}>Horario</h3>
+              <dl className="mt-3 space-y-2 text-sm">
+                {schedule.map((row) => (
+                  <div key={row.day} className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--c-ink)]/12 pb-2">
+                    <dt className="text-[var(--c-ink)]/70">{row.day}</dt>
+                    <dd className={row.hours === "Cerrado" ? "text-[var(--c-ink)]/40" : "font-semibold"}>{row.hours}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {/* Dirección */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[var(--c-accent)]" style={round}>Dónde estamos</h3>
+              <address className="mt-3 not-italic text-sm leading-relaxed text-[var(--c-ink)]/70">
+                {clinic.address.street}<br />
+                {clinic.address.neighborhood} · {clinic.address.zip}<br />
+                {clinic.address.reference}
+              </address>
+              <a href={clinic.address.mapsUrl} className="mt-3 inline-flex min-h-[44px] items-center text-sm font-bold text-[var(--c-accent)] underline-offset-4 hover:underline" style={round}>
+                Ver en Google Maps →
+              </a>
+            </div>
+
+            {/* Contacto */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[var(--c-accent)]" style={round}>Contacto</h3>
+              <div className="mt-3 flex flex-col gap-2 text-sm">
+                <a href={`tel:${clinic.phoneHref}`} className="inline-flex min-h-[44px] items-center gap-2">
+                  <span className="text-[var(--c-ink)]/50">Tel</span>
+                  <span className="font-semibold text-[var(--c-accent)]">{clinic.phone}</span>
+                </a>
+                <a href={clinic.whatsapp} className="inline-flex min-h-[44px] items-center gap-2">
+                  <span className="text-[var(--c-ink)]/50">WhatsApp</span>
+                  <span className="font-semibold text-[var(--c-accent)]">{clinic.phone}</span>
+                </a>
+                <a href={`mailto:${clinic.email}`} className="inline-flex min-h-[44px] items-center gap-2">
+                  <span className="text-[var(--c-ink)]/50">Correo</span>
+                  <span className="break-all font-semibold text-[var(--c-accent)]">{clinic.email}</span>
+                </a>
+                <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+                  <a href={clinic.social.facebook} className="inline-flex min-h-[44px] items-center text-[var(--c-ink)]/70 hover:text-[var(--c-accent)]">Facebook</a>
+                  <a href={clinic.social.instagram} className="inline-flex min-h-[44px] items-center text-[var(--c-ink)]/70 hover:text-[var(--c-accent)]">
+                    Instagram {clinic.social.instagramHandle}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 border-t-2 border-dotted border-[var(--c-ink)]/15 pt-5 text-center text-xs text-[var(--c-ink)]/50">
+            {clinic.name} · {clinic.doctor} · Céd. {clinic.license} · {clinic.school}
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
