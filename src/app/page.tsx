@@ -17,7 +17,7 @@ const specialties = [
   { href: "/nutriologo", label: "Nutriólogo", status: "live" as const, note: "Nutrición clínica · switch de paleta en vivo" },
   { href: "/nutriologo-template-02", label: "Nutriólogo (alterno B)", status: "live" as const, note: "Carta de menú / degustación" },
   { href: "/nutriologo-template-03", label: "Nutriólogo (alterno C)", status: "live" as const, note: "Planner semanal de hábitos" },
-  { href: "/fisioterapia", label: "Fisioterapia", status: "live" as const, note: "Ficha de rehabilitación" },
+  { href: "/fisioterapia", label: "Fisioterapia", status: "live" as const, note: "Rehabilitación · switch de paleta en vivo" },
   { href: "/estetica", label: "Estética", status: "live" as const, note: "Medicina estética facial y corporal" },
 ];
 

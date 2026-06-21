@@ -1,4 +1,52 @@
+"use client";
+
+import { useState } from "react";
 import { spectral, publicSans } from "@/lib/fonts";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
+
+// 3 paletas propias de fisioterapia (familias distintas): Terracota (rust, la original),
+// Cobalto (azul deportivo) y Lima bosque (verde). Acento seguro en AA como texto y botón.
+const palettes = [
+  {
+    name: "Terracota",
+    swatch: "#b5562f",
+    surface: "#fbfaf7",
+    ink: "#22312b",
+    vars: {
+      "--c-bg": "#fbfaf7",
+      "--c-ink": "#22312b",
+      "--c-ink-deep": "#0f1814",
+      "--c-accent": "#b5562f",
+      "--c-accent-deep": "#93431f",
+    },
+  },
+  {
+    name: "Cobalto",
+    swatch: "#2563c4",
+    surface: "#f5f8fc",
+    ink: "#1c2735",
+    vars: {
+      "--c-bg": "#f5f8fc",
+      "--c-ink": "#1c2735",
+      "--c-ink-deep": "#0e1722",
+      "--c-accent": "#2563c4",
+      "--c-accent-deep": "#1d4e9e",
+    },
+  },
+  {
+    name: "Lima bosque",
+    swatch: "#45701c",
+    surface: "#f6f9f1",
+    ink: "#1f2a1c",
+    vars: {
+      "--c-bg": "#f6f9f1",
+      "--c-ink": "#1f2a1c",
+      "--c-ink-deep": "#101810",
+      "--c-accent": "#45701c",
+      "--c-accent-deep": "#355314",
+    },
+  },
+] as const;
 
 // Completely different shape from every other specialty: no sidebar, no tabs, no bento, no
 // table. This is a vertical "recovery journey" — a thin top progress rail instead of a nav menu,
@@ -78,75 +126,78 @@ function RecoveryCurve({ className = "" }: { className?: string }) {
 }
 
 export default function FisioterapiaTemplate() {
+  const [active, setActive] = useState(0);
+
   return (
     <div
-      className={`${spectral.variable} ${publicSans.variable} min-h-screen bg-[#fbfaf7] text-[#22312b]`}
-      style={{ fontFamily: "var(--f-public-sans)" }}
+      className={`${spectral.variable} ${publicSans.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
+      style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-public-sans)" }}
     >
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
       {/* Thin progress rail instead of a header or sidebar nav */}
-      <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[#22312b]/10 bg-[#fbfaf7]/95 px-6 py-3 backdrop-blur md:px-12">
+      <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[var(--c-ink)]/10 bg-[var(--c-bg)]/95 px-6 py-3 backdrop-blur md:px-12">
         <span className="text-sm font-semibold" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.name}</span>
         <div className="hidden items-center gap-0 md:flex">
           {stages.map((s, i) => (
             <div key={s.code} className="flex items-center">
-              <a href={`#etapa-${s.code}`} className="flex items-center gap-2 px-3 text-xs uppercase tracking-wide text-[#22312b]/60 hover:text-[#b5562f]">
-                <span className="font-mono text-[#b5562f]">{s.code}</span>
+              <a href={`#etapa-${s.code}`} className="flex items-center gap-2 px-3 text-xs uppercase tracking-wide text-[var(--c-ink)]/60 hover:text-[var(--c-accent)]">
+                <span className="font-mono text-[var(--c-accent)]">{s.code}</span>
                 {s.label}
               </a>
-              {i < stages.length - 1 && <span className="h-px w-6 bg-[#22312b]/15" />}
+              {i < stages.length - 1 && <span className="h-px w-6 bg-[var(--c-ink)]/15" />}
             </div>
           ))}
         </div>
-        <a href={clinic.whatsapp} className="rounded-full bg-[#22312b] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0f1814]">
+        <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-ink)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--c-ink-deep)]">
           Agendar
         </a>
       </div>
 
       {/* Hero: full-bleed with recovery curve as background watermark, not a small icon */}
       <section className="relative overflow-hidden px-6 py-20 md:px-12">
-        <RecoveryCurve className="pointer-events-none absolute -bottom-4 left-0 h-32 w-full text-[#b5562f]/10" />
+        <RecoveryCurve className="pointer-events-none absolute -bottom-4 left-0 h-32 w-full text-[var(--c-accent)]/10" />
         <div className="relative max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b5562f]">{clinic.specialty}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
           <h1 className="mt-5 text-5xl leading-[1.1] md:text-6xl" style={{ fontFamily: "var(--f-spectral)" }}>
             Cada sesión avanza la curva.
           </h1>
-          <p className="mt-6 max-w-lg text-lg text-[#22312b]/70">{clinic.welcomeMessage}</p>
+          <p className="mt-6 max-w-lg text-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
           <div className="mt-9 flex flex-wrap gap-4">
-            <a href={clinic.whatsapp} className="rounded-full bg-[#b5562f] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[#93431f]">
+            <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
               Agendar sesión
             </a>
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[#22312b]/25 px-7 py-3.5 text-sm font-semibold transition hover:border-[#22312b]/50">
+            <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[var(--c-ink)]/25 px-7 py-3.5 text-sm font-semibold transition hover:border-[var(--c-ink)]/50">
               Llamar al consultorio
             </a>
           </div>
         </div>
-        <div className="relative mt-16 grid grid-cols-3 gap-6 border-t border-[#22312b]/10 pt-8 max-w-2xl">
+        <div className="relative mt-16 grid grid-cols-3 gap-6 border-t border-[var(--c-ink)]/10 pt-8 max-w-2xl">
           <div>
-            <p className="text-3xl font-semibold text-[#b5562f]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.experienceYears}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-[#22312b]/50">Años de práctica</p>
+            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.experienceYears}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Años de práctica</p>
           </div>
           <div>
-            <p className="text-3xl font-semibold text-[#b5562f]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.patients}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-[#22312b]/50">Pacientes rehabilitados</p>
+            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.patients}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Pacientes rehabilitados</p>
           </div>
           <div>
-            <p className="text-3xl font-semibold text-[#b5562f]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.license}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-[#22312b]/50">Cédula profesional</p>
+            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.license}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Cédula profesional</p>
           </div>
         </div>
       </section>
 
       {/* Especialista, woven into the journey as "stage 00" */}
-      <section className="border-t border-[#22312b]/10 bg-white px-6 py-16 md:px-12">
+      <section className="border-t border-[var(--c-ink)]/10 bg-white px-6 py-16 md:px-12">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-[auto_1fr]">
-          <div className="aspect-square w-40 rounded-full bg-[#b5562f]/15" aria-hidden />
+          <div className="aspect-square w-40 rounded-full bg-[var(--c-accent)]/15" aria-hidden />
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#b5562f]">Tu fisioterapeuta</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent)]">Tu fisioterapeuta</p>
             <h2 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.doctor}</h2>
-            <p className="mt-3 max-w-lg text-[#22312b]/70">
+            <p className="mt-3 max-w-lg text-[var(--c-ink)]/70">
               Egresado de la {clinic.school}, especializado en {clinic.specialty.toLowerCase()}.
             </p>
-            <ul className="mt-5 space-y-1.5 text-sm text-[#22312b]/70">
+            <ul className="mt-5 space-y-1.5 text-sm text-[var(--c-ink)]/70">
               <li>— Medición de rango de movimiento en cada sesión.</li>
               <li>— Plan de ejercicios progresivo, no genérico.</li>
               <li>— Alta cuando recuperas función, no cuando se acaban las sesiones.</li>
@@ -156,14 +207,14 @@ export default function FisioterapiaTemplate() {
       </section>
 
       {/* Etapas del proceso: horizontal stage markers anchored by the rail above */}
-      <section className="border-t border-[#22312b]/10 px-6 py-16 md:px-12">
+      <section className="border-t border-[var(--c-ink)]/10 px-6 py-16 md:px-12">
         <h2 className="text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>El camino de recuperación</h2>
         <div className="mt-10 grid gap-0 md:grid-cols-4">
           {stages.map((s, i) => (
-            <div key={s.code} id={`etapa-${s.code}`} className="scroll-mt-24 border-t-2 border-[#b5562f] pt-4 md:border-t-4">
-              <span className="font-mono text-xs text-[#b5562f]">{s.code}</span>
+            <div key={s.code} id={`etapa-${s.code}`} className="scroll-mt-24 border-t-2 border-[var(--c-accent)] pt-4 md:border-t-4">
+              <span className="font-mono text-xs text-[var(--c-accent)]">{s.code}</span>
               <p className="mt-1 text-lg" style={{ fontFamily: "var(--f-spectral)" }}>{s.label}</p>
-              <p className="mt-2 text-sm text-[#22312b]/60">
+              <p className="mt-2 text-sm text-[var(--c-ink)]/60">
                 {i === 0 && "Medimos movilidad, fuerza y dolor para establecer una línea base."}
                 {i === 1 && "Definimos objetivos medibles y el número de sesiones estimado."}
                 {i === 2 && "Terapia manual, ejercicio dirigido y ajustes semana a semana."}
@@ -175,25 +226,25 @@ export default function FisioterapiaTemplate() {
       </section>
 
       {/* Servicios: alternating left/right milestone rows, not a table or card grid */}
-      <section id="servicios" className="border-t border-[#22312b]/10 bg-white px-6 py-16 md:px-12">
+      <section id="servicios" className="border-t border-[var(--c-ink)]/10 bg-white px-6 py-16 md:px-12">
         <h2 className="text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>Sesiones y tratamientos</h2>
         <div className="mt-10 space-y-10">
           {services.map((s, i) => (
             <div
               key={s.name}
-              className={`flex flex-col gap-3 border-b border-[#22312b]/10 pb-8 last:border-0 md:flex-row md:items-baseline md:gap-8 ${
+              className={`flex flex-col gap-3 border-b border-[var(--c-ink)]/10 pb-8 last:border-0 md:flex-row md:items-baseline md:gap-8 ${
                 i % 2 === 1 ? "md:flex-row-reverse md:text-right" : ""
-              } ${s.isUrgency ? "bg-[#b5562f]/5 -mx-6 px-6 py-6 md:-mx-12 md:px-12" : ""}`}
+              } ${s.isUrgency ? "bg-[var(--c-accent)]/5 -mx-6 px-6 py-6 md:-mx-12 md:px-12" : ""}`}
             >
               <div className="md:w-1/3">
-                <span className={`text-2xl font-semibold ${s.isUrgency ? "text-[#b5562f]" : "text-[#22312b]"}`} style={{ fontFamily: "var(--f-spectral)" }}>
+                <span className={`text-2xl font-semibold ${s.isUrgency ? "text-[var(--c-accent)]" : "text-[var(--c-ink)]"}`} style={{ fontFamily: "var(--f-spectral)" }}>
                   {s.price}
                 </span>
-                <span className="ml-2 text-xs uppercase tracking-wide text-[#22312b]/45">{priceTypeLabel[s.priceType]}</span>
+                <span className="ml-2 text-xs uppercase tracking-wide text-[var(--c-ink)]/45">{priceTypeLabel[s.priceType]}</span>
               </div>
               <div className="md:w-2/3">
                 <h3 className="font-semibold">{s.name}</h3>
-                <p className="mt-1 text-sm text-[#22312b]/60">{s.description}</p>
+                <p className="mt-1 text-sm text-[var(--c-ink)]/60">{s.description}</p>
               </div>
             </div>
           ))}
@@ -201,46 +252,46 @@ export default function FisioterapiaTemplate() {
       </section>
 
       {/* Ubicación + urgencias combined in one split band */}
-      <section id="ubicacion" className="border-t border-[#22312b]/10 px-6 py-16 md:px-12">
+      <section id="ubicacion" className="border-t border-[var(--c-ink)]/10 px-6 py-16 md:px-12">
         <div className="grid gap-10 md:grid-cols-2">
           <div>
             <h2 className="text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>Ubicación y horario</h2>
-            <address className="mt-4 not-italic text-[#22312b]/70">
+            <address className="mt-4 not-italic text-[var(--c-ink)]/70">
               {clinic.address.street}
               <br />
               {clinic.address.neighborhood}
               <br />
               {clinic.address.zip}
             </address>
-            <p className="mt-2 text-sm text-[#22312b]/55">{clinic.address.reference}</p>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-semibold text-[#b5562f] underline-offset-4 hover:underline">
+            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{clinic.address.reference}</p>
+            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-semibold text-[var(--c-accent)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
-            <div className="mt-7 divide-y divide-[#22312b]/10 text-sm">
+            <div className="mt-7 divide-y divide-[var(--c-ink)]/10 text-sm">
               {schedule.map((row) => (
                 <div key={row.day} className="flex justify-between py-2">
-                  <span className="text-[#22312b]/70">{row.day}</span>
-                  <span className={row.hours === "Cerrado" ? "text-[#22312b]/40" : "font-semibold"}>{row.hours}</span>
+                  <span className="text-[var(--c-ink)]/70">{row.day}</span>
+                  <span className={row.hours === "Cerrado" ? "text-[var(--c-ink)]/40" : "font-semibold"}>{row.hours}</span>
                 </div>
               ))}
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
               {paymentMethods.map((m) => (
-                <span key={m} className="rounded-full border border-[#22312b]/15 px-3 py-1 text-xs text-[#22312b]/70">{m}</span>
+                <span key={m} className="rounded-full border border-[var(--c-ink)]/15 px-3 py-1 text-xs text-[var(--c-ink)]/70">{m}</span>
               ))}
             </div>
           </div>
 
-          <div id="urgencias" className="rounded-2xl bg-[#22312b] px-8 py-10 text-[#fbfaf7]">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#b5562f]">Dolor agudo</p>
+          <div id="urgencias" className="rounded-2xl bg-[var(--c-ink)] px-8 py-10 text-[var(--c-bg)]">
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent)]">Dolor agudo</p>
             <h2 className="mt-3 text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>
               Un esguince o bloqueo reciente no espera a la próxima cita.
             </h2>
             <div className="mt-7 flex flex-wrap gap-3">
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[#b5562f] px-6 py-3 text-sm font-semibold text-white">
+              <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-semibold text-white">
                 Llamar ahora
               </a>
-              <a href={clinic.whatsapp} className="rounded-full border border-[#fbfaf7]/30 px-6 py-3 text-sm font-semibold">
+              <a href={clinic.whatsapp} className="rounded-full border border-[var(--c-bg)]/30 px-6 py-3 text-sm font-semibold">
                 WhatsApp directo
               </a>
             </div>
@@ -249,40 +300,40 @@ export default function FisioterapiaTemplate() {
       </section>
 
       {/* Testimonios: horizontal snap-scroll strip, not a grid */}
-      <section id="testimonios" className="border-t border-[#22312b]/10 bg-white py-16">
+      <section id="testimonios" className="border-t border-[var(--c-ink)]/10 bg-white py-16">
         <h2 className="px-6 text-2xl md:px-12" style={{ fontFamily: "var(--f-spectral)" }}>Lo que cuentan los pacientes</h2>
         <div className="mt-8 flex gap-5 overflow-x-auto px-6 pb-4 [scrollbar-width:none] md:px-12" style={{ scrollSnapType: "x mandatory" }}>
           {testimonials.map((t) => (
             <figure
               key={t.name}
-              className="min-w-[280px] flex-shrink-0 rounded-2xl border border-[#22312b]/10 bg-[#fbfaf7] p-6 md:min-w-[340px]"
+              className="min-w-[280px] flex-shrink-0 rounded-2xl border border-[var(--c-ink)]/10 bg-[var(--c-bg)] p-6 md:min-w-[340px]"
               style={{ scrollSnapAlign: "start" }}
             >
-              <blockquote className="text-[#22312b]/80">&ldquo;{t.quote}&rdquo;</blockquote>
-              <figcaption className="mt-4 text-xs text-[#22312b]/50">{t.name} · {t.treatment}</figcaption>
+              <blockquote className="text-[var(--c-ink)]/80">&ldquo;{t.quote}&rdquo;</blockquote>
+              <figcaption className="mt-4 text-xs text-[var(--c-ink)]/50">{t.name} · {t.treatment}</figcaption>
             </figure>
           ))}
         </div>
       </section>
 
       {/* Contacto */}
-      <section id="contacto" className="border-t border-[#22312b]/10 px-6 py-16 md:px-12">
+      <section id="contacto" className="border-t border-[var(--c-ink)]/10 px-6 py-16 md:px-12">
         <h2 className="text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>Agenda tu sesión</h2>
         <div className="mt-7 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <div className="text-[#22312b]/50">Teléfono</div>
+            <div className="text-[var(--c-ink)]/50">Teléfono</div>
             <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-semibold">{clinic.phone}</a>
           </div>
           <div>
-            <div className="text-[#22312b]/50">WhatsApp</div>
+            <div className="text-[var(--c-ink)]/50">WhatsApp</div>
             <a href={clinic.whatsapp} className="mt-1 block font-semibold">{clinic.phone}</a>
           </div>
           <div>
-            <div className="text-[#22312b]/50">Correo</div>
+            <div className="text-[var(--c-ink)]/50">Correo</div>
             <a href={`mailto:${clinic.email}`} className="mt-1 block font-semibold">{clinic.email}</a>
           </div>
           <div>
-            <div className="text-[#22312b]/50">Redes</div>
+            <div className="text-[var(--c-ink)]/50">Redes</div>
             <div className="mt-1 flex flex-col gap-1">
               <a href={clinic.social.facebook}>Facebook</a>
               <a href={clinic.social.instagram}>Instagram {clinic.social.instagramHandle}</a>
