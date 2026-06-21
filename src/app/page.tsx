@@ -11,7 +11,7 @@ const specialties = [
   { href: "/veterinario", label: "Veterinario", status: "live" as const, note: "Mascotas pequeñas · switch de paleta en vivo" },
   { href: "/veterinario-template-02", label: "Veterinario (alterno B)", status: "live" as const, note: "Bento grid / modular" },
   { href: "/veterinario-template-03", label: "Veterinario (alterno C)", status: "live" as const, note: "Hospital institucional / especialidades" },
-  { href: "/psicologo", label: "Psicólogo", status: "live" as const, note: "Terapia de adultos" },
+  { href: "/psicologo", label: "Psicólogo", status: "live" as const, note: "Terapia de adultos · switch de paleta en vivo" },
   { href: "/nutriologo", label: "Nutriólogo", status: "live" as const, note: "Nutrición clínica y deportiva" },
   { href: "/fisioterapia", label: "Fisioterapia", status: "live" as const, note: "Ficha de rehabilitación" },
   { href: "/estetica", label: "Estética", status: "live" as const, note: "Medicina estética facial y corporal" },

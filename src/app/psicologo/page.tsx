@@ -1,4 +1,52 @@
+"use client";
+
+import { useState } from "react";
 import { lora, manrope } from "@/lib/fonts";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
+
+// 3 paletas calmadas/humanistas propias de psicólogo (familias distintas entre sí):
+// Tierra cálida (taupe), Salvia (verde sage) y Lavanda. Acento seguro en AA como texto y botón.
+const palettes = [
+  {
+    name: "Tierra cálida",
+    swatch: "#7a5c44",
+    surface: "#f6f4ef",
+    ink: "#372f2c",
+    vars: {
+      "--c-bg": "#f6f4ef",
+      "--c-ink": "#372f2c",
+      "--c-ink-deep": "#241e1c",
+      "--c-accent": "#7a5c44",
+      "--c-accent-deep": "#624a37",
+    },
+  },
+  {
+    name: "Salvia",
+    swatch: "#4f6e4b",
+    surface: "#eef3ee",
+    ink: "#2a342a",
+    vars: {
+      "--c-bg": "#eef3ee",
+      "--c-ink": "#2a342a",
+      "--c-ink-deep": "#1b231b",
+      "--c-accent": "#4f6e4b",
+      "--c-accent-deep": "#3c563a",
+    },
+  },
+  {
+    name: "Lavanda",
+    swatch: "#6b5b95",
+    surface: "#f3f0f7",
+    ink: "#2f2a3a",
+    vars: {
+      "--c-bg": "#f3f0f7",
+      "--c-ink": "#2f2a3a",
+      "--c-ink-deep": "#201c29",
+      "--c-accent": "#6b5b95",
+      "--c-accent-deep": "#564a78",
+    },
+  },
+] as const;
 
 // Keeps a conventional header, but the body is not a vertical stack of full-width sections like
 // every other template. Instead: a sticky profile card on the left that never scrolls away,
@@ -51,133 +99,136 @@ const tabs = [
 ];
 
 export default function PsicologoTemplate() {
+  const [active, setActive] = useState(0);
+
   return (
     <div
-      className={`${lora.variable} ${manrope.variable} min-h-screen bg-[#f6f4ef] text-[#372f2c]`}
-      style={{ fontFamily: "var(--f-manrope)" }}
+      className={`${lora.variable} ${manrope.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
+      style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-manrope)" }}
     >
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} align="right" />
       {/* Conventional header */}
-      <header className="sticky top-0 z-20 border-b border-[#372f2c]/10 bg-[#f6f4ef]/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-[var(--c-ink)]/10 bg-[var(--c-bg)]/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <span className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>{clinic.name}</span>
-          <a href={clinic.whatsapp} className="rounded-md bg-[#7a5c44] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#624a37]">
+          <a href={clinic.whatsapp} className="rounded-md bg-[var(--c-accent)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
             Agendar sesión
           </a>
         </div>
       </header>
 
       {/* Two-column "portal" layout: sticky profile card + switchable panel, not stacked sections */}
-      <main className="mx-auto grid max-w-5xl gap-8 px-6 py-12 md:grid-cols-[280px_1fr]">
+      <main className="mx-auto grid max-w-5xl gap-8 px-6 pt-12 pb-28 md:grid-cols-[280px_1fr]">
         <aside className="md:sticky md:top-24 md:self-start">
-          <div className="rounded-2xl border border-[#372f2c]/10 bg-white p-6">
-            <div className="aspect-square rounded-xl bg-[#7a5c44]/15" aria-hidden />
+          <div className="rounded-2xl border border-[var(--c-ink)]/10 bg-white p-6">
+            <div className="aspect-square rounded-xl bg-[var(--c-accent)]/15" aria-hidden />
             <h1 className="mt-5 text-xl" style={{ fontFamily: "var(--f-lora)" }}>{clinic.doctor}</h1>
-            <p className="mt-1 text-sm text-[#372f2c]/60">{clinic.specialty}</p>
+            <p className="mt-1 text-sm text-[var(--c-ink)]/60">{clinic.specialty}</p>
 
-            <dl className="mt-5 space-y-2 border-t border-[#372f2c]/10 pt-4 text-sm">
+            <dl className="mt-5 space-y-2 border-t border-[var(--c-ink)]/10 pt-4 text-sm">
               <div className="flex justify-between">
-                <dt className="text-[#372f2c]/50">Cédula profesional</dt>
+                <dt className="text-[var(--c-ink)]/50">Cédula profesional</dt>
                 <dd className="font-medium">{clinic.license}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[#372f2c]/50">Años de práctica</dt>
+                <dt className="text-[var(--c-ink)]/50">Años de práctica</dt>
                 <dd className="font-medium">{clinic.experienceYears}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[#372f2c]/50">Personas acompañadas</dt>
+                <dt className="text-[var(--c-ink)]/50">Personas acompañadas</dt>
                 <dd className="font-medium">{clinic.patients}</dd>
               </div>
             </dl>
 
-            <a href={clinic.whatsapp} className="mt-6 block rounded-md bg-[#372f2c] px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-[#241e1c]">
+            <a href={clinic.whatsapp} className="mt-6 block rounded-md bg-[var(--c-ink)] px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-[var(--c-ink-deep)]">
               Agendar sesión
             </a>
-            <a href={`tel:${clinic.phoneHref}`} className="mt-2 block rounded-md border border-[#372f2c]/20 px-4 py-2.5 text-center text-sm font-medium transition hover:border-[#372f2c]/40">
+            <a href={`tel:${clinic.phoneHref}`} className="mt-2 block rounded-md border border-[var(--c-ink)]/20 px-4 py-2.5 text-center text-sm font-medium transition hover:border-[var(--c-ink)]/40">
               Llamar al consultorio
             </a>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-[#7a5c44]/30 bg-[#7a5c44]/5 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-[#7a5c44]">Contención en crisis</p>
-            <p className="mt-2 text-sm text-[#372f2c]/70">
+          <div className="mt-6 rounded-2xl border border-[var(--c-accent)]/30 bg-[var(--c-accent)]/5 p-5">
+            <p className="text-xs uppercase tracking-[0.15em] text-[var(--c-accent)]">Contención en crisis</p>
+            <p className="mt-2 text-sm text-[var(--c-ink)]/70">
               Si hoy es un día difícil, no esperes a tu próxima cita.
             </p>
-            <a href={clinic.whatsapp} className="mt-3 inline-block text-sm font-medium text-[#7a5c44] underline-offset-4 hover:underline">
+            <a href={clinic.whatsapp} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
               Escribir ahora →
             </a>
           </div>
         </aside>
 
         <section>
-          <p className="mb-6 max-w-md text-[#372f2c]/70">
+          <p className="mb-6 max-w-md text-[var(--c-ink)]/70">
             Terapia individual y de pareja con un enfoque humanista, en consultorio o en línea.
           </p>
 
-          <nav className="flex gap-1 rounded-lg border border-[#372f2c]/10 bg-white p-1 text-sm">
+          <nav className="flex gap-1 rounded-lg border border-[var(--c-ink)]/10 bg-white p-1 text-sm">
             {tabs.map((t, i) => (
               <a
                 key={t.id}
                 href={`#${t.id}`}
-                className={`flex-1 rounded-md px-4 py-2 text-center font-medium transition hover:bg-[#7a5c44]/10 ${i === 0 ? "bg-[#7a5c44] text-white hover:bg-[#7a5c44]" : "text-[#372f2c]/70"}`}
+                className={`flex-1 rounded-md px-4 py-2 text-center font-medium transition hover:bg-[var(--c-accent)]/10 ${i === 0 ? "bg-[var(--c-accent)] text-white hover:bg-[var(--c-accent)]" : "text-[var(--c-ink)]/70"}`}
               >
                 {t.label}
               </a>
             ))}
           </nav>
 
-          <div id="servicios" className="mt-8 scroll-mt-24 rounded-2xl border border-[#372f2c]/10 bg-white p-6">
+          <div id="servicios" className="mt-8 scroll-mt-24 rounded-2xl border border-[var(--c-ink)]/10 bg-white p-6">
             <h2 className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>Modalidades y honorarios</h2>
-            <div className="mt-5 divide-y divide-[#372f2c]/10">
+            <div className="mt-5 divide-y divide-[var(--c-ink)]/10">
               {services.map((s) => (
                 <div key={s.name} className="flex flex-wrap items-baseline justify-between gap-3 py-4">
                   <div>
                     <div className="font-medium">{s.name}</div>
-                    <div className="mt-0.5 text-sm text-[#372f2c]/55">{s.description}</div>
+                    <div className="mt-0.5 text-sm text-[var(--c-ink)]/55">{s.description}</div>
                   </div>
-                  <span className="font-semibold text-[#7a5c44]">{s.price}</span>
+                  <span className="font-semibold text-[var(--c-accent)]">{s.price}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div id="horario" className="mt-8 scroll-mt-24 grid gap-6 rounded-2xl border border-[#372f2c]/10 bg-white p-6 sm:grid-cols-2">
+          <div id="horario" className="mt-8 scroll-mt-24 grid gap-6 rounded-2xl border border-[var(--c-ink)]/10 bg-white p-6 sm:grid-cols-2">
             <div>
               <h2 className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>Ubicación</h2>
-              <address className="mt-3 not-italic text-sm text-[#372f2c]/70">
+              <address className="mt-3 not-italic text-sm text-[var(--c-ink)]/70">
                 {clinic.address.street}<br />
                 {clinic.address.neighborhood}
               </address>
-              <p className="mt-2 text-xs text-[#372f2c]/50">{clinic.address.reference}</p>
-              <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[#7a5c44] underline-offset-4 hover:underline">
+              <p className="mt-2 text-xs text-[var(--c-ink)]/50">{clinic.address.reference}</p>
+              <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
                 Ver en Google Maps →
               </a>
             </div>
             <div>
               <h2 className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>Horario</h2>
-              <div className="mt-3 divide-y divide-[#372f2c]/10 text-sm">
+              <div className="mt-3 divide-y divide-[var(--c-ink)]/10 text-sm">
                 {schedule.map((row) => (
                   <div key={row.day} className="flex justify-between py-2">
-                    <span className="text-[#372f2c]/70">{row.day}</span>
-                    <span className={row.hours === "Cerrado" ? "text-[#372f2c]/40" : "font-medium"}>{row.hours}</span>
+                    <span className="text-[var(--c-ink)]/70">{row.day}</span>
+                    <span className={row.hours === "Cerrado" ? "text-[var(--c-ink)]/40" : "font-medium"}>{row.hours}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div id="testimonios" className="mt-8 scroll-mt-24 rounded-2xl border border-[#372f2c]/10 bg-white p-6">
+          <div id="testimonios" className="mt-8 scroll-mt-24 rounded-2xl border border-[var(--c-ink)]/10 bg-white p-6">
             <h2 className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>Lo que comparten quienes vienen aquí</h2>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               {testimonials.map((t) => (
-                <figure key={t.name} className="rounded-xl bg-[#f6f4ef] p-4">
-                  <blockquote className="text-sm text-[#372f2c]/80">&ldquo;{t.quote}&rdquo;</blockquote>
-                  <figcaption className="mt-2 text-xs text-[#372f2c]/45">{t.name} · {t.treatment}</figcaption>
+                <figure key={t.name} className="rounded-xl bg-[var(--c-bg)] p-4">
+                  <blockquote className="text-sm text-[var(--c-ink)]/80">&ldquo;{t.quote}&rdquo;</blockquote>
+                  <figcaption className="mt-2 text-xs text-[var(--c-ink)]/45">{t.name} · {t.treatment}</figcaption>
                 </figure>
               ))}
             </div>
           </div>
 
-          <p className="mt-8 text-center text-sm text-[#372f2c]/50">
+          <p className="mt-8 text-center text-sm text-[var(--c-ink)]/50">
             ¿Dudas antes de agendar? Escribe a <a href={`mailto:${clinic.email}`} className="underline">{clinic.email}</a>
           </p>
         </section>
