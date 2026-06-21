@@ -105,13 +105,20 @@ export default function PsicologoTemplate03() {
 
   return (
     <div
-      className={`${fraunces.variable} ${figtree.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
+      className={`${fraunces.variable} ${figtree.variable} relative min-h-screen overflow-hidden bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
       style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-figtree)" }}
     >
       <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
 
+      {/* Atmósfera suave: un solo resplandor difuso arriba, para dar profundidad sin ruido */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[460px]"
+        style={{ background: "radial-gradient(70% 100% at 50% 0%, var(--c-soft), transparent 72%)" }}
+      />
+
       {/* Barra superior mínima: nombre a la izquierda, enlace discreto a la derecha */}
-      <header className="mx-auto flex max-w-2xl items-center justify-between px-6 py-6">
+      <header className="relative z-10 mx-auto flex max-w-2xl items-center justify-between px-6 py-6">
         <span className="text-sm tracking-wide text-[var(--c-ink)]/70" style={serif}>
           {clinic.name}
         </span>
@@ -123,12 +130,14 @@ export default function PsicologoTemplate03() {
         </a>
       </header>
 
-      <main className="mx-auto max-w-2xl px-6">
+      <main className="relative z-10 mx-auto max-w-2xl px-4 pt-6 sm:px-6">
+        <div className="rounded-[2rem] bg-[var(--c-surface)] px-6 py-10 shadow-[0_2px_60px_-24px_rgba(0,0,0,0.3)] ring-1 ring-[var(--c-ink)]/5 sm:px-12 sm:py-14">
         {/* CARTA DE APERTURA */}
-        <section className="pt-10 pb-14">
+        <section className="pt-2 pb-12">
           <p className="text-sm tracking-[0.18em] text-[var(--c-accent)]" style={serifItalic}>
             Hola, soy Daniela
           </p>
+          <span aria-hidden className="mt-4 block h-px w-12 bg-[var(--c-accent)]/40" />
           <h1
             className="mt-6 text-4xl leading-[1.18] tracking-tight md:text-5xl"
             style={serif}
@@ -159,7 +168,7 @@ export default function PsicologoTemplate03() {
         </section>
 
         {/* FAQ CONVERSACIONAL — preguntas y respuestas, separadas por hairlines, sobre banda suave */}
-        <section className="-mx-6 rounded-3xl bg-[var(--c-soft)]/60 px-6 py-12 sm:px-10">
+        <section className="rounded-3xl bg-[var(--c-soft)]/60 px-6 py-10 sm:px-8">
           <div className="divide-y divide-[var(--c-ink)]/10">
             <div className="pb-8">
               <h2 className="text-2xl leading-snug" style={serif}>
@@ -304,6 +313,7 @@ export default function PsicologoTemplate03() {
             {clinic.patients} personas acompañadas en {clinic.experienceYears} años.
           </p>
         </section>
+        </div>
       </main>
     </div>
   );
