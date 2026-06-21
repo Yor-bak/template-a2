@@ -1,4 +1,53 @@
+"use client";
+
+import { useState } from "react";
 import { archivo, karla } from "@/lib/fonts";
+import { PaletteSwitcher } from "@/components/PaletteSwitcher";
+
+// 3 paletas propias de veterinario, familias distintas entre sí (y de los demás templates):
+// --c-header es la banda viva (header), --c-accent el tono cálido de texto/precios/urgencia,
+// --c-ink el oscuro, --c-bg el crema, --c-ink-deep el hover oscuro. El swatch es el header.
+const palettes = [
+  {
+    name: "Ámbar campo",
+    swatch: "#f4a637",
+    surface: "#fbf3e7",
+    ink: "#2e3b2c",
+    vars: {
+      "--c-bg": "#fbf3e7",
+      "--c-ink": "#2e3b2c",
+      "--c-ink-deep": "#1e2a1c",
+      "--c-accent": "#c0622b",
+      "--c-header": "#f4a637",
+    },
+  },
+  {
+    name: "Aqua coral",
+    swatch: "#2bb3a3",
+    surface: "#edf6f3",
+    ink: "#1d3a35",
+    vars: {
+      "--c-bg": "#edf6f3",
+      "--c-ink": "#1d3a35",
+      "--c-ink-deep": "#122a26",
+      "--c-accent": "#c8482f",
+      "--c-header": "#2bb3a3",
+    },
+  },
+  {
+    name: "Lila durazno",
+    swatch: "#a78bdb",
+    surface: "#f5f1fb",
+    ink: "#2c2440",
+    vars: {
+      "--c-bg": "#f5f1fb",
+      "--c-ink": "#2c2440",
+      "--c-ink-deep": "#1f1930",
+      "--c-accent": "#b0531f",
+      "--c-header": "#a78bdb",
+    },
+  },
+] as const;
 
 // Signature motifs for this specialty: a paw-print bullet/divider (instead of a generic dot or rule)
 // and a "cartilla de vacunación" stamp-card layout for services, evoking a pet's actual vaccination booklet.
@@ -83,56 +132,59 @@ function PawTrail({ className = "" }: { className?: string }) {
 }
 
 export default function VeterinarioTemplate() {
+  const [active, setActive] = useState(0);
+
   return (
     <div
-      className={`${archivo.variable} ${karla.variable} min-h-screen bg-[#fbf3e7] text-[#2e3b2c]`}
-      style={{ fontFamily: "var(--f-karla)" }}
+      className={`${archivo.variable} ${karla.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
+      style={{ ...(palettes[active].vars as React.CSSProperties), fontFamily: "var(--f-karla)" }}
     >
+      <PaletteSwitcher palettes={palettes} active={active} onSelect={setActive} />
       {/* Header */}
-      <header className="border-b-4 border-[#2e3b2c] bg-[#f4a637]">
+      <header className="border-b-4 border-[var(--c-ink)] bg-[var(--c-header)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="flex items-center gap-3">
-            <Paw className="h-7 w-7 text-[#2e3b2c]" />
+            <Paw className="h-7 w-7 text-[var(--c-ink)]" />
             <h1 className="text-lg font-black uppercase tracking-tight" style={{ fontFamily: "var(--f-archivo)" }}>
               {clinic.name}
             </h1>
           </div>
-          <a href={clinic.whatsapp} className="rounded-full bg-[#2e3b2c] px-5 py-2.5 text-sm font-bold text-[#fbf3e7] transition hover:bg-[#1e2a1c]">
+          <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-ink)] px-5 py-2.5 text-sm font-bold text-[var(--c-bg)] transition hover:bg-[var(--c-ink-deep)]">
             Agendar cita
           </a>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-14">
+      <main className="mx-auto max-w-6xl px-6 pt-14 pb-28">
         {/* Hero */}
         <section className="grid gap-10 pb-14 md:grid-cols-[1.3fr_1fr] md:items-center">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#c0622b]">{clinic.specialty}</p>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
             <h2
               className="mt-4 max-w-xl text-4xl font-black leading-[1.1] md:text-5xl"
               style={{ fontFamily: "var(--f-archivo)" }}
             >
               Para tu mascota, no para cualquier paciente.
             </h2>
-            <p className="mt-5 max-w-lg text-[#2e3b2c]/70">{clinic.welcomeMessage}</p>
+            <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href={clinic.whatsapp} className="rounded-full bg-[#2e3b2c] px-6 py-3 text-sm font-bold text-[#fbf3e7] transition hover:bg-[#1e2a1c]">
+              <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-ink)] px-6 py-3 text-sm font-bold text-[var(--c-bg)] transition hover:bg-[var(--c-ink-deep)]">
                 Agendar cita
               </a>
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border-2 border-[#2e3b2c]/30 px-6 py-3 text-sm font-bold transition hover:border-[#2e3b2c]/60">
+              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border-2 border-[var(--c-ink)]/30 px-6 py-3 text-sm font-bold transition hover:border-[var(--c-ink)]/60">
                 Llamar a la clínica
               </a>
             </div>
-            <PawTrail className="mt-10 text-[#c0622b]/50" />
+            <PawTrail className="mt-10 text-[var(--c-accent)]/50" />
           </div>
 
-          <div className="rounded-[2rem] border-4 border-[#2e3b2c] bg-white p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c0622b]">Cartilla de la clínica</p>
+          <div className="rounded-[2rem] border-4 border-[var(--c-ink)] bg-white p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--c-accent)]">Cartilla de la clínica</p>
             <dl className="mt-4 space-y-4">
               {stamps.map((s) => (
-                <div key={s.label} className="flex items-baseline justify-between border-b-2 border-dashed border-[#2e3b2c]/20 pb-3 last:border-0 last:pb-0">
-                  <dt className="text-sm text-[#2e3b2c]/60">{s.label}</dt>
-                  <dd className="font-mono text-xl font-bold text-[#c0622b]">{s.value}</dd>
+                <div key={s.label} className="flex items-baseline justify-between border-b-2 border-dashed border-[var(--c-ink)]/20 pb-3 last:border-0 last:pb-0">
+                  <dt className="text-sm text-[var(--c-ink)]/60">{s.label}</dt>
+                  <dd className="font-mono text-xl font-bold text-[var(--c-accent)]">{s.value}</dd>
                 </div>
               ))}
             </dl>
@@ -140,15 +192,15 @@ export default function VeterinarioTemplate() {
         </section>
 
         {/* Especialista */}
-        <section id="especialista" className="grid gap-10 border-t-2 border-dashed border-[#2e3b2c]/20 py-14 md:grid-cols-[1fr_1.4fr]">
-          <div className="aspect-square rounded-[2rem] bg-[#f4a637]/30" aria-hidden />
+        <section id="especialista" className="grid gap-10 border-t-2 border-dashed border-[var(--c-ink)]/20 py-14 md:grid-cols-[1fr_1.4fr]">
+          <div className="aspect-square rounded-[2rem] bg-[var(--c-header)]/30" aria-hidden />
           <div>
             <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>{clinic.doctor}</h3>
-            <p className="mt-3 max-w-lg text-[#2e3b2c]/70">
+            <p className="mt-3 max-w-lg text-[var(--c-ink)]/70">
               Médica veterinaria zootecnista con especialidad en {clinic.specialty}, egresada de la {clinic.school}.
               Cédula profesional {clinic.license}.
             </p>
-            <ul className="mt-6 space-y-2 text-sm text-[#2e3b2c]/70">
+            <ul className="mt-6 space-y-2 text-sm text-[var(--c-ink)]/70">
               <li>🐾 Manejo de bajo estrés para perros y gatos.</li>
               <li>🐾 Hospitalización con monitoreo permanente.</li>
               <li>🐾 Cartilla digital con historial completo de cada mascota.</li>
@@ -157,51 +209,51 @@ export default function VeterinarioTemplate() {
         </section>
 
         {/* Servicios */}
-        <section id="servicios" className="border-t-2 border-dashed border-[#2e3b2c]/20 py-14">
+        <section id="servicios" className="border-t-2 border-dashed border-[var(--c-ink)]/20 py-14">
           <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>Servicios y cartilla de precios</h3>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {services.map((s) => (
               <div
                 key={s.name}
-                className={`rounded-2xl border-2 p-5 ${s.isUrgency ? "border-[#c0622b] bg-[#c0622b]/10" : "border-[#2e3b2c]/15 bg-white"}`}
+                className={`rounded-2xl border-2 p-5 ${s.isUrgency ? "border-[var(--c-accent)] bg-[var(--c-accent)]/10" : "border-[var(--c-ink)]/15 bg-white"}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-2">
-                    <Paw className="mt-1 h-4 w-4 shrink-0 text-[#c0622b]" />
+                    <Paw className="mt-1 h-4 w-4 shrink-0 text-[var(--c-accent)]" />
                     <h4 className="font-bold">{s.name}</h4>
                   </div>
-                  <span className="whitespace-nowrap font-mono text-lg font-bold text-[#c0622b]">{s.price}</span>
+                  <span className="whitespace-nowrap font-mono text-lg font-bold text-[var(--c-accent)]">{s.price}</span>
                 </div>
-                <p className="mt-2 text-sm text-[#2e3b2c]/60">{s.description}</p>
-                <p className="mt-2 text-xs uppercase tracking-wide text-[#2e3b2c]/40">{priceTypeLabel[s.priceType]}</p>
+                <p className="mt-2 text-sm text-[var(--c-ink)]/60">{s.description}</p>
+                <p className="mt-2 text-xs uppercase tracking-wide text-[var(--c-ink)]/40">{priceTypeLabel[s.priceType]}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Ubicación */}
-        <section id="ubicacion" className="grid gap-10 border-t-2 border-dashed border-[#2e3b2c]/20 py-14 md:grid-cols-2">
+        <section id="ubicacion" className="grid gap-10 border-t-2 border-dashed border-[var(--c-ink)]/20 py-14 md:grid-cols-2">
           <div>
             <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>Ubicación y horario</h3>
-            <address className="mt-4 not-italic text-[#2e3b2c]/70">
+            <address className="mt-4 not-italic text-[var(--c-ink)]/70">
               {clinic.address.street}<br />
               {clinic.address.neighborhood}<br />
               {clinic.address.zip}
             </address>
-            <p className="mt-2 text-sm text-[#2e3b2c]/60">{clinic.address.reference}</p>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-bold text-[#c0622b] underline-offset-4 hover:underline">
+            <p className="mt-2 text-sm text-[var(--c-ink)]/60">{clinic.address.reference}</p>
+            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-bold text-[var(--c-accent)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-8 flex flex-wrap gap-2">
               {paymentMethods.map((m) => (
-                <span key={m} className="rounded-full border-2 border-[#2e3b2c]/15 px-3 py-1 text-xs font-bold text-[#2e3b2c]/70">{m}</span>
+                <span key={m} className="rounded-full border-2 border-[var(--c-ink)]/15 px-3 py-1 text-xs font-bold text-[var(--c-ink)]/70">{m}</span>
               ))}
             </div>
           </div>
-          <div className="divide-y-2 divide-dashed divide-[#2e3b2c]/15 self-start rounded-2xl border-2 border-[#2e3b2c]/15 bg-white p-6 text-sm">
+          <div className="divide-y-2 divide-dashed divide-[var(--c-ink)]/15 self-start rounded-2xl border-2 border-[var(--c-ink)]/15 bg-white p-6 text-sm">
             {schedule.map((row) => (
               <div key={row.day} className="flex justify-between py-2">
-                <span className="text-[#2e3b2c]/70">{row.day}</span>
+                <span className="text-[var(--c-ink)]/70">{row.day}</span>
                 <span className="font-bold">{row.hours}</span>
               </div>
             ))}
@@ -209,48 +261,48 @@ export default function VeterinarioTemplate() {
         </section>
 
         {/* Urgencias */}
-        <section id="urgencias" className="my-14 rounded-[2rem] bg-[#2e3b2c] px-8 py-10 text-[#fbf3e7]">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f4a637]">Urgencia 24 horas</p>
+        <section id="urgencias" className="my-14 rounded-[2rem] bg-[var(--c-ink)] px-8 py-10 text-[var(--c-bg)]">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--c-header)]">Urgencia 24 horas</p>
           <h3 className="mt-3 max-w-md text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>
             Intoxicación, trauma o dificultad para respirar no esperan.
           </h3>
           <div className="mt-6 flex gap-4">
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[#c0622b] px-6 py-3 text-sm font-bold text-white">Llamar ahora</a>
-            <a href={clinic.whatsapp} className="rounded-full border-2 border-[#fbf3e7]/40 px-6 py-3 text-sm font-bold">WhatsApp de urgencias</a>
+            <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-bold text-white">Llamar ahora</a>
+            <a href={clinic.whatsapp} className="rounded-full border-2 border-[var(--c-bg)]/40 px-6 py-3 text-sm font-bold">WhatsApp de urgencias</a>
           </div>
         </section>
 
         {/* Testimonios */}
-        <section id="testimonios" className="border-t-2 border-dashed border-[#2e3b2c]/20 py-14">
+        <section id="testimonios" className="border-t-2 border-dashed border-[var(--c-ink)]/20 py-14">
           <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>Lo que cuentan los dueños</h3>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             {testimonials.map((t) => (
-              <figure key={t.name} className="rounded-2xl border-2 border-[#2e3b2c]/15 bg-white p-5">
-                <blockquote className="text-[#2e3b2c]/80">&ldquo;{t.quote}&rdquo;</blockquote>
-                <figcaption className="mt-3 text-xs font-bold text-[#2e3b2c]/50">{t.name} · {t.treatment}</figcaption>
+              <figure key={t.name} className="rounded-2xl border-2 border-[var(--c-ink)]/15 bg-white p-5">
+                <blockquote className="text-[var(--c-ink)]/80">&ldquo;{t.quote}&rdquo;</blockquote>
+                <figcaption className="mt-3 text-xs font-bold text-[var(--c-ink)]/50">{t.name} · {t.treatment}</figcaption>
               </figure>
             ))}
           </div>
         </section>
 
         {/* Contacto */}
-        <section id="contacto" className="border-t-2 border-dashed border-[#2e3b2c]/20 py-14">
+        <section id="contacto" className="border-t-2 border-dashed border-[var(--c-ink)]/20 py-14">
           <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>Agenda la cita de tu mascota</h3>
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <div className="text-[#2e3b2c]/50">Teléfono</div>
+              <div className="text-[var(--c-ink)]/50">Teléfono</div>
               <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-bold">{clinic.phone}</a>
             </div>
             <div>
-              <div className="text-[#2e3b2c]/50">WhatsApp</div>
+              <div className="text-[var(--c-ink)]/50">WhatsApp</div>
               <a href={clinic.whatsapp} className="mt-1 block font-bold">{clinic.phone}</a>
             </div>
             <div>
-              <div className="text-[#2e3b2c]/50">Correo</div>
+              <div className="text-[var(--c-ink)]/50">Correo</div>
               <a href={`mailto:${clinic.email}`} className="mt-1 block font-bold">{clinic.email}</a>
             </div>
             <div>
-              <div className="text-[#2e3b2c]/50">Redes</div>
+              <div className="text-[var(--c-ink)]/50">Redes</div>
               <div className="mt-1 flex flex-col gap-1">
                 <a href={clinic.social.facebook}>Facebook</a>
                 <a href={clinic.social.instagram}>Instagram {clinic.social.instagramHandle}</a>
