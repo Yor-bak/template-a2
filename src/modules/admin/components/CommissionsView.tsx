@@ -138,6 +138,12 @@ export function CommissionsView() {
                       <p className="text-[10px] text-[var(--text-muted)]">
                         {store.salesReps.find((r) => r.id === c.salesRepId)?.name ?? "—"}
                       </p>
+                      {(() => {
+                        const acct = store.salesReps.find((r) => r.id === c.salesRepId)?.accountNumber;
+                        return acct ? (
+                          <p className="text-[10px] font-mono text-[var(--text-muted)] mt-0.5">{acct}</p>
+                        ) : null;
+                      })()}
                     </td>
                     <td className="px-5 py-3">
                       <span className="font-mono text-[11px] text-[var(--text-muted)]">{c.clientNumber}</span>

@@ -30,6 +30,19 @@ import type {
   TransferRecord,
   TransferStatus,
   TransferType,
+  BusinessType,
+  PreClientStatus,
+  PreClient,
+  MonthlyFixedExpense,
+  OtherFinancialMovement,
+  MonthlyTaxRecord,
+  InvoiceRecord,
+  InvoiceStatus,
+  BankMovement,
+  ReconciliationStatus,
+  MonthlyCloseRecord,
+  MonthlyCloseStatus,
+  FinancialLogItem,
 } from "@/types/user";
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -134,6 +147,26 @@ export const TRANSFER_STATUS_LABELS: Record<TransferStatus, string> = {
   refunded: "Reembolsada",
 };
 
+export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
+  dentist: "Dentista",
+  doctor: "Médico",
+  physiotherapist: "Fisioterapeuta",
+  nutritionist: "Nutriólogo/a",
+  psychologist: "Psicólogo/a",
+  veterinarian: "Veterinario/a",
+  other: "Otro",
+};
+
+export const PRE_CLIENT_STATUS_LABELS: Record<PreClientStatus, string> = {
+  new: "Nuevo",
+  contacted: "Contactado",
+  interested: "Interesado",
+  negotiating: "Negociando",
+  awaiting_payment: "Esperando pago",
+  converted: "Convertido",
+  discarded: "Descartado",
+};
+
 export const MX_STATES = [
   "Aguascalientes", "Baja California", "Baja California Sur", "Campeche",
   "Chiapas", "Chihuahua", "Ciudad de México", "Coahuila", "Colima",
@@ -176,6 +209,14 @@ export function generateSellerNumber(existing: SalesRep[]): string {
   return `VEN-${String(max + 1).padStart(4, "0")}`;
 }
 
+export function generatePreClientNumber(existing: PreClient[]): string {
+  const max = existing.reduce((acc, p) => {
+    const n = parseInt(p.preClientNumber.replace("PRE-", ""), 10);
+    return isNaN(n) ? acc : Math.max(acc, n);
+  }, 0);
+  return `PRE-${String(max + 1).padStart(4, "0")}`;
+}
+
 export function generateContractEndDate(
   activationDate: string,
   contractType: ContractType
@@ -206,6 +247,332 @@ export function getFortnightLabel(date: string): string {
   const range = half === 1 ? "1–15" : `16–${lastDay}`;
   const monthName = d.toLocaleDateString("es-MX", { month: "long" });
   return `${half === 1 ? "1a" : "2a"} quincena de ${monthName} ${year} (${range})`;
+}
+
+/** Returns the fortnight ID for today's date (system date). */
+export function getCurrentFortnight(): string {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth() + 1;
+  const half = today.getDate() <= 15 ? 1 : 2;
+  return `${y}-${String(m).padStart(2, "0")}-${half}`;
+}
+
+/** Returns { start, end } date strings for a given fortnight ID. */
+export function getFortnightRange(fortnightId: string): { start: string; end: string } {
+  const [y, m, h] = fortnightId.split("-").map(Number);
+  const start = h === 1 ? `${y}-${String(m).padStart(2, "0")}-01` : `${y}-${String(m).padStart(2, "0")}-16`;
+  const lastDay = getLastDayOfMonth(y, m);
+  const end = h === 1 ? `${y}-${String(m).padStart(2, "0")}-15` : `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { start, end };
+}
+
+/** Returns total authorized (unpaid) commission debt for a fortnight. */
+export function getFortnightDebt(fortnightId: string, commissions: CommissionRecord[]): number {
+  return commissions
+    .filter((c) => c.fortnightId === fortnightId && c.status === "authorized")
+    .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/** Returns fortnight IDs to show in the main view: current + previous ones with debt. */
+export function getVisibleFortnights(fortnights: Fortnight[], commissions: CommissionRecord[]): string[] {
+  const current = getCurrentFortnight();
+  const visible = new Set<string>([current]);
+  for (const f of fortnights) {
+    if (f.id === current) continue;
+    if (getFortnightDebt(f.id, commissions) > 0) {
+      visible.add(f.id);
+    }
+  }
+  return Array.from(visible).sort((a, b) => b.localeCompare(a));
+}
+
+/** Returns all fortnight IDs sorted newest-first, for the history view. */
+export function getHistoricalFortnights(fortnights: Fortnight[]): string[] {
+  return fortnights
+    .map((f) => f.id)
+    .sort((a, b) => b.localeCompare(a));
+}
+
+/** Returns commissions for a specific seller in a specific fortnight. */
+export function getSellerFortnightCommissions(
+  sellerId: string,
+  fortnightId: string,
+  commissions: CommissionRecord[]
+): CommissionRecord[] {
+  return commissions.filter((c) => c.salesRepId === sellerId && c.fortnightId === fortnightId);
+}
+
+/** Returns total authorized (unpaid) debt for a seller in a specific fortnight. */
+export function getSellerFortnightDebt(
+  sellerId: string,
+  fortnightId: string,
+  commissions: CommissionRecord[]
+): number {
+  return commissions
+    .filter((c) => c.salesRepId === sellerId && c.fortnightId === fortnightId && c.status === "authorized")
+    .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/** Returns fortnightIds to show for a seller: current + previous with authorized debt. */
+export function getVisibleSellerFortnights(
+  sellerId: string,
+  commissions: CommissionRecord[]
+): string[] {
+  const current = getCurrentFortnight();
+  const visible = new Set<string>([current]);
+  const sellerComms = commissions.filter((c) => c.salesRepId === sellerId);
+  const fortnightIds = new Set(sellerComms.map((c) => c.fortnightId));
+  for (const fid of fortnightIds) {
+    if (fid === current) continue;
+    const debt = sellerComms
+      .filter((c) => c.fortnightId === fid && c.status === "authorized")
+      .reduce((sum, c) => sum + c.amount, 0);
+    if (debt > 0) visible.add(fid);
+  }
+  return Array.from(visible).sort((a, b) => b.localeCompare(a));
+}
+
+/** Returns all fortnightIds for a seller's history (includes current), sorted newest-first. */
+export function getSellerFortnightHistory(
+  sellerId: string,
+  commissions: CommissionRecord[]
+): string[] {
+  const current = getCurrentFortnight();
+  const ids = new Set(commissions.filter((c) => c.salesRepId === sellerId).map((c) => c.fortnightId));
+  ids.add(current);
+  return Array.from(ids).sort((a, b) => b.localeCompare(a));
+}
+
+// ── Financial helpers ─────────────────────────────────────────────────────────
+
+export const MONTH_NAMES = [
+  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+];
+
+/** Verified opening transfers for a year, optionally filtered by month (uses verifiedAt). */
+export function getVerifiedOpeningIncome(
+  transfers: TransferRecord[],
+  year: number,
+  month?: number
+): TransferRecord[] {
+  return transfers.filter((t) => {
+    if (t.type !== "opening" || t.status !== "verified" || !t.verifiedAt) return false;
+    const d = new Date(t.verifiedAt);
+    if (d.getFullYear() !== year) return false;
+    if (month !== undefined && d.getMonth() + 1 !== month) return false;
+    return true;
+  });
+}
+
+/** Verified monthly transfers for a year, optionally filtered by month (uses verifiedAt). */
+export function getVerifiedMonthlyIncome(
+  transfers: TransferRecord[],
+  year: number,
+  month?: number
+): TransferRecord[] {
+  return transfers.filter((t) => {
+    if (t.type !== "monthly" || t.status !== "verified" || !t.verifiedAt) return false;
+    const d = new Date(t.verifiedAt);
+    if (d.getFullYear() !== year) return false;
+    if (month !== undefined && d.getMonth() + 1 !== month) return false;
+    return true;
+  });
+}
+
+/** Paid commissions for a year, optionally filtered by month (uses paidAt). */
+export function getPaidCommissions(
+  commissions: CommissionRecord[],
+  year: number,
+  month?: number
+): CommissionRecord[] {
+  return commissions.filter((c) => {
+    if (c.status !== "paid" || !c.paidAt) return false;
+    const d = new Date(c.paidAt);
+    if (d.getFullYear() !== year) return false;
+    if (month !== undefined && d.getMonth() + 1 !== month) return false;
+    return true;
+  });
+}
+
+/** Authorized (unpaid) commissions for a year, optionally filtered by month (uses authorizedAt). */
+export function getAuthorizedCommissionDebt(
+  commissions: CommissionRecord[],
+  year: number,
+  month?: number
+): CommissionRecord[] {
+  return commissions.filter((c) => {
+    if (c.status !== "authorized" || !c.authorizedAt) return false;
+    const d = new Date(c.authorizedAt);
+    if (d.getFullYear() !== year) return false;
+    if (month !== undefined && d.getMonth() + 1 !== month) return false;
+    return true;
+  });
+}
+
+export interface AnnualFinancialSummary {
+  year: number;
+  openingIncome: number;
+  monthlyIncome: number;
+  totalIncome: number;
+  paidCommissions: number;
+  pendingCommissions: number;
+  netAfterCommissions: number;
+  openingCount: number;
+  monthlyCount: number;
+}
+
+export function getAnnualFinancialSummary(
+  transfers: TransferRecord[],
+  commissions: CommissionRecord[],
+  year: number
+): AnnualFinancialSummary {
+  const openings = getVerifiedOpeningIncome(transfers, year);
+  const monthly  = getVerifiedMonthlyIncome(transfers, year);
+  const paid     = getPaidCommissions(commissions, year);
+  const debt     = getAuthorizedCommissionDebt(commissions, year);
+
+  const openingIncome      = openings.reduce((s, t) => s + t.amount, 0);
+  const monthlyIncome      = monthly.reduce((s, t) => s + t.amount, 0);
+  const paidCommissions    = paid.reduce((s, c) => s + c.amount, 0);
+  const pendingCommissions = debt.reduce((s, c) => s + c.amount, 0);
+
+  return {
+    year,
+    openingIncome,
+    monthlyIncome,
+    totalIncome: openingIncome + monthlyIncome,
+    paidCommissions,
+    pendingCommissions,
+    netAfterCommissions: openingIncome + monthlyIncome - paidCommissions,
+    openingCount: openings.length,
+    monthlyCount: monthly.length,
+  };
+}
+
+export interface MonthlyFinancialData {
+  month: number;
+  monthLabel: string;
+  openingIncome: number;
+  monthlyIncome: number;
+  totalIncome: number;
+  authorizedCommissions: number;
+  paidCommissions: number;
+  netAfterCommissions: number;
+}
+
+export function getMonthlyFinancialBreakdown(
+  transfers: TransferRecord[],
+  commissions: CommissionRecord[],
+  year: number
+): MonthlyFinancialData[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const month   = i + 1;
+    const openings = getVerifiedOpeningIncome(transfers, year, month);
+    const monthly  = getVerifiedMonthlyIncome(transfers, year, month);
+    const paid     = getPaidCommissions(commissions, year, month);
+    const debt     = getAuthorizedCommissionDebt(commissions, year, month);
+
+    const openingIncome   = openings.reduce((s, t) => s + t.amount, 0);
+    const monthlyIncome   = monthly.reduce((s, t) => s + t.amount, 0);
+    const paidComms       = paid.reduce((s, c) => s + c.amount, 0);
+    const authorizedComms = debt.reduce((s, c) => s + c.amount, 0);
+
+    return {
+      month,
+      monthLabel: MONTH_NAMES[i],
+      openingIncome,
+      monthlyIncome,
+      totalIncome: openingIncome + monthlyIncome,
+      authorizedCommissions: authorizedComms,
+      paidCommissions: paidComms,
+      netAfterCommissions: openingIncome + monthlyIncome - paidComms,
+    };
+  });
+}
+
+// ── Extended finance helpers ──────────────────────────────────────────────────
+
+export function expenseAppliesToMonth(expense: MonthlyFixedExpense, year: number, month: number): boolean {
+  if (!expense.active) return false;
+  const target = `${year}-${String(month).padStart(2, "0")}`;
+  const start  = expense.startDate.slice(0, 7);
+  if (start > target) return false;
+  if (expense.endDate && expense.endDate.slice(0, 7) < target) return false;
+  return true;
+}
+
+export function getActiveFixedExpensesByMonth(
+  expenses: MonthlyFixedExpense[], year: number, month: number
+): MonthlyFixedExpense[] {
+  return expenses.filter((e) => expenseAppliesToMonth(e, year, month));
+}
+
+export function getFixedExpensesTotalByMonth(
+  expenses: MonthlyFixedExpense[], year: number, month: number
+): number {
+  return getActiveFixedExpensesByMonth(expenses, year, month).reduce((s, e) => s + e.amount, 0);
+}
+
+export function getOtherIncomeByMonth(
+  movements: OtherFinancialMovement[], year: number, month: number
+): OtherFinancialMovement[] {
+  return movements.filter((m) => {
+    if (m.type !== "other_income") return false;
+    const d = new Date(m.movementDate + "T00:00:00");
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  });
+}
+
+export function getOtherExpensesByMonth(
+  movements: OtherFinancialMovement[], year: number, month: number
+): OtherFinancialMovement[] {
+  return movements.filter((m) => {
+    if (m.type !== "other_expense") return false;
+    const d = new Date(m.movementDate + "T00:00:00");
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  });
+}
+
+export function getEstimatedNetProfitByMonth(
+  transfers: TransferRecord[],
+  commissions: CommissionRecord[],
+  expenses: MonthlyFixedExpense[],
+  movements: OtherFinancialMovement[],
+  taxRecords: MonthlyTaxRecord[],
+  year: number,
+  month: number
+): number {
+  const openingInc = getVerifiedOpeningIncome(transfers, year, month).reduce((s, t) => s + t.amount, 0);
+  const monthlyInc = getVerifiedMonthlyIncome(transfers, year, month).reduce((s, t) => s + t.amount, 0);
+  const otherInc   = getOtherIncomeByMonth(movements, year, month).reduce((s, m) => s + m.amount, 0);
+  const comms      = getPaidCommissions(commissions, year, month).reduce((s, c) => s + c.amount, 0);
+  const fixed      = getFixedExpensesTotalByMonth(expenses, year, month);
+  const otherExp   = getOtherExpensesByMonth(movements, year, month).reduce((s, m) => s + m.amount, 0);
+  const tax        = taxRecords.find((t) => t.year === year && t.month === month);
+  const estTax     = tax?.estimatedTaxAmount ?? 0;
+  return openingInc + monthlyInc + otherInc - comms - fixed - otherExp - estTax;
+}
+
+export function getActualNetProfitByMonth(
+  transfers: TransferRecord[],
+  commissions: CommissionRecord[],
+  expenses: MonthlyFixedExpense[],
+  movements: OtherFinancialMovement[],
+  taxRecords: MonthlyTaxRecord[],
+  year: number,
+  month: number
+): number | null {
+  const tax = taxRecords.find((t) => t.year === year && t.month === month);
+  if (!tax?.actualPaidAmount) return null;
+  const openingInc = getVerifiedOpeningIncome(transfers, year, month).reduce((s, t) => s + t.amount, 0);
+  const monthlyInc = getVerifiedMonthlyIncome(transfers, year, month).reduce((s, t) => s + t.amount, 0);
+  const otherInc   = getOtherIncomeByMonth(movements, year, month).reduce((s, m) => s + m.amount, 0);
+  const comms      = getPaidCommissions(commissions, year, month).reduce((s, c) => s + c.amount, 0);
+  const fixed      = getFixedExpensesTotalByMonth(expenses, year, month);
+  const otherExp   = getOtherExpensesByMonth(movements, year, month).reduce((s, m) => s + m.amount, 0);
+  return openingInc + monthlyInc + otherInc - comms - fixed - otherExp - tax.actualPaidAmount;
 }
 
 export function calcOnboardingStatus(
@@ -302,22 +669,174 @@ const EMPTY_CL: OnboardingChecklist = {
   paymentMethods: false, templateSelected: false, colorsSelected: false, testimonials: false,
 };
 
+// ── Mock fixed expenses ───────────────────────────────────────────────────────
+
+const MOCK_FIXED_EXPENSES: MonthlyFixedExpense[] = [
+  { id: "exp1", name: "Servidor cloud", description: "DigitalOcean droplet",
+    amount: 350, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp2", name: "Hosting", description: "Dominio + SSL",
+    amount: 120, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp3", name: "Software de diseño", description: "Figma + herramientas",
+    amount: 200, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp4", name: "Contabilidad", description: "Honorarios contador",
+    amount: 800, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp5", name: "Publicidad Meta", description: "Ads en FB/Instagram",
+    amount: 500, active: false, startDate: "2026-01-01", endDate: "2026-05-31",
+    createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-06-01T00:00:00Z" },
+  { id: "exp6", name: "Renta coworking", description: "Espacio de trabajo Q1",
+    amount: 1500, active: false, startDate: "2026-01-01", endDate: "2026-03-31",
+    createdAt: "2026-01-01T00:00:00Z" },
+];
+
+// ── Mock other financial movements ────────────────────────────────────────────
+
+const MOCK_OTHER_MOVEMENTS: OtherFinancialMovement[] = [
+  { id: "mov1", type: "other_income", name: "Servicio de consultoría",
+    description: "Asesoría de implementación para cliente externo",
+    amount: 2500, movementDate: "2026-03-15", reference: "CONS-001",
+    createdAt: "2026-03-15T10:00:00Z" },
+  { id: "mov2", type: "other_expense", name: "Capacitación equipo",
+    description: "Taller de UX para el equipo",
+    amount: 1200, movementDate: "2026-02-20", reference: "CAP-001",
+    createdAt: "2026-02-20T10:00:00Z" },
+  { id: "mov3", type: "other_income", name: "Venta de licencia adicional",
+    amount: 800, movementDate: "2026-05-10", createdAt: "2026-05-10T10:00:00Z" },
+  { id: "mov4", type: "other_expense", name: "Compra de equipo",
+    description: "Monitor para nuevo integrante",
+    amount: 3500, movementDate: "2026-04-05", createdAt: "2026-04-05T10:00:00Z" },
+];
+
+// ── Mock tax records ──────────────────────────────────────────────────────────
+
+const MOCK_TAX_RECORDS: MonthlyTaxRecord[] = [
+  { id: "tax1", year: 2026, month: 1, taxPercentage: 16,
+    taxableBase: 2150, estimatedTaxAmount: 344,
+    actualPaidAmount: 344, paidAt: "2026-02-15",
+    notes: "IVA enero", createdAt: "2026-02-01T00:00:00Z" },
+  { id: "tax2", year: 2026, month: 2, taxPercentage: 16,
+    taxableBase: 1800, estimatedTaxAmount: 288,
+    actualPaidAmount: 300, paidAt: "2026-03-14",
+    notes: "IVA febrero — ajuste manual",
+    createdAt: "2026-03-01T00:00:00Z", updatedAt: "2026-03-14T00:00:00Z" },
+  { id: "tax3", year: 2026, month: 3, taxPercentage: 16,
+    taxableBase: 2900, estimatedTaxAmount: 464,
+    notes: "Pendiente de pago", createdAt: "2026-04-01T00:00:00Z" },
+  { id: "tax4", year: 2026, month: 4, taxPercentage: 16,
+    taxableBase: 1500, estimatedTaxAmount: 240,
+    notes: "Pendiente de pago", createdAt: "2026-05-01T00:00:00Z" },
+  { id: "tax5", year: 2026, month: 5, taxPercentage: 16,
+    taxableBase: 3200, estimatedTaxAmount: 512,
+    notes: "Pendiente de pago", createdAt: "2026-06-01T00:00:00Z" },
+];
+
+// ── Mock invoices ─────────────────────────────────────────────────────────────
+
+const MOCK_INVOICES: InvoiceRecord[] = [
+  { id: "inv1", clientId: "c1", transferId: "tr1", requiresInvoice: true,
+    status: "issued", invoiceNumber: "A-0001", fiscalFolio: "UUID-001",
+    issuedAt: "2026-01-05", invoicedAmount: 599,
+    notes: "Factura apertura Clínica Dental Sonrisa", createdAt: "2026-01-05T10:00:00Z" },
+  { id: "inv2", clientId: "c2", transferId: "tr2", requiresInvoice: true,
+    status: "pending", invoicedAmount: 299,
+    notes: "Pendiente de emitir", createdAt: "2026-05-02T10:00:00Z" },
+  { id: "inv3", clientId: "c3", transferId: "tr3", requiresInvoice: false,
+    status: "not_required", createdAt: "2025-12-03T10:00:00Z" },
+  { id: "inv4", clientId: "c4", transferId: "tr4", requiresInvoice: true,
+    status: "issued", invoiceNumber: "A-0002", fiscalFolio: "UUID-002",
+    issuedAt: "2026-01-06", invoicedAmount: 299, createdAt: "2026-01-06T10:00:00Z" },
+  { id: "inv5", clientId: "c8", transferId: "tr8", requiresInvoice: true,
+    status: "cancelled", invoiceNumber: "A-0003",
+    cancelledAt: "2026-06-20",
+    notes: "Cancelada por error en datos fiscales", createdAt: "2026-06-19T10:00:00Z" },
+];
+
+// ── Mock bank movements ───────────────────────────────────────────────────────
+
+const MOCK_BANK_MOVEMENTS: BankMovement[] = [
+  { id: "bm1", movementDate: "2026-01-03", description: "SPEI recibido - MARIANA LOPEZ",
+    reference: "TRF-2026-001", amount: 599, direction: "income",
+    reconciliationStatus: "matched", relatedTransferId: "tr1",
+    createdAt: "2026-01-04T09:00:00Z" },
+  { id: "bm2", movementDate: "2026-01-04", description: "SPEI recibido - JORGE SALINAS",
+    reference: "TRF-2026-007", amount: 299, direction: "income",
+    reconciliationStatus: "matched", relatedTransferId: "tr4",
+    createdAt: "2026-01-05T09:00:00Z" },
+  { id: "bm3", movementDate: "2026-01-18", description: "SPEI enviado - PEDRO GONZALEZ",
+    reference: "TRF-COM-001", amount: 500, direction: "expense",
+    reconciliationStatus: "matched", relatedCommissionId: "com1",
+    createdAt: "2026-01-18T09:00:00Z" },
+  { id: "bm4", movementDate: "2026-05-02", description: "SPEI recibido - CARLOS MENDOZA",
+    reference: "TRF-2026-028", amount: 299, direction: "income",
+    reconciliationStatus: "matched", relatedTransferId: "tr2",
+    createdAt: "2026-05-03T09:00:00Z" },
+  { id: "bm5", movementDate: "2026-04-12", description: "SPEI recibido - origen desconocido",
+    reference: "REF-UNKNOWN-001", amount: 1500, direction: "income",
+    reconciliationStatus: "unmatched", createdAt: "2026-04-12T09:00:00Z" },
+  { id: "bm6", movementDate: "2026-06-18", description: "SPEI recibido - BEATRIZ SOLANO",
+    reference: "TRF-2026-101", amount: 600, direction: "income",
+    reconciliationStatus: "difference", relatedTransferId: "tr8",
+    notes: "Monto difiere: banco $600 vs registrado $599",
+    createdAt: "2026-06-19T09:00:00Z" },
+  { id: "bm7", movementDate: "2026-03-01", description: "Cargo bancario mensual",
+    reference: "CARGO-MAR-001", amount: 75, direction: "expense",
+    reconciliationStatus: "ignored",
+    notes: "Comisión bancaria, no afecta reportes internos",
+    createdAt: "2026-03-02T09:00:00Z" },
+];
+
+// ── Mock monthly close records ────────────────────────────────────────────────
+
+const MOCK_MONTHLY_CLOSES: MonthlyCloseRecord[] = [
+  { id: "mc1", year: 2026, month: 1, status: "closed",
+    closedAt: "2026-02-01T09:00:00Z", closedBy: "Admin" },
+  { id: "mc2", year: 2026, month: 2, status: "closed",
+    closedAt: "2026-03-01T09:00:00Z", closedBy: "Admin" },
+  { id: "mc3", year: 2026, month: 3, status: "reopened",
+    closedAt: "2026-04-01T09:00:00Z", closedBy: "Admin",
+    reopenedAt: "2026-04-15T10:00:00Z", reopenedBy: "Admin",
+    reopenReason: "Ajuste en gastos de consultoría" },
+  { id: "mc4", year: 2026, month: 4, status: "closed",
+    closedAt: "2026-05-01T09:00:00Z", closedBy: "Admin" },
+];
+
+// ── Mock financial log ────────────────────────────────────────────────────────
+
+const MOCK_FINANCIAL_LOG: FinancialLogItem[] = [
+  { id: "fl1", date: "2026-06-01T09:00:00Z", action: "Mes cerrado", entity: "Mayo 2026", actor: "Admin" },
+  { id: "fl2", date: "2026-05-01T09:00:00Z", action: "Mes cerrado", entity: "Abril 2026", actor: "Admin" },
+  { id: "fl3", date: "2026-04-15T10:00:00Z", action: "Mes reabierto", entity: "Marzo 2026",
+    detail: "Ajuste en gastos de consultoría", actor: "Admin" },
+  { id: "fl4", date: "2026-04-05T09:00:00Z", action: "Gasto registrado", entity: "Compra de equipo",
+    newValue: "$3,500", actor: "Admin" },
+  { id: "fl5", date: "2026-03-15T10:00:00Z", action: "Ingreso adicional registrado",
+    entity: "Servicio de consultoría", newValue: "$2,500", actor: "Admin" },
+  { id: "fl6", date: "2026-03-14T09:00:00Z", action: "Impuesto pagado",
+    entity: "Feb 2026", detail: "$300 MXN", actor: "Admin" },
+  { id: "fl7", date: "2026-02-15T09:00:00Z", action: "Impuesto pagado",
+    entity: "Ene 2026", detail: "$344 MXN", actor: "Admin" },
+  { id: "fl8", date: "2026-06-01T00:00:00Z", action: "Gasto pausado",
+    entity: "Publicidad Meta", previousValue: "activo", newValue: "pausado", actor: "Admin" },
+];
+
 // ── Mock sales reps (no email, fixed commission amount) ───────────────────────
 
 const MOCK_SALES_REPS: SalesRep[] = [
   {
     id: "rep1", sellerNumber: "VEN-0001", name: "Pedro González",
-    phone: "5512340001", active: true, fixedCommissionAmount: 500,
+    phone: "5512340001", accountNumber: "BBVA 4152 3130 1234 5678",
+    active: true, fixedCommissionAmount: 500,
     createdAt: "2025-11-01T00:00:00Z",
   },
   {
     id: "rep2", sellerNumber: "VEN-0002", name: "Lucía Ramírez",
-    phone: "5512340002", active: true, fixedCommissionAmount: 400,
+    phone: "5512340002", accountNumber: "Banamex 5204 1652 9876 5432",
+    active: true, fixedCommissionAmount: 400,
     createdAt: "2025-11-15T00:00:00Z",
   },
   {
     id: "rep3", sellerNumber: "VEN-0003", name: "Carlos Vega",
-    phone: "5512340003", active: false, fixedCommissionAmount: 500,
+    phone: "5512340003", accountNumber: "HSBC 4213 0011 2233 4455",
+    active: false, fixedCommissionAmount: 500,
     createdAt: "2025-12-01T00:00:00Z",
   },
 ];
@@ -377,6 +896,7 @@ const MOCK_TRANSFERS: TransferRecord[] = [
     fixedCommissionAmount: 500,
     prospectName: "Ana García", prospectPhone: "5544332211",
     prospectiveBusinessName: "Estética Dental Ana García",
+    preClientId: "pre1",
     createdAt: "2026-06-17T14:00:00Z",
   },
   {
@@ -395,6 +915,169 @@ const MOCK_TRANSFERS: TransferRecord[] = [
     paymentMonth: "mayo de 2026",
     createdAt: "2026-05-05T09:00:00Z", verifiedAt: "2026-05-06T10:00:00Z",
   },
+  // Test case 2 – current fortnight (2026-06-2) with authorized commission (VEN-0001)
+  {
+    id: "tr8", referenceNumber: "TRF-2026-101",
+    transferDate: "2026-06-18", amount: 599,
+    type: "opening", status: "verified",
+    sellerId: "rep1", sellerNumber: "VEN-0001", sellerName: "Pedro González",
+    fixedCommissionAmount: 500,
+    prospectName: "Beatriz Solano", prospectPhone: "5500223344",
+    prospectiveBusinessName: "Dermatología Solano",
+    clientId: "c8", clientNumber: "TA2-0008",
+    createdAt: "2026-06-18T10:00:00Z", verifiedAt: "2026-06-18T11:00:00Z",
+  },
+  // Test case 3 – quincena 2026-05-2: authorized commission (debt) → must appear in main view
+  {
+    id: "tr9", referenceNumber: "TRF-2026-062",
+    transferDate: "2026-05-20", amount: 599,
+    type: "opening", status: "verified",
+    sellerId: "rep1", sellerNumber: "VEN-0001", sellerName: "Pedro González",
+    fixedCommissionAmount: 500,
+    prospectName: "Daniela Ortiz", prospectPhone: "5511334455",
+    prospectiveBusinessName: "Ortiz Odontología",
+    clientId: "c10", clientNumber: "TA2-0010",
+    createdAt: "2026-05-18T09:00:00Z", verifiedAt: "2026-05-20T10:00:00Z",
+  },
+  // Test case 4 – quincena 2026-05-2: partially paid (one authorized, one paid) → must appear in main view
+  {
+    id: "tr10", referenceNumber: "TRF-2026-063",
+    transferDate: "2026-05-22", amount: 299,
+    type: "opening", status: "verified",
+    sellerId: "rep2", sellerNumber: "VEN-0002", sellerName: "Lucía Ramírez",
+    fixedCommissionAmount: 400,
+    prospectName: "Fernanda Salas", prospectPhone: "5599001122",
+    prospectiveBusinessName: "Psicología Salas",
+    clientId: "c9", clientNumber: "TA2-0009",
+    createdAt: "2026-05-22T10:00:00Z", verifiedAt: "2026-05-22T11:00:00Z",
+  },
+  // Test case 7 – quincena 2026-04-2: two vendors with debt → must appear in main view
+  {
+    id: "tr11", referenceNumber: "TRF-2026-040",
+    transferDate: "2026-04-17", amount: 599,
+    type: "opening", status: "verified",
+    sellerId: "rep1", sellerNumber: "VEN-0001", sellerName: "Pedro González",
+    fixedCommissionAmount: 500,
+    prospectName: "Marcos Vidal", prospectPhone: "5533445566",
+    prospectiveBusinessName: "Vidal Nutrición",
+    clientId: "c5", clientNumber: "TA2-0005",
+    createdAt: "2026-04-17T09:00:00Z", verifiedAt: "2026-04-17T10:00:00Z",
+  },
+  {
+    id: "tr12", referenceNumber: "TRF-2026-041",
+    transferDate: "2026-04-20", amount: 299,
+    type: "opening", status: "verified",
+    sellerId: "rep2", sellerNumber: "VEN-0002", sellerName: "Lucía Ramírez",
+    fixedCommissionAmount: 400,
+    prospectName: "Elena Mora", prospectPhone: "5522113344",
+    prospectiveBusinessName: "PsicoMora",
+    clientId: "c6", clientNumber: "TA2-0006",
+    createdAt: "2026-04-20T10:00:00Z", verifiedAt: "2026-04-20T11:00:00Z",
+  },
+  // ── Monthly income transfers (for Finanzas section) ─────────────────────────
+  // c1 – Clínica Dental Sonrisa ($599/mes, pago anual)
+  { id: "tr13", referenceNumber: "TRF-MEN-2026-001",
+    transferDate: "2026-01-10", amount: 599,
+    type: "monthly", status: "verified",
+    specialistId: "c1", clientNumber: "TA2-0001",
+    paymentMonth: "enero de 2026",
+    createdAt: "2026-01-10T08:00:00Z", verifiedAt: "2026-01-10T09:00:00Z" },
+  { id: "tr14", referenceNumber: "TRF-MEN-2026-002",
+    transferDate: "2026-02-07", amount: 599,
+    type: "monthly", status: "verified",
+    specialistId: "c1", clientNumber: "TA2-0001",
+    paymentMonth: "febrero de 2026",
+    createdAt: "2026-02-07T08:00:00Z", verifiedAt: "2026-02-07T09:00:00Z" },
+  { id: "tr15", referenceNumber: "TRF-MEN-2026-003",
+    transferDate: "2026-03-06", amount: 599,
+    type: "monthly", status: "verified",
+    specialistId: "c1", clientNumber: "TA2-0001",
+    paymentMonth: "marzo de 2026",
+    createdAt: "2026-03-06T08:00:00Z", verifiedAt: "2026-03-06T09:00:00Z" },
+  { id: "tr16", referenceNumber: "TRF-MEN-2026-004",
+    transferDate: "2026-04-05", amount: 599,
+    type: "monthly", status: "verified",
+    specialistId: "c1", clientNumber: "TA2-0001",
+    paymentMonth: "abril de 2026",
+    createdAt: "2026-04-05T08:00:00Z", verifiedAt: "2026-04-05T09:00:00Z" },
+  // Mayo pagado con retraso — verificado en junio (demuestra cross-month)
+  { id: "tr17", referenceNumber: "TRF-MEN-2026-005",
+    transferDate: "2026-06-01", amount: 599,
+    type: "monthly", status: "verified",
+    specialistId: "c1", clientNumber: "TA2-0001",
+    paymentMonth: "mayo de 2026",
+    createdAt: "2026-06-01T08:00:00Z", verifiedAt: "2026-06-03T09:00:00Z" },
+  // c4 – Fisioterapia Movimiento ($299/mes)
+  { id: "tr18", referenceNumber: "TRF-MEN-2026-006",
+    transferDate: "2026-02-07", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c4", clientNumber: "TA2-0004",
+    paymentMonth: "febrero de 2026",
+    createdAt: "2026-02-07T08:00:00Z", verifiedAt: "2026-02-07T10:00:00Z" },
+  { id: "tr19", referenceNumber: "TRF-MEN-2026-007",
+    transferDate: "2026-03-10", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c4", clientNumber: "TA2-0004",
+    paymentMonth: "marzo de 2026",
+    createdAt: "2026-03-10T08:00:00Z", verifiedAt: "2026-03-10T10:00:00Z" },
+  { id: "tr20", referenceNumber: "TRF-MEN-2026-008",
+    transferDate: "2026-04-07", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c4", clientNumber: "TA2-0004",
+    paymentMonth: "abril de 2026",
+    createdAt: "2026-04-07T08:00:00Z", verifiedAt: "2026-04-07T10:00:00Z" },
+  { id: "tr21", referenceNumber: "TRF-MEN-2026-009",
+    transferDate: "2026-05-08", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c4", clientNumber: "TA2-0004",
+    paymentMonth: "mayo de 2026",
+    createdAt: "2026-05-08T08:00:00Z", verifiedAt: "2026-05-08T10:00:00Z" },
+  // c10 – Sonrisas Aguilar ($299/mes, activation feb 2026)
+  { id: "tr22", referenceNumber: "TRF-MEN-2026-010",
+    transferDate: "2026-03-05", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c10", clientNumber: "TA2-0010",
+    paymentMonth: "marzo de 2026",
+    createdAt: "2026-03-05T08:00:00Z", verifiedAt: "2026-03-05T10:00:00Z" },
+  { id: "tr23", referenceNumber: "TRF-MEN-2026-011",
+    transferDate: "2026-04-06", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c10", clientNumber: "TA2-0010",
+    paymentMonth: "abril de 2026",
+    createdAt: "2026-04-06T08:00:00Z", verifiedAt: "2026-04-06T10:00:00Z" },
+  { id: "tr24", referenceNumber: "TRF-MEN-2026-012",
+    transferDate: "2026-05-06", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c10", clientNumber: "TA2-0010",
+    paymentMonth: "mayo de 2026",
+    createdAt: "2026-05-06T08:00:00Z", verifiedAt: "2026-05-06T10:00:00Z" },
+  // c5 – Nutrición Equilibrio ($299/mes, activation mar 2026)
+  { id: "tr25", referenceNumber: "TRF-MEN-2026-013",
+    transferDate: "2026-04-08", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c5", clientNumber: "TA2-0005",
+    paymentMonth: "abril de 2026",
+    createdAt: "2026-04-08T08:00:00Z", verifiedAt: "2026-04-08T10:00:00Z" },
+  { id: "tr26", referenceNumber: "TRF-MEN-2026-014",
+    transferDate: "2026-05-08", amount: 299,
+    type: "monthly", status: "verified",
+    specialistId: "c5", clientNumber: "TA2-0005",
+    paymentMonth: "mayo de 2026",
+    createdAt: "2026-05-08T08:00:00Z", verifiedAt: "2026-05-08T10:00:00Z" },
+  // c9 – Bienestar Camila ($599/mes, pro, activation apr 2026)
+  { id: "tr28", referenceNumber: "TRF-MEN-2026-015",
+    transferDate: "2026-05-06", amount: 599,
+    type: "monthly", status: "verified",
+    specialistId: "c9", clientNumber: "TA2-0009",
+    paymentMonth: "mayo de 2026",
+    createdAt: "2026-05-06T08:00:00Z", verifiedAt: "2026-05-06T10:00:00Z" },
+  // Mensualidad pendiente vencida (c3 con pagos atrasados)
+  { id: "tr27", referenceNumber: "TRF-MEN-PEND-001",
+    transferDate: "2026-06-20", amount: 599,
+    type: "monthly", status: "pending",
+    specialistId: "c3", clientNumber: "TA2-0003",
+    paymentMonth: "marzo de 2026",
+    createdAt: "2026-06-20T10:00:00Z" },
 ];
 
 // ── Mock commissions (fixed amount, not percentage) ───────────────────────────
@@ -434,16 +1117,96 @@ const MOCK_COMMISSIONS: CommissionRecord[] = [
     generatedAt: "2026-01-04T10:00:00Z", authorizedAt: "2026-01-04T10:00:00Z",
     fortnightId: "2026-01-1",
   },
+  // Test case 2 – current fortnight (2026-06-2) authorized commission for VEN-0001
+  {
+    id: "com5", salesRepId: "rep1", sellerNumber: "VEN-0001",
+    transferId: "tr8", clientId: "c8", clientNumber: "TA2-0008",
+    businessName: "Dermatología Solano",
+    amount: 500, status: "authorized",
+    generatedAt: "2026-06-18T11:00:00Z", authorizedAt: "2026-06-18T11:00:00Z",
+    fortnightId: "2026-06-2",
+  },
+  // Test case 3 – quincena 2026-05-2: authorized (debt) for VEN-0001
+  {
+    id: "com6", salesRepId: "rep1", sellerNumber: "VEN-0001",
+    transferId: "tr9", clientId: "c10", clientNumber: "TA2-0010",
+    businessName: "Ortiz Odontología",
+    amount: 500, status: "authorized",
+    generatedAt: "2026-05-20T10:00:00Z", authorizedAt: "2026-05-20T10:00:00Z",
+    fortnightId: "2026-05-2",
+  },
+  // Test case 4 – quincena 2026-05-2: authorized (debt) for VEN-0002
+  {
+    id: "com7", salesRepId: "rep2", sellerNumber: "VEN-0002",
+    transferId: "tr10", clientId: "c9", clientNumber: "TA2-0009",
+    businessName: "Psicología Salas",
+    amount: 400, status: "authorized",
+    generatedAt: "2026-05-22T11:00:00Z", authorizedAt: "2026-05-22T11:00:00Z",
+    fortnightId: "2026-05-2",
+  },
+  // Test case 5 – quincena 2026-05-1 (com2) was already authorized → now fully paid → must NOT appear as debt
+  // (com2 already has status: "authorized" for 2026-05-1 — left as-is to test: it has debt → WILL appear)
+  // Adding a separate fully-paid commission in 2026-04-1 to show it doesn't appear
+  {
+    id: "com8", salesRepId: "rep1", sellerNumber: "VEN-0001",
+    transferId: "tr1", clientId: "c1", clientNumber: "TA2-0001",
+    businessName: "Clínica Dental Sonrisa (bono extra)",
+    amount: 500, status: "paid",
+    generatedAt: "2026-04-03T10:00:00Z", authorizedAt: "2026-04-03T10:00:00Z",
+    paidAt: "2026-04-18T00:00:00Z", paidTransferRef: "TRF-COM-005", paidTransferDate: "2026-04-18",
+    fortnightId: "2026-04-1",
+  },
+  // Test case 6 – quincena 2026-03-1: cancelled commission → must NOT count as debt
+  {
+    id: "com9", salesRepId: "rep2", sellerNumber: "VEN-0002",
+    transferId: "tr4", clientId: "c4", clientNumber: "TA2-0004",
+    businessName: "Fisioterapia Movimiento (anulada)",
+    amount: 400, status: "cancelled",
+    generatedAt: "2026-03-05T09:00:00Z",
+    fortnightId: "2026-03-1",
+  },
+  // Test case 7 – quincena 2026-04-2: two vendors with authorized debt
+  {
+    id: "com10", salesRepId: "rep1", sellerNumber: "VEN-0001",
+    transferId: "tr11", clientId: "c5", clientNumber: "TA2-0005",
+    businessName: "Vidal Nutrición",
+    amount: 500, status: "authorized",
+    generatedAt: "2026-04-17T10:00:00Z", authorizedAt: "2026-04-17T10:00:00Z",
+    fortnightId: "2026-04-2",
+  },
+  {
+    id: "com11", salesRepId: "rep2", sellerNumber: "VEN-0002",
+    transferId: "tr12", clientId: "c6", clientNumber: "TA2-0006",
+    businessName: "PsicoMora",
+    amount: 400, status: "authorized",
+    generatedAt: "2026-04-20T11:00:00Z", authorizedAt: "2026-04-20T11:00:00Z",
+    fortnightId: "2026-04-2",
+  },
+  // Test case 6 — comisión autorizada en febrero, pagada en junio (cross-month)
+  {
+    id: "com12", salesRepId: "rep1", sellerNumber: "VEN-0001",
+    transferId: "tr3", clientId: "c3", clientNumber: "TA2-0003",
+    businessName: "Centro Dental Familiar (bono 1a feb)",
+    amount: 500, status: "paid",
+    generatedAt: "2026-02-05T10:00:00Z", authorizedAt: "2026-02-05T10:00:00Z",
+    paidAt: "2026-06-10T00:00:00Z", paidTransferRef: "TRF-COM-006", paidTransferDate: "2026-06-10",
+    fortnightId: "2026-02-1",
+  },
 ];
 
 // ── Mock fortnights ───────────────────────────────────────────────────────────
 
 const MOCK_FORTNIGHTS: Fortnight[] = [
-  { id: "2025-12-1", year: 2025, month: 12, half: 1, label: "1a quincena de diciembre 2025 (1–15)", closed: true, closedAt: "2025-12-16T09:00:00Z", closedBy: "Admin" },
-  { id: "2026-01-1", year: 2026, month: 1,  half: 1, label: "1a quincena de enero 2026 (1–15)",     closed: true, closedAt: "2026-01-16T09:00:00Z", closedBy: "Admin" },
-  { id: "2026-05-1", year: 2026, month: 5,  half: 1, label: "1a quincena de mayo 2026 (1–15)",      closed: true, closedAt: "2026-05-16T09:00:00Z", closedBy: "Admin" },
-  { id: "2026-06-1", year: 2026, month: 6,  half: 1, label: "1a quincena de junio 2026 (1–15)",     closed: true, closedAt: "2026-06-16T09:00:00Z", closedBy: "Admin" },
-  { id: "2026-06-2", year: 2026, month: 6,  half: 2, label: "2a quincena de junio 2026 (16–30)",    closed: false },
+  { id: "2025-12-1", year: 2025, month: 12, half: 1, label: "1a quincena de diciembre 2025 (1–15)",   closed: true,  closedAt: "2025-12-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-01-1", year: 2026, month: 1,  half: 1, label: "1a quincena de enero 2026 (1–15)",       closed: true,  closedAt: "2026-01-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-02-1", year: 2026, month: 2,  half: 1, label: "1a quincena de febrero 2026 (1–15)",     closed: true,  closedAt: "2026-02-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-03-1", year: 2026, month: 3,  half: 1, label: "1a quincena de marzo 2026 (1–15)",       closed: true,  closedAt: "2026-03-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-04-1", year: 2026, month: 4,  half: 1, label: "1a quincena de abril 2026 (1–15)",       closed: true,  closedAt: "2026-04-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-04-2", year: 2026, month: 4,  half: 2, label: "2a quincena de abril 2026 (16–30)",      closed: true,  closedAt: "2026-05-01T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-05-1", year: 2026, month: 5,  half: 1, label: "1a quincena de mayo 2026 (1–15)",        closed: true,  closedAt: "2026-05-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-05-2", year: 2026, month: 5,  half: 2, label: "2a quincena de mayo 2026 (16–31)",       closed: true,  closedAt: "2026-06-01T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-06-1", year: 2026, month: 6,  half: 1, label: "1a quincena de junio 2026 (1–15)",       closed: true,  closedAt: "2026-06-16T09:00:00Z", closedBy: "Admin" },
+  { id: "2026-06-2", year: 2026, month: 6,  half: 2, label: "2a quincena de junio 2026 (16–30)",      closed: false },
 ];
 
 // ── Mock global activity log ──────────────────────────────────────────────────
@@ -476,7 +1239,8 @@ function mockHistory(
 ): MonthlyPayment[] {
   const months = contractType === "one_year" ? 12 : 6;
   const start = new Date(activationDate + "T00:00:00");
-  const today = new Date("2026-06-19T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   return Array.from({ length: months }, (_, i) => {
     const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
     const dueDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
@@ -565,6 +1329,7 @@ const business4: BusinessInfo = {
 const MOCK_CLIENTS: AdminClient[] = [
   {
     id: "c1", clientNumber: "TA2-0001",
+    businessType: "dentist",
     specialist: spec1, business: business1,
     slug: "negocio-sonrisa", subdomain: "negocio-sonrisa.templatea2.com",
     plan: "pro", isPro: true,
@@ -594,6 +1359,7 @@ const MOCK_CLIENTS: AdminClient[] = [
   },
   {
     id: "c2", clientNumber: "TA2-0002",
+    businessType: "physiotherapist",
     specialist: spec2, business: business2,
     slug: "doctor-mendoza", subdomain: "doctor-mendoza.templatea2.com",
     plan: "standard", isPro: false,
@@ -620,6 +1386,7 @@ const MOCK_CLIENTS: AdminClient[] = [
   },
   {
     id: "c3", clientNumber: "TA2-0003",
+    businessType: "dentist",
     specialist: spec3, business: business3,
     slug: "dental-familiar", subdomain: "dental-familiar.templatea2.com",
     plan: "pro", isPro: true,
@@ -643,6 +1410,7 @@ const MOCK_CLIENTS: AdminClient[] = [
   },
   {
     id: "c4", clientNumber: "TA2-0004",
+    businessType: "physiotherapist",
     specialist: spec4, business: business4,
     slug: "fisio-movimiento", subdomain: "fisio-movimiento.templatea2.com",
     plan: "standard", isPro: false,
@@ -663,6 +1431,315 @@ const MOCK_CLIENTS: AdminClient[] = [
     contracts: [],
     createdAt: "2026-01-04T10:00:00Z", updatedAt: "2026-06-01T00:00:00Z",
     lastPaymentAt: "2026-06-01", nextPaymentDueAt: "2026-07-01",
+  },
+  // c5 — Nutriólogo/a, periodo de gracia
+  {
+    id: "c5", clientNumber: "TA2-0005",
+    businessType: "nutritionist",
+    specialist: {
+      firstName: "Valeria", lastNamePaternal: "Gutiérrez", lastNameMaternal: "Mora",
+      publicName: "Lic. Valeria Gutiérrez",
+      phone: "5544001122", whatsapp: "5544001122",
+      email: "valeria.gutierrez@nutriequilibrio.mx",
+      shortDescription: "Nutrióloga clínica especializada en obesidad y diabetes.",
+    },
+    business: { name: "Nutrición Equilibrio", street: "Av. Revolución", exteriorNumber: "88",
+      colony: "San Pedro de los Pinos", municipality: "Benito Juárez",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "03800",
+      phone: "5544001122" },
+    slug: "nutricion-equilibrio", subdomain: "nutricion-equilibrio.templatea2.com",
+    plan: "standard", isPro: false,
+    paymentStatus: "grace_period", clientStatus: "active", accessActive: true,
+    publicPageStatus: "published",
+    contractType: "six_months", activationDate: "2026-03-01", contractEndDate: "2026-08-31",
+    monthlyAmount: 299,
+    paymentHistory: mockHistory("2026-03-01", "six_months", 299, 3),
+    onboardingStatus: "ready", onboardingChecklist: FULL_CL,
+    salesRepId: "rep1", salesRepName: "Pedro González", sellerNumber: "VEN-0001",
+    internalNotes: "Pago de junio no recibido. En periodo de gracia hasta fin de mes.",
+    activityLog: [
+      { id: "a-c5-1", date: "2026-06-03T09:00:00Z", action: "Periodo de gracia iniciado", detail: "Pago junio sin confirmar", actor: "Sistema" },
+      { id: "a-c5-2", date: "2026-03-04T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-03-04T10:00:00Z", updatedAt: "2026-06-03T00:00:00Z",
+    lastPaymentAt: "2026-05-05", nextPaymentDueAt: "2026-06-01",
+  },
+  // c6 — Psicólogo/a, acceso bloqueado manualmente
+  {
+    id: "c6", clientNumber: "TA2-0006",
+    businessType: "psychologist",
+    specialist: {
+      firstName: "Rodrigo", lastNamePaternal: "Peña", lastNameMaternal: "Ibáñez",
+      publicName: "Dr. Rodrigo Peña",
+      phone: "5533009988", whatsapp: "5533009988",
+      email: "rodrigo.pena@psicovida.mx",
+      shortDescription: "Psicólogo clínico con especialidad en terapia cognitivo-conductual.",
+    },
+    business: { name: "PsicoVida Consultorio", street: "Calle Sonora", exteriorNumber: "14",
+      colony: "Condesa", municipality: "Cuauhtémoc",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "06140",
+      phone: "5533009988" },
+    slug: "psicovida-consultorio", subdomain: "psicovida-consultorio.templatea2.com",
+    plan: "standard", isPro: false,
+    paymentStatus: "pending", clientStatus: "active", accessActive: false,
+    publicPageStatus: "hidden",
+    contractType: "six_months", activationDate: "2026-04-01", contractEndDate: "2026-09-30",
+    monthlyAmount: 299,
+    paymentHistory: mockHistory("2026-04-01", "six_months", 299, 2),
+    onboardingStatus: "in_progress", onboardingChecklist: PARTIAL_CL,
+    salesRepId: "rep2", salesRepName: "Lucía Ramírez", sellerNumber: "VEN-0002",
+    internalNotes: "Acceso bloqueado por solicitud del cliente. Pendiente documentación.",
+    activityLog: [
+      { id: "a-c6-1", date: "2026-06-10T11:00:00Z", action: "Acceso bloqueado", detail: "Solicitud del cliente por vacaciones", actor: "Admin" },
+      { id: "a-c6-2", date: "2026-04-02T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-04-02T10:00:00Z", updatedAt: "2026-06-10T00:00:00Z",
+    lastPaymentAt: "2026-05-05",
+  },
+  // c7 — Veterinario/a, cancelado
+  {
+    id: "c7", clientNumber: "TA2-0007",
+    businessType: "veterinarian",
+    specialist: {
+      firstName: "Daniela", lastNamePaternal: "Fuentes", lastNameMaternal: "Ochoa",
+      publicName: "M.V.Z. Daniela Fuentes",
+      phone: "5577443322",
+      email: "daniela.fuentes@vetpaws.mx",
+      shortDescription: "Médica veterinaria especializada en animales de compañía.",
+    },
+    business: { name: "VetPaws Clínica Veterinaria", street: "Av. Coyoacán", exteriorNumber: "321",
+      colony: "Del Valle", municipality: "Benito Juárez",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "03100",
+      phone: "5577443322" },
+    slug: "vetpaws-clinica", subdomain: "vetpaws-clinica.templatea2.com",
+    plan: "standard", isPro: false,
+    paymentStatus: "cancelled", clientStatus: "cancelled", accessActive: false,
+    publicPageStatus: "hidden",
+    contractType: "six_months", activationDate: "2026-01-15", contractEndDate: "2026-07-14",
+    monthlyAmount: 299,
+    paymentHistory: mockHistory("2026-01-15", "six_months", 299, 1),
+    onboardingStatus: "not_started", onboardingChecklist: EMPTY_CL,
+    salesRepId: "rep2", salesRepName: "Lucía Ramírez", sellerNumber: "VEN-0002",
+    internalNotes: "Canceló al segundo mes. No quiso continuar.",
+    activityLog: [
+      { id: "a-c7-1", date: "2026-02-20T14:00:00Z", action: "Contrato cancelado", detail: "Solicitud del cliente", actor: "Admin" },
+      { id: "a-c7-2", date: "2026-01-16T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-01-16T10:00:00Z", updatedAt: "2026-02-20T00:00:00Z",
+  },
+  // c8 — Médico, onboarding incompleto, plan standard
+  {
+    id: "c8", clientNumber: "TA2-0008",
+    businessType: "doctor",
+    specialist: {
+      firstName: "Ernesto", lastNamePaternal: "Villanueva", lastNameMaternal: "Cruz",
+      publicName: "Dr. Ernesto Villanueva",
+      phone: "5566112233", whatsapp: "5566112233",
+      email: "ernesto.villanueva@consultorioev.mx",
+      shortDescription: "Médico general con enfoque en medicina preventiva.",
+    },
+    business: { name: "Consultorio Dr. Villanueva", street: "Blvd. Manuel Ávila Camacho", exteriorNumber: "200",
+      colony: "Lomas Verdes", municipality: "Naucalpan",
+      city: "Naucalpan de Juárez", state: "Estado de México", postalCode: "53120",
+      phone: "5566112233" },
+    slug: "consultorio-villanueva", subdomain: "consultorio-villanueva.templatea2.com",
+    plan: "standard", isPro: false,
+    paymentStatus: "pending", clientStatus: "active", accessActive: true,
+    publicPageStatus: "hidden",
+    contractType: "six_months", activationDate: "2026-05-15", contractEndDate: "2026-11-14",
+    monthlyAmount: 299,
+    paymentHistory: mockHistory("2026-05-15", "six_months", 299, 1),
+    onboardingStatus: "in_progress",
+    onboardingChecklist: { basicData: true, services: true, address: false, paymentMethods: false, templateSelected: false, colorsSelected: false, testimonials: false },
+    salesRepId: "rep1", salesRepName: "Pedro González", sellerNumber: "VEN-0001",
+    internalNotes: "Pendiente completar dirección y seleccionar template.",
+    activityLog: [
+      { id: "a-c8-1", date: "2026-05-16T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-05-16T10:00:00Z",
+  },
+  // c9 — Otro tipo, plan Pro, 1 año, página oculta, onboarding en proceso
+  {
+    id: "c9", clientNumber: "TA2-0009",
+    businessType: "other",
+    specialist: {
+      firstName: "Camila", lastNamePaternal: "Reyes", lastNameMaternal: "Montoya",
+      publicName: "Lic. Camila Reyes",
+      phone: "5511220033", whatsapp: "5511220033",
+      email: "camila.reyes@bienestarcamila.mx",
+      shortDescription: "Terapeuta holística y coach de bienestar.",
+    },
+    business: { name: "Bienestar Camila", street: "Calle Amatlán", exteriorNumber: "10",
+      colony: "Condesa", municipality: "Cuauhtémoc",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "06140",
+      phone: "5511220033" },
+    slug: "bienestar-camila", subdomain: "bienestar-camila.templatea2.com",
+    plan: "pro", isPro: true,
+    paymentStatus: "pending", clientStatus: "active", accessActive: true,
+    publicPageStatus: "hidden",
+    contractType: "one_year", activationDate: "2026-04-01", contractEndDate: "2027-03-31",
+    monthlyAmount: 599,
+    paymentHistory: mockHistory("2026-04-01", "one_year", 599, 2),
+    onboardingStatus: "in_progress",
+    onboardingChecklist: { basicData: true, services: true, address: true, paymentMethods: true, templateSelected: false, colorsSelected: false, testimonials: false },
+    salesRepId: "rep2", salesRepName: "Lucía Ramírez", sellerNumber: "VEN-0002",
+    internalNotes: "Pendiente seleccionar template y colores.",
+    activityLog: [
+      { id: "a-c9-1", date: "2026-04-02T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-04-02T10:00:00Z",
+    lastPaymentAt: "2026-05-05",
+  },
+  // c10 — Dentista, standard, 6 meses, todo al corriente
+  {
+    id: "c10", clientNumber: "TA2-0010",
+    businessType: "dentist",
+    specialist: {
+      firstName: "Patricio", lastNamePaternal: "Aguilar", lastNameMaternal: "Soto",
+      publicName: "Dr. Patricio Aguilar",
+      phone: "5522334455", whatsapp: "5522334455",
+      email: "patricio.aguilar@sonrisasaguila.mx",
+      shortDescription: "Odontólogo general y estético con 8 años de experiencia.",
+    },
+    business: { name: "Sonrisas Aguilar", street: "Calle Hamburgo", exteriorNumber: "55",
+      colony: "Juárez", municipality: "Cuauhtémoc",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "06600",
+      phone: "5522334455" },
+    slug: "sonrisas-aguilar", subdomain: "sonrisas-aguilar.templatea2.com",
+    plan: "standard", isPro: false,
+    paymentStatus: "pending", clientStatus: "active", accessActive: true,
+    publicPageStatus: "published",
+    contractType: "six_months", activationDate: "2026-02-01", contractEndDate: "2026-07-31",
+    monthlyAmount: 299,
+    paymentHistory: mockHistory("2026-02-01", "six_months", 299, 4),
+    onboardingStatus: "ready", onboardingChecklist: FULL_CL,
+    salesRepId: "rep1", salesRepName: "Pedro González", sellerNumber: "VEN-0001",
+    internalNotes: "Buen cliente. Al corriente en pagos.",
+    activityLog: [
+      { id: "a-c10-1", date: "2026-05-05T10:00:00Z", action: "Pago registrado", detail: "Mayo 2026 — $299 MXN", actor: "Pedro González" },
+      { id: "a-c10-2", date: "2026-02-02T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-02-02T10:00:00Z", updatedAt: "2026-05-05T00:00:00Z",
+    lastPaymentAt: "2026-05-05", nextPaymentDueAt: "2026-07-01",
+  },
+  // c11 — Fisioterapeuta, contrato vencido (feb 2026), acceso bloqueado
+  {
+    id: "c11", clientNumber: "TA2-0011",
+    businessType: "physiotherapist",
+    specialist: {
+      firstName: "Natalia", lastNamePaternal: "Herrera", lastNameMaternal: "Lara",
+      publicName: "Lic. Natalia Herrera",
+      phone: "5599887766",
+      email: "natalia.herrera@fisionat.mx",
+      shortDescription: "Fisioterapeuta especializada en terapia manual y pilates clínico.",
+    },
+    business: { name: "FisioNat Studio", street: "Av. de los Maestros", exteriorNumber: "120",
+      colony: "Normal", municipality: "Azcapotzalco",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "02450",
+      phone: "5599887766" },
+    slug: "fisionat-studio", subdomain: "fisionat-studio.templatea2.com",
+    plan: "standard", isPro: false,
+    paymentStatus: "overdue", clientStatus: "active", accessActive: false,
+    publicPageStatus: "hidden",
+    contractType: "six_months", activationDate: "2025-09-01", contractEndDate: "2026-02-28",
+    monthlyAmount: 299,
+    paymentHistory: mockHistory("2025-09-01", "six_months", 299, 3),
+    onboardingStatus: "not_started", onboardingChecklist: EMPTY_CL,
+    internalNotes: "Contrato vencido en febrero 2026. Pendiente renovación o cancelación.",
+    activityLog: [
+      { id: "a-c11-1", date: "2026-03-01T09:00:00Z", action: "Acceso bloqueado", detail: "Contrato vencido, pagos pendientes", actor: "Sistema" },
+      { id: "a-c11-2", date: "2025-09-02T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2025-09-02T10:00:00Z", updatedAt: "2026-03-01T00:00:00Z",
+    lastPaymentAt: "2025-11-05",
+  },
+];
+
+// ── Mock pre-clients ──────────────────────────────────────────────────────────
+
+const MOCK_PRE_CLIENTS: PreClient[] = [
+  {
+    id: "pre1",
+    preClientNumber: "PRE-0001",
+    specialistName: "Ana García",
+    phone: "5544332211",
+    businessName: "Estética Dental Ana García",
+    businessType: "dentist",
+    sellerId: "rep1",
+    sellerNumber: "VEN-0001",
+    status: "awaiting_payment",
+    notes: "Acordó contrato anual Pro. Transferencia enviada el 17 de junio, pendiente de verificar.",
+    createdAt: "2026-06-15T10:00:00Z",
+    updatedAt: "2026-06-17T14:00:00Z",
+  },
+  {
+    id: "pre2",
+    preClientNumber: "PRE-0002",
+    specialistName: "Luis Hernández",
+    phone: "5533221100",
+    businessName: "Consultorio Dr. Hernández",
+    businessType: "doctor",
+    sellerId: "rep2",
+    sellerNumber: "VEN-0002",
+    status: "negotiating",
+    notes: "Interesado en plan Pro anual. Solicita descuento por pago adelantado.",
+    createdAt: "2026-06-10T09:00:00Z",
+    updatedAt: "2026-06-18T11:00:00Z",
+  },
+  {
+    id: "pre3",
+    preClientNumber: "PRE-0003",
+    specialistName: "Valentina Cruz",
+    phone: "5577889900",
+    businessName: "Nutrición Integral Cruz",
+    businessType: "nutritionist",
+    sellerId: "rep1",
+    sellerNumber: "VEN-0001",
+    status: "interested",
+    notes: "Pidió demo de la plataforma. Seguimiento pendiente para esta semana.",
+    createdAt: "2026-06-08T15:00:00Z",
+  },
+  {
+    id: "pre4",
+    preClientNumber: "PRE-0004",
+    specialistName: "Roberto Torres",
+    phone: "5500112233",
+    businessType: "physiotherapist",
+    status: "contacted",
+    notes: "Contactado por WhatsApp. Pendiente llamada de presentación.",
+    createdAt: "2026-06-12T10:00:00Z",
+  },
+  {
+    id: "pre5",
+    preClientNumber: "PRE-0005",
+    specialistName: "Marco Jiménez",
+    phone: "5511002233",
+    businessName: "PsicoBalance",
+    businessType: "psychologist",
+    status: "new",
+    createdAt: "2026-06-20T16:00:00Z",
+  },
+  {
+    id: "pre6",
+    preClientNumber: "PRE-0006",
+    specialistName: "Jorge Salinas",
+    phone: "5566778899",
+    businessName: "Fisioterapia Movimiento",
+    businessType: "physiotherapist",
+    sellerId: "rep2",
+    sellerNumber: "VEN-0002",
+    status: "converted",
+    convertedClientId: "c4",
+    notes: "Convertido en cliente TA2-0004 en enero 2026.",
+    createdAt: "2025-12-28T09:00:00Z",
+    updatedAt: "2026-01-04T10:00:00Z",
   },
 ];
 
@@ -688,6 +1765,7 @@ interface AdminStoreValue {
   commissions: CommissionRecord[];
   fortnights: Fortnight[];
   adminLog: ActivityLogItem[];
+  preClients: PreClient[];
 
   // Clients
   updateClient: (id: string, patch: Partial<AdminClient>) => void;
@@ -736,6 +1814,46 @@ interface AdminStoreValue {
   closeFortnight: (fortnightId: string) => void;
   reopenFortnight: (fortnightId: string) => void;
 
+  // Pre-clients
+  addPreClient: (data: Omit<PreClient, "id" | "preClientNumber" | "createdAt">) => void;
+  updatePreClient: (id: string, patch: Partial<PreClient>) => void;
+  setPreClientStatus: (id: string, status: PreClientStatus) => void;
+
+  // Finance module state
+  fixedExpenses: MonthlyFixedExpense[];
+  otherMovements: OtherFinancialMovement[];
+  taxRecords: MonthlyTaxRecord[];
+  invoices: InvoiceRecord[];
+  bankMovements: BankMovement[];
+  monthlyCloses: MonthlyCloseRecord[];
+  financialLog: FinancialLogItem[];
+
+  // Fixed expenses
+  addFixedExpense: (data: Omit<MonthlyFixedExpense, "id" | "createdAt">) => void;
+  updateFixedExpense: (id: string, patch: Partial<MonthlyFixedExpense>) => void;
+  toggleFixedExpense: (id: string) => void;
+
+  // Other movements
+  addOtherMovement: (data: Omit<OtherFinancialMovement, "id" | "createdAt">) => void;
+  deleteOtherMovement: (id: string) => void;
+
+  // Tax records
+  upsertTaxRecord: (year: number, month: number, data: Partial<Omit<MonthlyTaxRecord, "id" | "year" | "month" | "createdAt">>) => void;
+  markTaxPaid: (id: string, amount: number, paidAt: string) => void;
+
+  // Invoices
+  addInvoice: (data: Omit<InvoiceRecord, "id" | "createdAt">) => void;
+  updateInvoice: (id: string, patch: Partial<InvoiceRecord>) => void;
+
+  // Bank movements
+  addBankMovement: (data: Omit<BankMovement, "id" | "createdAt">) => void;
+  reconcileBankMovement: (id: string, status: ReconciliationStatus, patch?: Partial<BankMovement>) => void;
+
+  // Monthly close
+  closeMonth: (year: number, month: number) => void;
+  reopenMonth: (year: number, month: number, reason: string) => void;
+  isMonthClosed: (year: number, month: number) => boolean;
+
   // Legacy aliases
   users: AdminClient[];
   updateUser: (id: string, patch: Partial<AdminClient>) => void;
@@ -752,6 +1870,14 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const [commissions, setCommissions] = useState<CommissionRecord[]>(MOCK_COMMISSIONS);
   const [fortnights, setFortnights] = useState<Fortnight[]>(MOCK_FORTNIGHTS);
   const [adminLog, setAdminLog] = useState<ActivityLogItem[]>(MOCK_ADMIN_LOG);
+  const [preClients, setPreClients] = useState<PreClient[]>(MOCK_PRE_CLIENTS);
+  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>(MOCK_FIXED_EXPENSES);
+  const [otherMovements, setOtherMovements] = useState<OtherFinancialMovement[]>(MOCK_OTHER_MOVEMENTS);
+  const [taxRecords, setTaxRecords] = useState<MonthlyTaxRecord[]>(MOCK_TAX_RECORDS);
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>(MOCK_INVOICES);
+  const [bankMovements, setBankMovements] = useState<BankMovement[]>(MOCK_BANK_MOVEMENTS);
+  const [monthlyCloses, setMonthlyCloses] = useState<MonthlyCloseRecord[]>(MOCK_MONTHLY_CLOSES);
+  const [financialLog, setFinancialLog] = useState<FinancialLogItem[]>(MOCK_FINANCIAL_LOG);
 
   function addToAdminLog(action: string, detail?: string) {
     setAdminLog((prev) => [mkLog(action, detail), ...prev].slice(0, 300));
@@ -1128,7 +2254,18 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       return [...prev, { id: fnId, year: d.getFullYear(), month: d.getMonth() + 1, half: half as 1 | 2, label, closed: false }];
     });
 
-    // 5. Log
+    // 5. Mark pre-client as converted if linked
+    if (transfer.preClientId) {
+      setPreClients((prev) =>
+        prev.map((p) =>
+          p.id !== transfer.preClientId
+            ? p
+            : { ...p, status: "converted" as PreClientStatus, convertedClientId: clientId, updatedAt: now }
+        )
+      );
+    }
+
+    // 6. Log
     addToAdminLog("Apertura verificada", `${transfer.referenceNumber} — ${transfer.prospectiveBusinessName}`);
     addToAdminLog("Cliente creado", `${clientNumber} — ${transfer.prospectiveBusinessName}`);
     addToAdminLog("Comisión generada (autorizada)", `${transfer.sellerNumber ?? ""} — $${transfer.fixedCommissionAmount ?? 0}`);
@@ -1324,6 +2461,202 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Pre-client actions ──────────────────────────────────────────────────────
+
+  const addPreClient = useCallback(
+    (data: Omit<PreClient, "id" | "preClientNumber" | "createdAt">) => {
+      setPreClients((prev) => {
+        const preClientNumber = generatePreClientNumber(prev);
+        const newPc: PreClient = {
+          ...data,
+          id: crypto.randomUUID(),
+          preClientNumber,
+          createdAt: new Date().toISOString(),
+        };
+        return [newPc, ...prev];
+      });
+    },
+    []
+  );
+
+  const updatePreClient = useCallback((id: string, patch: Partial<PreClient>) => {
+    setPreClients((prev) =>
+      prev.map((p) =>
+        p.id !== id ? p : { ...p, ...patch, updatedAt: new Date().toISOString() }
+      )
+    );
+  }, []);
+
+  const setPreClientStatus = useCallback((id: string, status: PreClientStatus) => {
+    setPreClients((prev) =>
+      prev.map((p) =>
+        p.id !== id ? p : { ...p, status, updatedAt: new Date().toISOString() }
+      )
+    );
+  }, []);
+
+  // ── Finance module actions ──────────────────────────────────────────────────
+
+  function addFinancialLogEntry(action: string, entity?: string, detail?: string, newValue?: string, previousValue?: string) {
+    const entry: FinancialLogItem = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      action, entity, detail, newValue, previousValue,
+      actor: "Admin",
+    };
+    setFinancialLog((prev) => [entry, ...prev].slice(0, 500));
+  }
+
+  const addFixedExpense = useCallback((data: Omit<MonthlyFixedExpense, "id" | "createdAt">) => {
+    const expense: MonthlyFixedExpense = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    setFixedExpenses((prev) => [...prev, expense]);
+    addFinancialLogEntry("Gasto fijo creado", data.name, undefined, `$${data.amount}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateFixedExpense = useCallback((id: string, patch: Partial<MonthlyFixedExpense>) => {
+    setFixedExpenses((prev) =>
+      prev.map((e) => e.id !== id ? e : { ...e, ...patch, updatedAt: new Date().toISOString() })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleFixedExpense = useCallback((id: string) => {
+    setFixedExpenses((prev) =>
+      prev.map((e) => {
+        if (e.id !== id) return e;
+        const next = { ...e, active: !e.active, updatedAt: new Date().toISOString() };
+        addFinancialLogEntry(
+          next.active ? "Gasto activado" : "Gasto pausado",
+          e.name, undefined, next.active ? "activo" : "pausado", next.active ? "pausado" : "activo"
+        );
+        return next;
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addOtherMovement = useCallback((data: Omit<OtherFinancialMovement, "id" | "createdAt">) => {
+    const mov: OtherFinancialMovement = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    setOtherMovements((prev) => [mov, ...prev]);
+    addFinancialLogEntry(
+      data.type === "other_income" ? "Ingreso adicional registrado" : "Egreso adicional registrado",
+      data.name, undefined, `$${data.amount}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const deleteOtherMovement = useCallback((id: string) => {
+    setOtherMovements((prev) => prev.filter((m) => m.id !== id));
+    addFinancialLogEntry("Movimiento eliminado", id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const upsertTaxRecord = useCallback(
+    (year: number, month: number, data: Partial<Omit<MonthlyTaxRecord, "id" | "year" | "month" | "createdAt">>) => {
+      setTaxRecords((prev) => {
+        const existing = prev.find((t) => t.year === year && t.month === month);
+        if (existing) {
+          return prev.map((t) =>
+            t.year === year && t.month === month
+              ? { ...t, ...data, updatedAt: new Date().toISOString() }
+              : t
+          );
+        }
+        const newRecord: MonthlyTaxRecord = {
+          id: crypto.randomUUID(), year, month,
+          taxPercentage: data.taxPercentage ?? 16,
+          taxableBase: data.taxableBase ?? 0,
+          estimatedTaxAmount: data.estimatedTaxAmount ?? 0,
+          notes: data.notes,
+          createdAt: new Date().toISOString(),
+        };
+        return [...prev, newRecord];
+      });
+      addFinancialLogEntry("Registro de impuesto actualizado", `${MONTH_NAMES[month - 1]} ${year}`);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const markTaxPaid = useCallback((id: string, amount: number, paidAt: string) => {
+    setTaxRecords((prev) =>
+      prev.map((t) =>
+        t.id !== id ? t : { ...t, actualPaidAmount: amount, paidAt, updatedAt: new Date().toISOString() }
+      )
+    );
+    const rec = taxRecords.find((t) => t.id === id);
+    addFinancialLogEntry(
+      "Impuesto pagado",
+      rec ? `${MONTH_NAMES[rec.month - 1]} ${rec.year}` : id,
+      undefined, `$${amount}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taxRecords]);
+
+  const addInvoice = useCallback((data: Omit<InvoiceRecord, "id" | "createdAt">) => {
+    const inv: InvoiceRecord = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    setInvoices((prev) => [inv, ...prev]);
+    addFinancialLogEntry("Factura creada", inv.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateInvoice = useCallback((id: string, patch: Partial<InvoiceRecord>) => {
+    setInvoices((prev) => prev.map((i) => i.id !== id ? i : { ...i, ...patch }));
+    addFinancialLogEntry("Factura actualizada", id, patch.status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addBankMovement = useCallback((data: Omit<BankMovement, "id" | "createdAt">) => {
+    const bm: BankMovement = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    setBankMovements((prev) => [bm, ...prev]);
+    addFinancialLogEntry("Movimiento bancario registrado", data.description, undefined, `$${data.amount}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const reconcileBankMovement = useCallback((id: string, status: ReconciliationStatus, patch?: Partial<BankMovement>) => {
+    setBankMovements((prev) =>
+      prev.map((b) => b.id !== id ? b : { ...b, ...patch, reconciliationStatus: status })
+    );
+    addFinancialLogEntry("Movimiento conciliado", id, status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const closeMonth = useCallback((year: number, month: number) => {
+    const now = new Date().toISOString();
+    setMonthlyCloses((prev) => {
+      const existing = prev.find((m) => m.year === year && m.month === month);
+      if (existing) {
+        return prev.map((m) =>
+          m.year === year && m.month === month
+            ? { ...m, status: "closed" as MonthlyCloseStatus, closedAt: now, closedBy: "Admin" }
+            : m
+        );
+      }
+      return [...prev, { id: crypto.randomUUID(), year, month, status: "closed", closedAt: now, closedBy: "Admin" }];
+    });
+    addFinancialLogEntry("Mes cerrado", `${MONTH_NAMES[month - 1]} ${year}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const reopenMonth = useCallback((year: number, month: number, reason: string) => {
+    const now = new Date().toISOString();
+    setMonthlyCloses((prev) =>
+      prev.map((m) =>
+        m.year === year && m.month === month
+          ? { ...m, status: "reopened" as MonthlyCloseStatus, reopenedAt: now, reopenedBy: "Admin", reopenReason: reason }
+          : m
+      )
+    );
+    addFinancialLogEntry("Mes reabierto", `${MONTH_NAMES[month - 1]} ${year}`, reason);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function isMonthClosed(year: number, month: number): boolean {
+    const rec = monthlyCloses.find((m) => m.year === year && m.month === month);
+    return rec?.status === "closed";
+  }
+
   const togglePro = useCallback((id: string) => {
     setClients((prev) =>
       prev.map((c) =>
@@ -1333,7 +2666,8 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value: AdminStoreValue = {
-    clients, salesReps, transfers, commissions, fortnights, adminLog,
+    clients, salesReps, transfers, commissions, fortnights, adminLog, preClients,
+    fixedExpenses, otherMovements, taxRecords, invoices, bankMovements, monthlyCloses, financialLog,
     updateClient,
     setPaymentStatus, setClientStatus, setPlan, setAccess, setPublicPageStatus,
     setMonthStatus, markMonthPaid, regenerateHistory, renewContract,
@@ -1344,6 +2678,13 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     authorizeCommission, markCommissionPaid, cancelCommission,
     addSalesRep, updateSalesRep, toggleSalesRep,
     ensureFortnight, closeFortnight, reopenFortnight,
+    addPreClient, updatePreClient, setPreClientStatus,
+    addFixedExpense, updateFixedExpense, toggleFixedExpense,
+    addOtherMovement, deleteOtherMovement,
+    upsertTaxRecord, markTaxPaid,
+    addInvoice, updateInvoice,
+    addBankMovement, reconcileBankMovement,
+    closeMonth, reopenMonth, isMonthClosed,
     users: clients, updateUser: updateClient, togglePro,
     updateClinic: updateBusiness,
   };

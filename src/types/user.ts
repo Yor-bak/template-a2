@@ -38,6 +38,24 @@ export type ClientType =
   | "veterinarian"
   | "other";
 
+export type BusinessType =
+  | "dentist"
+  | "doctor"
+  | "physiotherapist"
+  | "nutritionist"
+  | "psychologist"
+  | "veterinarian"
+  | "other";
+
+export type PreClientStatus =
+  | "new"
+  | "contacted"
+  | "interested"
+  | "negotiating"
+  | "awaiting_payment"
+  | "converted"
+  | "discarded";
+
 // ── Nested entities ───────────────────────────────────────────────────────────
 
 export interface SpecialistInfo {
@@ -53,7 +71,24 @@ export interface SpecialistInfo {
   bio?: string;
 }
 
+export interface PreClient {
+  id: string;
+  preClientNumber: string;
+  specialistName: string;
+  phone: string;
+  businessName?: string;
+  businessType?: BusinessType;
+  sellerId?: string;
+  sellerNumber?: string;
+  status: PreClientStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  convertedClientId?: string;
+}
+
 export interface BusinessInfo {
+  businessType?: BusinessType;
   name: string;
   commercialName?: string;
   street?: string;
@@ -77,6 +112,7 @@ export interface SalesRep {
   sellerNumber: string;          // VEN-0001, VEN-0002, …
   name: string;
   phone?: string;
+  accountNumber?: string;        // bank account for commission payments
   active: boolean;
   fixedCommissionAmount: number; // fixed amount per verified opening (not percentage)
   createdAt: string;
@@ -134,6 +170,7 @@ export interface TransferRecord {
   prospectName?: string;
   prospectPhone?: string;
   prospectiveBusinessName?: string;
+  preClientId?: string;
 
   // Set after verification (opening)
   clientId?: string;
@@ -224,6 +261,7 @@ export interface ClientContractDocument {
 export interface AdminClient {
   id: string;
   clientNumber: string;
+  businessType?: BusinessType;
 
   specialist: SpecialistInfo;
   /** Business/consultorio data (formerly "clinic") */
@@ -281,4 +319,109 @@ export interface User {
   paymentStatus: "paid" | "pending" | "overdue" | "free";
   createdAt: string;
   updatedAt: string;
+}
+
+// ── Finance module types ───────────────────────────────────────────────────────
+
+export interface MonthlyFixedExpense {
+  id: string;
+  name: string;
+  description?: string;
+  amount: number;
+  active: boolean;
+  startDate: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type FinancialMovementType = "other_income" | "other_expense";
+
+export interface OtherFinancialMovement {
+  id: string;
+  type: FinancialMovementType;
+  name: string;
+  description?: string;
+  amount: number;
+  movementDate: string;
+  reference?: string;
+  createdAt: string;
+}
+
+export interface MonthlyTaxRecord {
+  id: string;
+  year: number;
+  month: number;
+  taxPercentage: number;
+  taxableBase: number;
+  estimatedTaxAmount: number;
+  actualPaidAmount?: number;
+  paidAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type InvoiceStatus = "not_required" | "pending" | "issued" | "cancelled";
+
+export interface InvoiceRecord {
+  id: string;
+  clientId: string;
+  transferId?: string;
+  requiresInvoice: boolean;
+  status: InvoiceStatus;
+  invoiceNumber?: string;
+  fiscalFolio?: string;
+  issuedAt?: string;
+  cancelledAt?: string;
+  invoicedAmount?: number;
+  pdfUrl?: string;
+  xmlUrl?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type ReconciliationStatus = "unmatched" | "matched" | "difference" | "ignored";
+
+export interface BankMovement {
+  id: string;
+  movementDate: string;
+  description: string;
+  reference?: string;
+  amount: number;
+  direction: "income" | "expense";
+  reconciliationStatus: ReconciliationStatus;
+  relatedTransferId?: string;
+  relatedCommissionId?: string;
+  relatedExpenseId?: string;
+  relatedTaxId?: string;
+  relatedFinancialMovementId?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type MonthlyCloseStatus = "open" | "closed" | "reopened";
+
+export interface MonthlyCloseRecord {
+  id: string;
+  year: number;
+  month: number;
+  status: MonthlyCloseStatus;
+  closedAt?: string;
+  reopenedAt?: string;
+  closedBy?: string;
+  reopenedBy?: string;
+  reopenReason?: string;
+  notes?: string;
+}
+
+export interface FinancialLogItem {
+  id: string;
+  date: string;
+  action: string;
+  entity?: string;
+  detail?: string;
+  previousValue?: string;
+  newValue?: string;
+  actor: string;
 }

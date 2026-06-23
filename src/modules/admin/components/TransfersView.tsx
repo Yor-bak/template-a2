@@ -1,13 +1,141 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import type { TransferType, TransferStatus } from "@/types/user";
 import {
   useAdminStore,
-  TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS,
+  TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, BUSINESS_TYPE_LABELS,
 } from "@/store/adminStore";
 import {
   S, Th, BadgeEl, TRANSFER_STATUS_META, TRANSFER_TYPE_META, fmtDate, fmtDateTime,
 } from "./adminUi";
+
+// ── Add Transfer Modal ────────────────────────────────────────────────────────
+
+// ── PreClient inline searcher ─────────────────────────────────────────────────
+
+function PreClientSearcher({
+  value,
+  onSelect,
+  onClear,
+}: {
+  value: string | null;
+  onSelect: (id: string, name: string, phone: string, business: string, sellerId: string) => void;
+  onClear: () => void;
+}) {
+  const { preClients, salesReps } = useAdminStore();
+  const [query, setQuery] = useState("");
+  const [open, setOpen]   = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
+
+  const eligible = useMemo(
+    () => preClients.filter((p) => p.status !== "converted" && p.status !== "discarded"),
+    [preClients]
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return eligible;
+    return eligible.filter(
+      (p) =>
+        p.preClientNumber.toLowerCase().includes(q) ||
+        p.specialistName.toLowerCase().includes(q) ||
+        p.phone.includes(q) ||
+        (p.businessName ?? "").toLowerCase().includes(q)
+    );
+  }, [eligible, query]);
+
+  const selected = value ? preClients.find((p) => p.id === value) : null;
+
+  if (selected) {
+    return (
+      <div className="flex items-start justify-between gap-3 rounded-lg border-[0.5px] border-[var(--accent)] bg-[var(--accent-muted)] px-3 py-2.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] text-[var(--accent)]">{selected.preClientNumber}</span>
+            {selected.businessType && (
+              <span className="text-[10px] text-[var(--text-muted)]">
+                {BUSINESS_TYPE_LABELS[selected.businessType]}
+              </span>
+            )}
+          </div>
+          <p className="text-sm font-medium text-[var(--text-primary)] mt-0.5">{selected.specialistName}</p>
+          {selected.businessName && (
+            <p className="text-[11px] text-[var(--text-muted)]">{selected.businessName}</p>
+          )}
+          <p className="text-[11px] text-[var(--text-muted)] font-mono">{selected.phone}</p>
+          {selected.sellerId && (
+            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+              Vendedor: {salesReps.find((r) => r.id === selected.sellerId)?.name ?? selected.sellerNumber}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-[var(--text-muted)] hover:text-[var(--danger)] text-lg leading-none transition-colors"
+          title="Quitar precliente"
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <input
+        className={S.input}
+        placeholder="Buscar por nombre, teléfono o N° de precliente…"
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && (
+        <div
+          className="absolute top-full left-0 right-0 mt-1 z-40 rounded-lg border-[0.5px] border-[var(--border)] shadow-xl overflow-hidden max-h-56 overflow-y-auto"
+          style={{ background: "var(--bg-elevated)" }}
+        >
+          {eligible.length === 0 && (
+            <p className="px-3 py-3 text-xs text-[var(--text-muted)]">No hay preclientes disponibles.</p>
+          )}
+          {filtered.length === 0 && eligible.length > 0 && (
+            <p className="px-3 py-3 text-xs text-[var(--text-muted)]">Sin coincidencias.</p>
+          )}
+          {filtered.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="w-full text-left px-3 py-2.5 hover:bg-[var(--bg-surface)] transition-colors border-b-[0.5px] border-[var(--border)] last:border-b-0"
+              onClick={() => {
+                onSelect(p.id, p.specialistName, p.phone, p.businessName ?? "", p.sellerId ?? "");
+                setQuery("");
+                setOpen(false);
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[11px] text-[var(--accent)]">{p.preClientNumber}</span>
+                {p.businessType && (
+                  <span className="text-[10px] text-[var(--text-muted)]">{BUSINESS_TYPE_LABELS[p.businessType]}</span>
+                )}
+              </div>
+              <p className="text-xs font-medium text-[var(--text-primary)]">{p.specialistName}</p>
+              {p.businessName && <p className="text-[11px] text-[var(--text-muted)]">{p.businessName}</p>}
+              <p className="text-[11px] text-[var(--text-muted)] font-mono">{p.phone}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Add Transfer Modal ────────────────────────────────────────────────────────
 
@@ -20,9 +148,10 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
   const [notes, setNotes] = useState("");
 
   // Opening fields
-  const [sellerId, setSellerId] = useState("");
-  const [prospectName, setProspectName] = useState("");
-  const [prospectPhone, setProspectPhone] = useState("");
+  const [preClientId, setPreClientId]         = useState<string | null>(null);
+  const [sellerId, setSellerId]               = useState("");
+  const [prospectName, setProspectName]       = useState("");
+  const [prospectPhone, setProspectPhone]     = useState("");
   const [prospectBusiness, setProspectBusiness] = useState("");
 
   // Monthly fields
@@ -31,12 +160,24 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
 
   const [error, setError] = useState("");
 
-  const selectedRep = store.salesReps.find((r) => r.id === sellerId);
+  const selectedRep    = store.salesReps.find((r) => r.id === sellerId);
   const selectedClient = store.clients.find((c) => c.id === specialistId);
   const availableMonths = useMemo(() => {
     if (!selectedClient) return [];
     return selectedClient.paymentHistory.filter((p) => p.status !== "paid");
   }, [selectedClient]);
+
+  function handleSelectPreClient(id: string, name: string, phone: string, business: string, repId: string) {
+    setPreClientId(id);
+    setProspectName(name);
+    setProspectPhone(phone);
+    setProspectBusiness(business);
+    if (repId) setSellerId(repId);
+  }
+
+  function handleClearPreClient() {
+    setPreClientId(null);
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,12 +206,13 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
       internalNotes: notes.trim() || undefined,
       // Opening
       ...(type === "opening" && {
+        preClientId:          preClientId ?? undefined,
         sellerId,
-        sellerNumber: selectedRep?.sellerNumber,
-        sellerName: selectedRep?.name,
+        sellerNumber:         selectedRep?.sellerNumber,
+        sellerName:           selectedRep?.name,
         fixedCommissionAmount: selectedRep?.fixedCommissionAmount,
-        prospectName: prospectName.trim(),
-        prospectPhone: prospectPhone.trim() || undefined,
+        prospectName:         prospectName.trim(),
+        prospectPhone:        prospectPhone.trim() || undefined,
         prospectiveBusinessName: prospectBusiness.trim(),
       }),
       // Monthly
@@ -149,6 +291,22 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
           {type === "opening" && (
             <div className="space-y-4 border-t-[0.5px] border-[var(--border)] pt-4">
               <p className="text-[10px] font-semibold text-[var(--accent)] uppercase tracking-wide">Datos de apertura</p>
+
+              {/* PreClient selector */}
+              <div>
+                <label className={S.label}>
+                  Precliente
+                  <span className="ml-1 font-normal lowercase tracking-normal text-[var(--text-muted)]">
+                    — selecciona uno para cargar sus datos automáticamente
+                  </span>
+                </label>
+                <PreClientSearcher
+                  value={preClientId}
+                  onSelect={handleSelectPreClient}
+                  onClear={handleClearPreClient}
+                />
+              </div>
+
               <div>
                 <label className={S.label}>Vendedor *</label>
                 <select className={S.select} value={sellerId} onChange={(e) => setSellerId(e.target.value)}>
@@ -173,7 +331,7 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
               <div>
                 <label className={S.label}>Nombre del futuro negocio *</label>
                 <input className={S.input} value={prospectBusiness} onChange={(e) => setProspectBusiness(e.target.value)}
-                  placeholder="Clínica Dental Ejemplo" />
+                  placeholder="Dental Ejemplo" />
               </div>
             </div>
           )}
@@ -245,10 +403,11 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
   const t = store.transfers.find((x) => x.id === transferId);
   if (!t) return null;
 
-  const rep = t.sellerId ? store.salesReps.find((r) => r.id === t.sellerId) : undefined;
-  const client = t.clientId ? store.clients.find((c) => c.id === t.clientId)
-    : t.specialistId ? store.clients.find((c) => c.id === t.specialistId) : undefined;
+  const rep        = t.sellerId    ? store.salesReps.find((r) => r.id === t.sellerId)   : undefined;
+  const client     = t.clientId   ? store.clients.find((c) => c.id === t.clientId)
+    : t.specialistId              ? store.clients.find((c) => c.id === t.specialistId) : undefined;
   const commission = store.commissions.find((c) => c.transferId === transferId);
+  const preClient  = t.preClientId ? store.preClients.find((p) => p.id === t.preClientId) : undefined;
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
@@ -293,10 +452,16 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Prospecto</p>
               <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1">
+                {preClient && (
+                  <p className="font-mono text-[11px] text-[var(--accent)] mb-1">{preClient.preClientNumber}</p>
+                )}
                 <p className="text-xs font-medium text-[var(--text-primary)]">{t.prospectName}</p>
                 {t.prospectPhone && <p className="text-[11px] text-[var(--text-muted)]">{t.prospectPhone}</p>}
                 {t.prospectiveBusinessName && (
                   <p className="text-[11px] text-[var(--accent)]">{t.prospectiveBusinessName}</p>
+                )}
+                {preClient?.businessType && (
+                  <p className="text-[10px] text-[var(--text-muted)]">{BUSINESS_TYPE_LABELS[preClient.businessType]}</p>
                 )}
               </div>
             </section>

@@ -66,11 +66,16 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   const url = `${BASE_URL}${path}`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
   let res: Response;
   try {
-    res = await fetch(url, { ...rest, headers });
+    res = await fetch(url, { ...rest, headers, signal: controller.signal });
   } catch (networkError) {
     throw new ApiError(0, "No se pudo conectar con el servidor. Verifica que el backend esté corriendo.", networkError);
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   // No content

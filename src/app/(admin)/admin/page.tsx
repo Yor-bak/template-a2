@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
-import { useAdminStore, useAdminAuth } from "@/store/adminStore";
-import type { AdminClient } from "@/types/user";
+import { useAdminStore, useAdminAuth, BUSINESS_TYPE_LABELS } from "@/store/adminStore";
+import type { AdminClient, BusinessType } from "@/types/user";
 import {
   S, BadgeEl, PlanBadge, AccessBadge, Th,
   PAYMENT_META, CLIENT_META, ONBOARDING_META,
@@ -9,9 +9,9 @@ import {
 } from "@/modules/admin/components/adminUi";
 import { ClientDrawer } from "@/modules/admin/components/ClientDrawer";
 import { SalesRepView } from "@/modules/admin/components/SalesRepView";
-import { FortnightView } from "@/modules/admin/components/FortnightView";
-import { CommissionsView } from "@/modules/admin/components/CommissionsView";
 import { TransfersView } from "@/modules/admin/components/TransfersView";
+import PreClientsView from "@/modules/admin/components/PreClientsView";
+import { FinanceView } from "@/modules/admin/components/FinanceView";
 
 // Suppress unused import warning
 void fmtDate;
@@ -22,7 +22,7 @@ void ONBOARDING_META;
 function AdminLogin() {
   const { login } = useAdminAuth();
   const [email, setEmail] = useState("admin@templatea2.com");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("admin123");
   const [error, setError] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
@@ -76,7 +76,10 @@ type FilterKey =
   | "plan_pro" | "plan_standard"
   | "paid" | "pending" | "overdue" | "grace_period" | "blocked"
   | "page_published" | "page_hidden"
-  | "ob_not_started" | "ob_in_progress" | "ob_ready";
+  | "ob_not_started" | "ob_in_progress" | "ob_ready"
+  | "bt_dentist" | "bt_doctor" | "bt_physiotherapist" | "bt_nutritionist"
+  | "bt_psychologist" | "bt_veterinarian" | "bt_other"
+  | "contract_expiring" | "contract_expired";
 
 interface FilterGroup {
   label: string;
@@ -124,12 +127,37 @@ const FILTER_GROUPS: FilterGroup[] = [
       { key: "ob_ready",       label: "Lista"      },
     ],
   },
+  {
+    label: "Tipo",
+    filters: [
+      { key: "bt_dentist",         label: "Dentista"       },
+      { key: "bt_doctor",          label: "Médico"         },
+      { key: "bt_physiotherapist", label: "Fisioterapeuta" },
+      { key: "bt_nutritionist",    label: "Nutriólogo/a"   },
+      { key: "bt_psychologist",    label: "Psicólogo/a"    },
+      { key: "bt_veterinarian",    label: "Veterinario/a"  },
+      { key: "bt_other",           label: "Otro"           },
+    ],
+  },
+  {
+    label: "Contrato",
+    filters: [
+      { key: "contract_expiring", label: "Vence en 30 días" },
+      { key: "contract_expired",  label: "Vencido"          },
+    ],
+  },
 ];
 
 function applyFilter(clients: AdminClient[], filter: FilterKey, search: string): AdminClient[] {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const in30 = new Date(now);
+  in30.setDate(now.getDate() + 30);
+
   let result = clients;
   if (filter !== "all") {
     result = result.filter((c) => {
+      const contractEnd = new Date(c.contractEndDate + "T00:00:00");
       if (filter === "active")        return c.clientStatus === "active";
       if (filter === "suspended")     return c.clientStatus === "suspended";
       if (filter === "cancelled")     return c.clientStatus === "cancelled";
@@ -145,6 +173,15 @@ function applyFilter(clients: AdminClient[], filter: FilterKey, search: string):
       if (filter === "ob_not_started") return c.onboardingStatus === "not_started";
       if (filter === "ob_in_progress") return c.onboardingStatus === "in_progress";
       if (filter === "ob_ready")      return c.onboardingStatus === "ready";
+      if (filter === "bt_dentist")         return c.businessType === "dentist";
+      if (filter === "bt_doctor")          return c.businessType === "doctor";
+      if (filter === "bt_physiotherapist") return c.businessType === "physiotherapist";
+      if (filter === "bt_nutritionist")    return c.businessType === "nutritionist";
+      if (filter === "bt_psychologist")    return c.businessType === "psychologist";
+      if (filter === "bt_veterinarian")    return c.businessType === "veterinarian";
+      if (filter === "bt_other")           return c.businessType === "other";
+      if (filter === "contract_expiring")  return contractEnd >= now && contractEnd <= in30;
+      if (filter === "contract_expired")   return contractEnd < now;
       return true;
     });
   }
@@ -166,8 +203,10 @@ function applyFilter(clients: AdminClient[], filter: FilterKey, search: string):
 
 // ── Alert bar ─────────────────────────────────────────────────────────────────
 
-function AlertsBar({ clients }: { clients: AdminClient[] }) {
+function AlertsBar() {
+  const { clients, preClients } = useAdminStore();
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const in30 = new Date(today);
   in30.setDate(today.getDate() + 30);
 
@@ -178,27 +217,35 @@ function AlertsBar({ clients }: { clients: AdminClient[] }) {
       cls: "text-[var(--danger)] border-[var(--danger)]",
     },
     {
-      count: clients.filter((c) => !c.accessActive).length,
-      label: "sin acceso",
-      cls: "text-[var(--text-muted)] border-[var(--border)]",
+      count: clients.filter((c) => {
+        const end = new Date(c.contractEndDate + "T00:00:00");
+        return end >= today && end <= in30 && c.clientStatus === "active";
+      }).length,
+      label: "contratos por vencer",
+      cls: "text-[var(--accent)] border-[var(--accent)]",
     },
     {
       count: clients.filter((c) => {
         const end = new Date(c.contractEndDate + "T00:00:00");
-        return end >= today && end <= in30 && c.accessActive;
+        return end < today && c.clientStatus === "active";
       }).length,
-      label: "contratos por vencer",
+      label: "contratos vencidos",
+      cls: "text-[var(--danger)] border-[var(--danger)]",
+    },
+    {
+      count: clients.filter((c) => c.onboardingStatus !== "ready" && c.clientStatus === "active").length,
+      label: "onboarding incompleto",
       cls: "text-[var(--text-muted)] border-[var(--border)]",
     },
     {
-      count: clients.filter((c) => c.onboardingStatus === "not_started").length,
-      label: "sin configurar",
+      count: preClients.filter((p) => p.status === "new" || p.status === "contacted").length,
+      label: "preclientes por contactar",
       cls: "text-[var(--text-muted)] border-[var(--border)]",
     },
     {
-      count: clients.filter((c) => c.publicPageStatus === "hidden" && c.accessActive).length,
-      label: "páginas ocultas",
-      cls: "text-[var(--text-muted)] border-[var(--border)]",
+      count: preClients.filter((p) => p.status === "awaiting_payment").length,
+      label: "preclientes esperando pago",
+      cls: "text-[var(--accent)] border-[var(--accent)]",
     },
   ].filter((a) => a.count > 0);
 
@@ -220,16 +267,20 @@ function AlertsBar({ clients }: { clients: AdminClient[] }) {
 // ── Stat cards ────────────────────────────────────────────────────────────────
 
 function StatCards({ clients }: { clients: AdminClient[] }) {
+  const { preClients } = useAdminStore();
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const in30 = new Date(today);
   in30.setDate(today.getDate() + 30);
 
+  const pipeline = preClients.filter((p) => p.status !== "converted" && p.status !== "discarded").length;
+
   const stats = [
-    { label: "Clientes",   value: clients.length,                                                               sub: `${clients.filter((c) => c.clientStatus === "active").length} activos`    },
-    { label: "Plan Pro",   value: clients.filter((c) => c.isPro).length,                                        sub: `${clients.filter((c) => !c.isPro).length} Standard`                      },
-    { label: "Al día",     value: clients.filter((c) => c.paymentStatus === "paid").length,                     sub: `${clients.filter((c) => c.paymentStatus === "overdue").length} vencidos`  },
-    { label: "Por vencer", value: clients.filter((c) => { const e = new Date(c.contractEndDate + "T00:00:00"); return e >= today && e <= in30; }).length, sub: "contratos ≤ 30 días"           },
-    { label: "Sin config", value: clients.filter((c) => c.onboardingStatus === "not_started").length,           sub: `${clients.filter((c) => c.onboardingStatus === "ready").length} listos`   },
+    { label: "Clientes",       value: clients.length,                                                               sub: `${clients.filter((c) => c.clientStatus === "active").length} activos`    },
+    { label: "Plan Pro",       value: clients.filter((c) => c.isPro).length,                                        sub: `${clients.filter((c) => !c.isPro).length} Standard`                      },
+    { label: "Al día",         value: clients.filter((c) => c.paymentStatus === "paid").length,                     sub: `${clients.filter((c) => c.paymentStatus === "overdue").length} vencidos`  },
+    { label: "Por vencer",     value: clients.filter((c) => { const e = new Date(c.contractEndDate + "T00:00:00"); return e >= today && e <= in30; }).length, sub: "contratos ≤ 30 días"           },
+    { label: "Preclientes",    value: pipeline,                                                                      sub: `${preClients.filter((p) => p.status === "converted").length} convertidos` },
   ];
 
   return (
@@ -249,14 +300,14 @@ function StatCards({ clients }: { clients: AdminClient[] }) {
 
 // ── Clients tab ───────────────────────────────────────────────────────────────
 
-type MainTab = "clients" | "transfers" | "vendors" | "fortnights" | "commissions";
+type MainTab = "clients" | "preclients" | "transfers" | "vendors" | "finance";
 
 const MAIN_TABS: { key: MainTab; label: string }[] = [
-  { key: "clients",      label: "Clientes"        },
-  { key: "transfers",    label: "Transferencias"  },
-  { key: "vendors",      label: "Vendedores"      },
-  { key: "fortnights",   label: "Quincenas"       },
-  { key: "commissions",  label: "Comisiones"      },
+  { key: "clients",    label: "Clientes"       },
+  { key: "preclients", label: "Preclientes"    },
+  { key: "transfers",  label: "Transferencias" },
+  { key: "vendors",    label: "Vendedores"     },
+  { key: "finance",    label: "Finanzas"       },
 ];
 
 function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
@@ -270,7 +321,7 @@ function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
 
   return (
     <>
-      <AlertsBar clients={clients} />
+      <AlertsBar />
       <StatCards clients={clients} />
 
       {/* Toolbar */}
@@ -345,11 +396,12 @@ function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
               <tr className="border-b-[0.5px] border-[var(--border)]">
                 <Th>N°</Th>
                 <Th>Negocio</Th>
+                <Th>Tipo</Th>
                 <Th>Especialista</Th>
                 <Th>Teléfono</Th>
-                <Th>Subdominio</Th>
                 <Th>Plan</Th>
                 <Th>Pago</Th>
+                <Th>Contrato</Th>
                 <Th>Acceso</Th>
                 <Th>Vendedor</Th>
                 <Th>{""}</Th>
@@ -358,67 +410,93 @@ function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
+                  <td colSpan={11} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
                     Sin resultados
                   </td>
                 </tr>
               )}
-              {filtered.map((c) => (
-                <tr
-                  key={c.id}
-                  className="group border-b-[0.5px] border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-elevated)]"
-                  onClick={() => onOpenClient(c.id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td className="px-5 py-3.5">
-                    <span className="font-mono text-[11px] text-[var(--text-muted)]">{c.clientNumber}</span>
-                  </td>
-                  <td className="px-5 py-3.5 min-w-[160px]">
-                    <p className="text-xs font-medium text-[var(--text-primary)] leading-snug">{c.business.name}</p>
-                    {c.business.city && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{c.business.city}</p>}
-                  </td>
-                  <td className="px-5 py-3.5 min-w-[140px]">
-                    <p className="text-xs text-[var(--text-primary)]">{c.specialist.publicName}</p>
-                    <BadgeEl meta={CLIENT_META[c.clientStatus]} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {c.specialist.phone ? (
-                      <a href={`tel:${c.specialist.phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors font-mono">
-                        {c.specialist.phone}
-                      </a>
-                    ) : (
-                      <span className="text-[11px] text-[var(--border)]">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="font-mono text-[10px] text-[var(--text-muted)]">{c.subdomain}</span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <PlanBadge plan={c.plan} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <BadgeEl meta={PAYMENT_META[c.paymentStatus]} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <AccessBadge active={c.accessActive} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div>
-                      <span className="text-[11px] text-[var(--text-muted)]">{c.salesRepName || "—"}</span>
-                      {c.sellerNumber && (
-                        <p className="text-[10px] font-mono text-[var(--accent)]">{c.sellerNumber}</p>
+              {filtered.map((c) => {
+                const contractEnd = new Date(c.contractEndDate + "T00:00:00");
+                const todayD = new Date();
+                todayD.setHours(0, 0, 0, 0);
+                const in30D = new Date(todayD);
+                in30D.setDate(todayD.getDate() + 30);
+                const expired  = contractEnd < todayD;
+                const expiring = !expired && contractEnd <= in30D;
+                return (
+                  <tr
+                    key={c.id}
+                    className="group border-b-[0.5px] border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-elevated)]"
+                    onClick={() => onOpenClient(c.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <td className="px-5 py-3.5">
+                      <span className="font-mono text-[11px] text-[var(--text-muted)]">{c.clientNumber}</span>
+                    </td>
+                    <td className="px-5 py-3.5 min-w-[160px]">
+                      <p className="text-xs font-medium text-[var(--text-primary)] leading-snug">{c.business.name}</p>
+                      {c.business.city && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{c.business.city}</p>}
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      {c.businessType ? (
+                        <span className="text-[10px] text-[var(--text-muted)]">
+                          {BUSINESS_TYPE_LABELS[c.businessType as BusinessType]}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-[var(--border)]">—</span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-[var(--accent)]">
-                      Ver →
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-3.5 min-w-[140px]">
+                      <p className="text-xs text-[var(--text-primary)]">{c.specialist.publicName}</p>
+                      <BadgeEl meta={CLIENT_META[c.clientStatus]} />
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {c.specialist.phone ? (
+                        <a href={`tel:${c.specialist.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors font-mono">
+                          {c.specialist.phone}
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-[var(--border)]">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <PlanBadge plan={c.plan} />
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <BadgeEl meta={PAYMENT_META[c.paymentStatus]} />
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <div className="text-[10px] text-[var(--text-muted)]">
+                        {c.contractEndDate}
+                      </div>
+                      {expired && (
+                        <div className="text-[10px] text-[var(--danger)]">Vencido</div>
+                      )}
+                      {expiring && (
+                        <div className="text-[10px] text-amber-400">Por vencer</div>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <AccessBadge active={c.accessActive} />
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div>
+                        <span className="text-[11px] text-[var(--text-muted)]">{c.salesRepName || "—"}</span>
+                        {c.sellerNumber && (
+                          <p className="text-[10px] font-mono text-[var(--accent)]">{c.sellerNumber}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-[var(--accent)]">
+                        Ver →
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -468,11 +546,11 @@ function AdminDashboard() {
       </header>
 
       <main className="max-w-[1440px] mx-auto px-6 py-7">
-        {mainTab === "clients"     && <ClientsTab onOpenClient={setSelectedId} />}
-        {mainTab === "transfers"   && <TransfersView />}
-        {mainTab === "vendors"     && <SalesRepView />}
-        {mainTab === "fortnights"  && <FortnightView />}
-        {mainTab === "commissions" && <CommissionsView />}
+        {mainTab === "clients"   && <ClientsTab onOpenClient={setSelectedId} />}
+        {mainTab === "preclients" && <PreClientsView />}
+        {mainTab === "transfers" && <TransfersView />}
+        {mainTab === "vendors"   && <SalesRepView />}
+        {mainTab === "finance"   && <FinanceView />}
       </main>
 
       {selectedId && <ClientDrawer clientId={selectedId} onClose={() => setSelectedId(null)} />}

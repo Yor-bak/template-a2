@@ -11,6 +11,7 @@ export function SalesRepView() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const [commission, setCommission] = useState("500");
   const [formError, setFormError] = useState("");
 
@@ -25,10 +26,11 @@ export function SalesRepView() {
     store.addSalesRep({
       name: name.trim(),
       phone: phone.trim() || undefined,
+      accountNumber: accountNumber.trim() || undefined,
       active: true,
       fixedCommissionAmount,
     });
-    setName(""); setPhone(""); setCommission("500"); setFormError("");
+    setName(""); setPhone(""); setAccountNumber(""); setCommission("500"); setFormError("");
     setShowAdd(false);
   }
 
@@ -64,6 +66,11 @@ export function SalesRepView() {
               <input className={S.input} type="number" min="0" step="1" value={commission}
                 onChange={(e) => setCommission(e.target.value)} placeholder="500" />
             </div>
+            <div className="col-span-2 md:col-span-3">
+              <label className={S.label}>Número de cuenta (para pago de comisiones)</label>
+              <input className={S.input} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)}
+                placeholder="BBVA 4152 3130 0000 0000" />
+            </div>
           </div>
           {formError && (
             <p className="text-[var(--danger)] text-xs bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-lg px-3 py-2">
@@ -82,6 +89,7 @@ export function SalesRepView() {
                 <Th>N° Vendedor</Th>
                 <Th>Nombre</Th>
                 <Th>Teléfono</Th>
+                <Th>Cuenta</Th>
                 <Th>Estado</Th>
                 <Th right>Com. fija</Th>
                 <Th right>Aperturas</Th>
@@ -94,7 +102,7 @@ export function SalesRepView() {
             <tbody>
               {store.salesReps.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
+                  <td colSpan={11} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
                     Sin vendedores registrados
                   </td>
                 </tr>
@@ -117,6 +125,9 @@ export function SalesRepView() {
                     </td>
                     <td className="px-5 py-3.5">
                       <p className="text-[11px] text-[var(--text-muted)]">{rep.phone ?? "—"}</p>
+                    </td>
+                    <td className="px-5 py-3.5 max-w-[160px]">
+                      <p className="font-mono text-[10px] text-[var(--text-muted)] truncate">{rep.accountNumber ?? "—"}</p>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border-[0.5px] ${
