@@ -6,11 +6,18 @@ import {
   CheckCircle2, AlertCircle, Car, Phone, Mail,
   ExternalLink, Save, Wifi, WifiOff, Info,
   Image, Search, MessageSquare, Globe, EyeOff,
+  GraduationCap, Star, HelpCircle, Eye, Trash2, Plus,
+  Sun, Moon, Monitor,
 } from "lucide-react";
 import type { MessageTemplates } from "@/types/clinic";
 import { DEFAULT_MESSAGE_TEMPLATES, MESSAGE_TEMPLATE_LABELS } from "@/lib/messageUtils";
 import { useClinicConfig } from "@/contexts/ClinicConfigContext";
-import { ThemePaletteSelector } from "@/components/theme/ThemePaletteSelector";
+import { useExtraProfile } from "@/contexts/ExtraProfileContext";
+import type { PublicTestimonial, PublicFAQ, DashboardColorSet, DashboardTheme } from "@/types/profile";
+import { getInitials } from "@/lib/profileUtils";
+import { TEMPLATE_REGISTRY, getTemplate } from "@/templates/registry";
+import type { TemplateImageField } from "@/templates/types";
+import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { DEFAULT_CLINIC_CONFIG as legacyClinic } from "@/config/defaultClinicData";
 import type { OpeningHour, PaymentMethod } from "@/types/clinic";
 import {
@@ -19,14 +26,19 @@ import {
   validateClinicConfig,
 } from "@/lib/clinicUtils";
 
-type Tab = "general" | "contacto" | "horarios" | "pagos" | "apariencia" | "automatizacion" | "imagenes" | "seo" | "mensajes";
+type Tab = "general" | "especialista" | "contacto" | "redes" | "horarios" | "pagos" | "apariencia" | "pagina" | "testimonios" | "preguntas" | "automatizacion" | "imagenes" | "seo" | "mensajes";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "general",        label: "General",            icon: User          },
+  { id: "especialista",   label: "Especialista",       icon: GraduationCap },
   { id: "contacto",       label: "Contacto y ubicación", icon: MapPin      },
+  { id: "redes",          label: "Redes sociales",     icon: Globe         },
   { id: "horarios",       label: "Horarios",           icon: Clock         },
   { id: "pagos",          label: "Pagos y urgencias",  icon: CreditCard    },
   { id: "apariencia",     label: "Apariencia",         icon: Palette       },
+  { id: "pagina",         label: "Página pública",     icon: Eye           },
+  { id: "testimonios",    label: "Testimonios",        icon: Star          },
+  { id: "preguntas",      label: "Preguntas",          icon: HelpCircle    },
   { id: "imagenes",       label: "Imágenes",           icon: Image         },
   { id: "seo",            label: "SEO Local",          icon: Search        },
   { id: "mensajes",       label: "Mensajes",           icon: MessageSquare },
@@ -105,11 +117,6 @@ function GeneralTab() {
   const { config, saveConfig } = useClinicConfig();
   const [form, setForm] = useState({
     clinicName: config.clinicName,
-    dentistName: config.dentistName,
-    professionalLicense: config.professionalLicense,
-    specialty: config.specialty,
-    yearsExperience: config.yearsExperience,
-    patientsServed: config.patientsServed,
     shortDescription: config.shortDescription,
     welcomeMessage: config.welcomeMessage,
     showPrices: config.showPrices,
@@ -123,12 +130,10 @@ function GeneralTab() {
   }
 
   async function handleSave() {
-    const errs = validateClinicConfig(form);
-    const relevant = Object.fromEntries(
-      Object.entries(errs).filter(([k]) => k in form)
-    );
-    setErrors(relevant);
-    if (Object.keys(relevant).length > 0) return;
+    const errs: Record<string, string> = {};
+    if (!form.clinicName.trim()) errs.clinicName = "El nombre del consultorio es requerido";
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     await saveConfig(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -136,28 +141,11 @@ function GeneralTab() {
 
   return (
     <div className="space-y-5">
-      <SectionCard title="Información del consultorio y dentista">
-        <div className="grid sm:grid-cols-2 gap-4">
+      <SectionCard title="Información del consultorio">
+        <div className="space-y-4">
           <Field label="Nombre del consultorio" required error={errors.clinicName}>
             <input value={form.clinicName} onChange={(e) => set("clinicName", e.target.value)} className={inputCls(errors.clinicName)} placeholder="Ej. Clínica Dental Sonrisa" />
           </Field>
-          <Field label="Nombre del dentista" required error={errors.dentistName}>
-            <input value={form.dentistName} onChange={(e) => set("dentistName", e.target.value)} className={inputCls(errors.dentistName)} placeholder="Ej. Dra. Mariana López" />
-          </Field>
-          <Field label="Cédula profesional" required error={errors.professionalLicense}>
-            <input value={form.professionalLicense} onChange={(e) => set("professionalLicense", e.target.value)} className={inputCls(errors.professionalLicense)} placeholder="12345678" />
-          </Field>
-          <Field label="Especialidad" required error={errors.specialty}>
-            <input value={form.specialty} onChange={(e) => set("specialty", e.target.value)} className={inputCls(errors.specialty)} placeholder="Ej. Odontología Integral" />
-          </Field>
-          <Field label="Años de experiencia" error={errors.yearsExperience}>
-            <input type="number" min={0} value={form.yearsExperience} onChange={(e) => set("yearsExperience", Number(e.target.value))} className={inputCls(errors.yearsExperience)} />
-          </Field>
-          <Field label="Pacientes atendidos" error={errors.patientsServed}>
-            <input type="number" min={0} value={form.patientsServed} onChange={(e) => set("patientsServed", Number(e.target.value))} className={inputCls(errors.patientsServed)} />
-          </Field>
-        </div>
-        <div className="mt-4 space-y-4">
           <Field label="Descripción corta del consultorio" hint="Se muestra en el encabezado de la página pública.">
             <textarea rows={2} value={form.shortDescription} onChange={(e) => set("shortDescription", e.target.value)} className={inputCls()} placeholder="Atención dental profesional, cercana y segura…" />
           </Field>
@@ -430,12 +418,15 @@ function HoursTab() {
 
 function PaymentsTab() {
   const { config, saveConfig } = useClinicConfig();
+  const { paymentInstructions, updatePaymentInstructions } = useExtraProfile();
   const [payments, setPayments] = useState<PaymentMethod[]>(config.acceptedPayments);
   const [acceptsEmergencies, setAcceptsEmergencies] = useState(config.acceptsEmergencies);
   const [emergencyDescription, setEmergencyDescription] = useState(config.emergencyDescription ?? "");
   const [emergencyPhone, setEmergencyPhone] = useState(config.emergencyPhone ?? "");
   const [emergencyWhatsapp, setEmergencyWhatsapp] = useState(config.emergencyWhatsapp ?? "");
+  const [pi, setPi] = useState({ ...paymentInstructions });
   const [saved, setSaved] = useState(false);
+  const [clabeError, setClabeError] = useState("");
 
   function togglePayment(m: PaymentMethod) {
     setPayments((p) =>
@@ -443,13 +434,26 @@ function PaymentsTab() {
     );
   }
 
+  function setPiField<K extends keyof typeof pi>(k: K, v: (typeof pi)[K]) {
+    setPi((prev) => ({ ...prev, [k]: v }));
+    if (k === "clabe") setClabeError("");
+  }
+
   async function handleSave() {
+    if (pi.clabe && pi.clabe.trim() && pi.clabe.replace(/\D/g, "").length !== 18) {
+      setClabeError("La CLABE debe tener exactamente 18 dígitos");
+      return;
+    }
     await saveConfig({
       acceptedPayments: payments,
       acceptsEmergencies,
       emergencyDescription: emergencyDescription || undefined,
       emergencyPhone: emergencyPhone || undefined,
       emergencyWhatsapp: emergencyWhatsapp || undefined,
+    });
+    updatePaymentInstructions({
+      ...pi,
+      clabe: pi.clabe?.replace(/\D/g, "") || undefined,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -482,6 +486,70 @@ function PaymentsTab() {
               </label>
             );
           })}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Instrucciones de transferencia bancaria">
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={pi.showTransferDetails}
+              onChange={(e) => setPiField("showTransferDetails", e.target.checked)}
+              className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+            />
+            <span className="text-sm text-[var(--color-muted-text)] font-medium">
+              Mostrar datos de transferencia en la página pública
+            </span>
+          </label>
+          {pi.showTransferDetails && (
+            <div className="space-y-4 pl-7 border-l-2 border-[var(--color-accent)]/30 ml-2">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Banco">
+                  <input value={pi.bankName ?? ""} onChange={(e) => setPiField("bankName", e.target.value || undefined)} className={inputCls()} placeholder="BBVA, Banamex, HSBC…" />
+                </Field>
+                <Field label="Titular de la cuenta">
+                  <input value={pi.accountHolder ?? ""} onChange={(e) => setPiField("accountHolder", e.target.value || undefined)} className={inputCls()} placeholder="Nombre completo" />
+                </Field>
+                <Field label="CLABE interbancaria (18 dígitos)" error={clabeError}>
+                  <input
+                    value={pi.clabe ?? ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 18);
+                      setPiField("clabe", digits || undefined);
+                    }}
+                    inputMode="numeric"
+                    maxLength={18}
+                    className={inputCls(clabeError)}
+                    placeholder="000000000000000000"
+                  />
+                  {pi.clabe && <p className="text-xs text-[var(--color-muted-text)]/60 mt-1">{pi.clabe.length}/18 dígitos</p>}
+                </Field>
+                <Field label="Número de cuenta (opcional)">
+                  <input value={pi.accountNumber ?? ""} onChange={(e) => setPiField("accountNumber", e.target.value || undefined)} className={inputCls()} placeholder="1234567890" />
+                </Field>
+                <Field label="Últimos 4 dígitos de tarjeta (opcional)" hint="Solo los últimos 4. No ingreses el número completo.">
+                  <input
+                    value={pi.cardLastFourDigits ?? ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setPiField("cardLastFourDigits", digits || undefined);
+                    }}
+                    inputMode="numeric"
+                    maxLength={4}
+                    className={inputCls()}
+                    placeholder="1234"
+                  />
+                </Field>
+                <Field label="Link de pago (opcional)" hint="PayPal, Mercado Pago, etc.">
+                  <input value={pi.paymentLink ?? ""} onChange={(e) => setPiField("paymentLink", e.target.value || undefined)} className={inputCls()} placeholder="https://mpago.la/..." />
+                </Field>
+              </div>
+              <Field label="Instrucciones adicionales para la referencia" hint="Ej. Indica tu nombre completo en el concepto.">
+                <textarea rows={2} value={pi.transferReferenceInstructions ?? ""} onChange={(e) => setPiField("transferReferenceInstructions", e.target.value || undefined)} className={inputCls()} placeholder="Por favor escribe tu nombre y número de cita en el concepto de la transferencia." />
+              </Field>
+            </div>
+          )}
         </div>
       </SectionCard>
 
@@ -536,17 +604,499 @@ function PaymentsTab() {
         </div>
       </SectionCard>
 
-      <SaveRow onSave={handleSave} saved={saved} saving={false} errors={[]} />
+      <SaveRow onSave={handleSave} saved={saved} saving={false} errors={clabeError ? [clabeError] : []} />
     </div>
   );
 }
 
 // ── Tab E: Apariencia ──────────────────────────────────────────────────────────
 
-function AppearanceTab() {
+// ── Appearance sub-components ──────────────────────────────────────────────────
+
+const TEMPLATE_CATEGORIES = [
+  { key: "dentista",    label: "Dentista"    },
+  { key: "medico",      label: "Médico"      },
+  { key: "veterinario", label: "Veterinario" },
+  { key: "psicologo",   label: "Psicólogo"   },
+  { key: "nutriologo",  label: "Nutriólogo"  },
+  { key: "fisioterapia",label: "Fisioterapia"},
+  { key: "estetica",    label: "Estética"    },
+] as const;
+
+function TemplatePickerModal({
+  currentId, onSelect, onClose,
+}: { currentId: string; onSelect: (id: string) => void; onClose: () => void }) {
+  const templates = Object.values(TEMPLATE_REGISTRY);
   return (
-    <div className="space-y-5">
-      <ThemePaletteSelector />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
+          <h2 className="font-bold text-[var(--color-text)]">Seleccionar plantilla</h2>
+          <button onClick={onClose} className="text-[var(--color-muted-text)] hover:text-[var(--color-text)] text-xl leading-none">✕</button>
+        </div>
+        <div className="overflow-y-auto p-6 space-y-6">
+          {TEMPLATE_CATEGORIES.map(cat => {
+            const cats = templates.filter(t => t.category === cat.key);
+            if (!cats.length) return null;
+            return (
+              <div key={cat.key}>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-text)] mb-2">{cat.label}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {cats.map(t => {
+                    const active = currentId === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => onSelect(t.id)}
+                        className={`rounded-xl border p-3 text-left transition ${
+                          active
+                            ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                            : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40"
+                        }`}
+                      >
+                        <div className="flex gap-1 mb-2">
+                          {[...t.palettes].slice(0, 3).map(p => (
+                            <span key={p.id} className="w-3 h-3 rounded-full" style={{ background: p.swatch }} />
+                          ))}
+                        </div>
+                        <p className="text-xs font-medium text-[var(--color-text)] leading-tight">{t.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-[var(--color-muted-text)] truncate">{t.description?.split("·")[0]}</p>
+                          {active && <CheckCircle2 className="w-3 h-3 text-[var(--color-accent)] flex-shrink-0" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobilePreviewModal({
+  PreviewComponent, profile, onClose,
+}: { PreviewComponent: React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined; profile: unknown; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-card)] border-b border-[var(--color-border)]">
+        <span className="text-sm font-medium text-[var(--color-text)]">Vista previa</span>
+        <button onClick={onClose} className="text-[var(--color-muted-text)] font-bold text-lg leading-none">✕</button>
+      </div>
+      <div className="flex-1 overflow-hidden relative bg-white">
+        {PreviewComponent && (
+          <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: `${100 / 0.42}%`, pointerEvents: "none", userSelect: "none" }}>
+            <PreviewComponent profile={profile} isPreview={true} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LivePreviewPanel({ PreviewComponent, profile }: {
+  PreviewComponent: React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined;
+  profile: unknown;
+}) {
+  if (!PreviewComponent) {
+    return (
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] flex items-center justify-center" style={{ height: "70vh" }}>
+        <p className="text-sm text-[var(--color-muted-text)]">Selecciona una plantilla</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-text)] mb-2">Vista previa</p>
+      {/* Isolation wrapper: reset CSS vars so dashboard theme doesn't bleed into preview */}
+      <div
+        className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] shadow-lg bg-white"
+        style={{ height: "70vh" }}
+      >
+        <div
+          style={{
+            // Reset dashboard vars inside the preview so templates only see their own palette
+            "--color-background": "initial",
+            "--color-primary": "initial",
+            "--color-accent": "initial",
+            "--color-text": "initial",
+            "--color-muted-text": "initial",
+            "--color-border": "initial",
+            "--color-card": "initial",
+            transform: "scale(0.42)",
+            transformOrigin: "top left",
+            width: `${100 / 0.42}%`,
+            pointerEvents: "none",
+            userSelect: "none",
+          } as React.CSSProperties}
+        >
+          <PreviewComponent profile={profile} isPreview={true} />
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-[var(--color-muted-text)]/60 text-center">
+        Vista previa aproximada · los datos reales se ven al publicar
+      </p>
+    </div>
+  );
+}
+
+function TemplateImagesSection({
+  imageFields, currentImages, onUpdate,
+}: {
+  imageFields: TemplateImageField[];
+  currentImages: Record<string, string | string[]>;
+  onUpdate: (fields: Record<string, string | string[]>) => void;
+}) {
+  if (!imageFields.length) return null;
+
+  function updateField(key: string, value: string | string[]) {
+    onUpdate({ ...currentImages, [key]: value });
+  }
+
+  return (
+    <SectionCard title="Imágenes de esta plantilla">
+      <div className="space-y-5">
+        {imageFields.map(field => {
+          const value = currentImages[field.key];
+
+          if (field.multiple) {
+            const arr = (Array.isArray(value) ? value : []) as string[];
+            return (
+              <div key={field.key}>
+                <label className="block text-sm font-medium text-[var(--color-muted-text)] mb-1">
+                  {field.label}{field.required && <span className="text-[var(--color-accent)] ml-0.5">*</span>}
+                </label>
+                {field.description && <p className="text-xs text-[var(--color-muted-text)]/60 mb-1">{field.description}</p>}
+                {field.recommendedAspectRatio && (
+                  <p className="text-xs text-[var(--color-muted-text)]/50 mb-2">Proporción: {field.recommendedAspectRatio}</p>
+                )}
+                <div className="space-y-2">
+                  {arr.map((url, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={e => {
+                          const next = [...arr];
+                          next[i] = e.target.value;
+                          updateField(field.key, next);
+                        }}
+                        placeholder="https://..."
+                        className={inputCls()}
+                      />
+                      {url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      )}
+                      <button onClick={() => updateField(field.key, arr.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {(!field.maxItems || arr.length < field.maxItems) && (
+                    <button
+                      onClick={() => updateField(field.key, [...arr, ""])}
+                      className="flex items-center gap-1 text-xs text-[var(--color-muted-text)] hover:text-[var(--color-primary)]"
+                    >
+                      <Plus className="w-3 h-3" /> Agregar imagen
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          const strVal = typeof value === "string" ? value : "";
+          return (
+            <div key={field.key}>
+              <label className="block text-sm font-medium text-[var(--color-muted-text)] mb-1">
+                {field.label}{field.required && <span className="text-[var(--color-accent)] ml-0.5">*</span>}
+              </label>
+              {field.description && <p className="text-xs text-[var(--color-muted-text)]/60 mb-1">{field.description}</p>}
+              {field.recommendedAspectRatio && (
+                <p className="text-xs text-[var(--color-muted-text)]/50 mb-2">Proporción recomendada: {field.recommendedAspectRatio}</p>
+              )}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="url"
+                  value={strVal}
+                  onChange={e => updateField(field.key, e.target.value)}
+                  placeholder="https://..."
+                  className={inputCls()}
+                />
+                {strVal && (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={strVal} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                    <button onClick={() => updateField(field.key, "")} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </SectionCard>
+  );
+}
+
+const DS_COLOR_FIELDS: { key: keyof DashboardColorSet; label: string }[] = [
+  { key: "background",       label: "Fondo principal"       },
+  { key: "surface",          label: "Superficie (tarjetas)" },
+  { key: "surfaceMuted",     label: "Superficie secundaria" },
+  { key: "primary",          label: "Color primario"        },
+  { key: "primaryForeground",label: "Texto sobre primario"  },
+  { key: "accent",           label: "Acento / Botones"      },
+  { key: "text",             label: "Texto principal"       },
+  { key: "textMuted",        label: "Texto secundario"      },
+  { key: "border",           label: "Bordes"                },
+];
+
+function DashboardThemeSection({ theme, onChange }: {
+  theme: DashboardTheme;
+  onChange: (partial: Partial<DashboardTheme>) => void;
+}) {
+  const [editingMode, setEditingMode] = useState<"light" | "dark">("light");
+  const { mode, lightColors, darkColors } = theme;
+  const colors = editingMode === "light" ? lightColors : darkColors;
+
+  function updateColors(partial: Partial<DashboardColorSet>) {
+    if (editingMode === "light") {
+      onChange({ lightColors: { ...lightColors, ...partial } });
+    } else {
+      onChange({ darkColors: { ...darkColors, ...partial } });
+    }
+  }
+
+  const MODE_OPTIONS: { value: DashboardTheme["mode"]; label: string; Icon: React.ElementType }[] = [
+    { value: "light",  label: "Claro",  Icon: Sun     },
+    { value: "dark",   label: "Oscuro", Icon: Moon    },
+    { value: "system", label: "Sistema",Icon: Monitor },
+  ];
+
+  return (
+    <SectionCard title="Tema del panel">
+      <p className="text-xs text-[var(--color-muted-text)]/70 mb-4">
+        Colores exclusivos de tu panel privado — no afectan la página pública.
+      </p>
+
+      <div className="flex gap-2 mb-5">
+        {MODE_OPTIONS.map(({ value, label, Icon }) => (
+          <button
+            key={value}
+            onClick={() => onChange({ mode: value })}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition ${
+              mode === value
+                ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-primary)]"
+                : "border-[var(--color-border)] text-[var(--color-muted-text)] hover:border-[var(--color-accent)]/40"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Color editor — always visible so user can prep both modes */}
+      <div>
+        <div className="flex border-b border-[var(--color-border)] mb-4">
+          {(["light", "dark"] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setEditingMode(m)}
+              className={`px-4 py-2 text-xs font-medium border-b-2 transition ${
+                editingMode === m
+                  ? "border-[var(--color-accent)] text-[var(--color-primary)]"
+                  : "border-transparent text-[var(--color-muted-text)]"
+              }`}
+            >
+              {m === "light" ? "Colores claros" : "Colores oscuros"}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-2.5">
+          {DS_COLOR_FIELDS.map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-3">
+              <input
+                type="color"
+                value={colors[key]}
+                onChange={e => updateColors({ [key]: e.target.value })}
+                className="w-8 h-8 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5 flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-[var(--color-text)]">{label}</p>
+              </div>
+              <input
+                type="text"
+                value={colors[key]}
+                onChange={e => updateColors({ [key]: e.target.value })}
+                className="w-24 text-xs font-mono border border-[var(--color-border)] rounded-lg px-2 py-1 text-[var(--color-text)] bg-[var(--color-background)]"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function AppearanceTab() {
+  const profile = usePublicProfile();
+  const extra = useExtraProfile();
+  const { appearance, updateAppearance } = profile;
+  const { templateImages, updateTemplateImages, dashboardTheme, updateDashboardTheme } = extra;
+
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
+
+  const templateId = appearance.selectedTemplateId ?? "dentista-01";
+  const templateDef = getTemplate(templateId);
+  const PreviewComponent = templateDef?.component as React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined;
+  const currentImages = templateImages[templateId] ?? {};
+
+  const activePaletteId = appearance.selectedPaletteId;
+
+  function handleTemplateSelect(id: string) {
+    const def = getTemplate(id);
+    updateAppearance({ selectedTemplateId: id, selectedPaletteId: def?.defaultPaletteId ?? "" });
+    setShowTemplatePicker(false);
+  }
+
+  return (
+    <div>
+      {/* ── Desktop: 2-column layout ────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+        {/* LEFT: controls */}
+        <div className="space-y-4">
+
+          {/* 1. Compact template selector */}
+          <SectionCard title="Plantilla">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1 flex-shrink-0">
+                {templateDef
+                  ? [...templateDef.palettes].slice(0, 3).map(p => (
+                      <span key={p.id} className="w-4 h-4 rounded-full ring-1 ring-black/10" style={{ background: p.swatch }} />
+                    ))
+                  : <span className="w-4 h-4 rounded-full bg-[var(--color-border)]" />
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--color-text)] truncate">{templateDef?.name ?? templateId}</p>
+                <p className="text-xs text-[var(--color-muted-text)] truncate">{templateDef?.description}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {templateDef?.publicPath && (
+                  <Link
+                    href={templateDef.publicPath}
+                    target="_blank"
+                    className="text-xs text-[var(--color-muted-text)] hover:text-[var(--color-primary)] flex items-center gap-1"
+                  >
+                    Ver <ExternalLink className="w-3 h-3" />
+                  </Link>
+                )}
+                <button
+                  onClick={() => setShowTemplatePicker(true)}
+                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-background)] transition"
+                >
+                  Cambiar
+                </button>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* 2. Palette — only palettes of the active template */}
+          {templateDef && (
+            <SectionCard title="Paleta de colores">
+              <div className="space-y-1.5">
+                {[...templateDef.palettes].map(p => {
+                  const isActive = p.id === activePaletteId;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => updateAppearance({ selectedPaletteId: p.id })}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl border transition ${
+                        isActive
+                          ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5"
+                          : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40"
+                      }`}
+                    >
+                      <div className="flex gap-1">
+                        <span className="w-4 h-4 rounded-full ring-1 ring-black/10" style={{ background: p.swatch }} />
+                        <span className="w-4 h-4 rounded-full ring-1 ring-black/10" style={{ background: p.surface }} />
+                        <span className="w-4 h-4 rounded-full ring-1 ring-black/10" style={{ background: p.ink }} />
+                      </div>
+                      <span className="text-sm text-[var(--color-text)]">{p.name}</span>
+                      {isActive && <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)] ml-auto" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* 3. Dynamic image fields for the active template */}
+          {templateDef && (
+            <TemplateImagesSection
+              imageFields={templateDef.imageFields}
+              currentImages={currentImages}
+              onUpdate={(fields) => updateTemplateImages(templateId, fields)}
+            />
+          )}
+
+          {/* 4. Mobile preview button */}
+          <div className="lg:hidden">
+            <button
+              onClick={() => setShowMobilePreview(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-background)] transition"
+            >
+              <Eye className="w-4 h-4" /> Ver vista previa
+            </button>
+          </div>
+
+          {/* 5. Dashboard theme (separated from public palette) */}
+          <DashboardThemeSection theme={dashboardTheme} onChange={updateDashboardTheme} />
+
+          {/* 6. Reset */}
+          <div className="pt-1 pb-2">
+            <button
+              onClick={() => {
+                updateAppearance({ selectedTemplateId: "dentista-01", selectedPaletteId: "azul-clinico" });
+              }}
+              className="text-xs text-[var(--color-muted-text)] hover:text-[var(--color-text)] underline"
+            >
+              Restablecer apariencia pública
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT: sticky live preview (desktop only) */}
+        <div className="hidden lg:block">
+          <div className="sticky top-4" style={{ maxHeight: "calc(100vh - 2rem)", overflowY: "auto" }}>
+            <LivePreviewPanel PreviewComponent={PreviewComponent} profile={profile} />
+          </div>
+        </div>
+      </div>
+
+      {showTemplatePicker && (
+        <TemplatePickerModal
+          currentId={templateId}
+          onSelect={handleTemplateSelect}
+          onClose={() => setShowTemplatePicker(false)}
+        />
+      )}
+
+      {showMobilePreview && (
+        <MobilePreviewModal
+          PreviewComponent={PreviewComponent}
+          profile={profile}
+          onClose={() => setShowMobilePreview(false)}
+        />
+      )}
     </div>
   );
 }
@@ -826,6 +1376,410 @@ function MessagesTab() {
   );
 }
 
+// ── Tab: Especialista ──────────────────────────────────────────────────────────
+
+function EspecialistaTab() {
+  const { config, saveConfig } = useClinicConfig();
+  const { specialistExtra, updateSpecialistExtra } = useExtraProfile();
+
+  const [coreForm, setCoreForm] = useState({
+    dentistName: config.dentistName,
+    professionalLicense: config.professionalLicense,
+    specialty: config.specialty,
+    yearsExperience: config.yearsExperience,
+    patientsServed: config.patientsServed,
+  });
+  const [extraForm, setExtraForm] = useState({
+    professionalTitle: specialistExtra.professionalTitle ?? "",
+    specialtyLicense: specialistExtra.specialtyLicense ?? "",
+    school: specialistExtra.school ?? "",
+    biography: specialistExtra.biography ?? "",
+    certifications: (specialistExtra.certifications ?? []).join("\n"),
+  });
+  const [saved, setSaved] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function setCore<K extends keyof typeof coreForm>(k: K, v: (typeof coreForm)[K]) {
+    setCoreForm((f) => ({ ...f, [k]: v }));
+    setErrors((e) => ({ ...e, [k]: "" }));
+  }
+
+  function setExtra<K extends keyof typeof extraForm>(k: K, v: (typeof extraForm)[K]) {
+    setExtraForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function handleSave() {
+    const errs: Record<string, string> = {};
+    if (!coreForm.dentistName.trim()) errs.dentistName = "El nombre es requerido";
+    if (!coreForm.professionalLicense.trim()) errs.professionalLicense = "La cédula es requerida";
+    if (!coreForm.specialty.trim()) errs.specialty = "La especialidad es requerida";
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    await saveConfig(coreForm);
+    updateSpecialistExtra({
+      professionalTitle: extraForm.professionalTitle || undefined,
+      specialtyLicense: extraForm.specialtyLicense || undefined,
+      school: extraForm.school || undefined,
+      biography: extraForm.biography || undefined,
+      certifications: extraForm.certifications.split("\n").map((c) => c.trim()).filter(Boolean),
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  return (
+    <div className="space-y-5">
+      <SectionCard title="Datos del especialista">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Nombre del especialista" required error={errors.dentistName}>
+            <input value={coreForm.dentistName} onChange={(e) => setCore("dentistName", e.target.value)} className={inputCls(errors.dentistName)} placeholder="Ej. Dra. Mariana López" />
+          </Field>
+          <Field label="Especialidad" required error={errors.specialty}>
+            <input value={coreForm.specialty} onChange={(e) => setCore("specialty", e.target.value)} className={inputCls(errors.specialty)} placeholder="Ej. Odontología Integral" />
+          </Field>
+          <Field label="Cédula profesional" required error={errors.professionalLicense}>
+            <input value={coreForm.professionalLicense} onChange={(e) => setCore("professionalLicense", e.target.value)} className={inputCls(errors.professionalLicense)} placeholder="12345678" />
+          </Field>
+          <Field label="Título profesional" hint="Ej. Cirujana Dentista, Médico Internista.">
+            <input value={extraForm.professionalTitle} onChange={(e) => setExtra("professionalTitle", e.target.value)} className={inputCls()} placeholder="Ej. Cirujana Dentista" />
+          </Field>
+          <Field label="Años de experiencia">
+            <input type="number" min={0} value={coreForm.yearsExperience} onChange={(e) => setCore("yearsExperience", Number(e.target.value))} className={inputCls()} />
+          </Field>
+          <Field label="Pacientes atendidos">
+            <input type="number" min={0} value={coreForm.patientsServed} onChange={(e) => setCore("patientsServed", Number(e.target.value))} className={inputCls()} />
+          </Field>
+          <Field label="Cédula de especialidad">
+            <input value={extraForm.specialtyLicense} onChange={(e) => setExtra("specialtyLicense", e.target.value)} className={inputCls()} placeholder="9871234" />
+          </Field>
+          <Field label="Universidad / Escuela">
+            <input value={extraForm.school} onChange={(e) => setExtra("school", e.target.value)} className={inputCls()} placeholder="Ej. UNAM" />
+          </Field>
+        </div>
+        <div className="mt-4 space-y-4">
+          <Field label="Biografía" hint="Texto más extenso sobre tu trayectoria y enfoque.">
+            <textarea rows={4} value={extraForm.biography} onChange={(e) => setExtra("biography", e.target.value)} className={inputCls()} placeholder="Cuéntale a tus pacientes sobre tu formación y forma de trabajar…" />
+          </Field>
+          <Field label="Certificaciones" hint="Una por línea.">
+            <textarea rows={3} value={extraForm.certifications} onChange={(e) => setExtra("certifications", e.target.value)} className={inputCls()} placeholder={"Diplomado en Ortodoncia\nMiembro del Colegio…"} />
+          </Field>
+        </div>
+      </SectionCard>
+      <SaveRow onSave={handleSave} saved={saved} saving={false} errors={Object.values(errors).filter(Boolean)} />
+    </div>
+  );
+}
+
+// ── Tab: Redes sociales ────────────────────────────────────────────────────────
+
+function RedesTab() {
+  const { config, saveConfig } = useClinicConfig();
+  const { businessExtra, updateBusinessExtra } = useExtraProfile();
+  const [form, setForm] = useState({
+    instagram: businessExtra.socialLinksExtra.instagram ?? config.socialMedia?.instagram ?? "",
+    facebook: businessExtra.socialLinksExtra.facebook ?? config.socialMedia?.facebook ?? "",
+    tiktok: businessExtra.socialLinksExtra.tiktok ?? "",
+    youtube: businessExtra.socialLinksExtra.youtube ?? "",
+    linkedin: businessExtra.socialLinksExtra.linkedin ?? "",
+    website: businessExtra.socialLinksExtra.website ?? businessExtra.websiteUrl ?? "",
+  });
+  const [saved, setSaved] = useState(false);
+
+  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
+    setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function handleSave() {
+    await saveConfig({
+      socialMedia: {
+        instagram: form.instagram || undefined,
+        facebook: form.facebook || undefined,
+      },
+    });
+    updateBusinessExtra({
+      websiteUrl: form.website || undefined,
+      socialLinksExtra: {
+        instagram: form.instagram || undefined,
+        facebook: form.facebook || undefined,
+        tiktok: form.tiktok || undefined,
+        youtube: form.youtube || undefined,
+        linkedin: form.linkedin || undefined,
+        website: form.website || undefined,
+      },
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  return (
+    <div className="space-y-5">
+      <SectionCard title="Redes sociales y sitio web">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Instagram" hint="URL completa de tu perfil.">
+            <input value={form.instagram} onChange={(e) => set("instagram", e.target.value)} className={inputCls()} placeholder="https://instagram.com/usuario" />
+          </Field>
+          <Field label="Facebook">
+            <input value={form.facebook} onChange={(e) => set("facebook", e.target.value)} className={inputCls()} placeholder="https://facebook.com/pagina" />
+          </Field>
+          <Field label="TikTok">
+            <input value={form.tiktok} onChange={(e) => set("tiktok", e.target.value)} className={inputCls()} placeholder="https://tiktok.com/@usuario" />
+          </Field>
+          <Field label="YouTube">
+            <input value={form.youtube} onChange={(e) => set("youtube", e.target.value)} className={inputCls()} placeholder="https://youtube.com/@canal" />
+          </Field>
+          <Field label="LinkedIn">
+            <input value={form.linkedin} onChange={(e) => set("linkedin", e.target.value)} className={inputCls()} placeholder="https://linkedin.com/in/usuario" />
+          </Field>
+          <Field label="Sitio web">
+            <input value={form.website} onChange={(e) => set("website", e.target.value)} className={inputCls()} placeholder="https://tusitio.com" />
+          </Field>
+        </div>
+      </SectionCard>
+      <SaveRow onSave={handleSave} saved={saved} saving={false} errors={[]} />
+    </div>
+  );
+}
+
+// ── Tab: Testimonios (CRUD) ────────────────────────────────────────────────────
+
+const emptyTestimonial = (): PublicTestimonial => ({
+  id: `t-${Date.now()}`,
+  name: "",
+  comment: "",
+  rating: 5,
+  isPublished: true,
+});
+
+function TestimoniosTab() {
+  const { testimonials, upsertTestimonial, deleteTestimonial } = useExtraProfile();
+  const [draft, setDraft] = useState<PublicTestimonial>(emptyTestimonial());
+
+  function set<K extends keyof PublicTestimonial>(k: K, v: PublicTestimonial[K]) {
+    setDraft((d) => ({ ...d, [k]: v }));
+  }
+
+  function handleAdd() {
+    if (!draft.name.trim() || !draft.comment.trim()) return;
+    upsertTestimonial(draft);
+    setDraft(emptyTestimonial());
+  }
+
+  return (
+    <div className="space-y-5">
+      <SectionCard title="Testimonios publicados">
+        {testimonials.length === 0 && (
+          <p className="text-sm text-[var(--color-muted-text)]/70">Aún no hay testimonios.</p>
+        )}
+        <div className="space-y-3">
+          {testimonials.map((t) => (
+            <div key={t.id} className="flex items-start gap-3 border border-[var(--color-border)] rounded-xl p-3">
+              <div className="w-9 h-9 shrink-0 rounded-full bg-[var(--color-primary)]/10 grid place-items-center text-xs font-bold text-[var(--color-primary)]">
+                {getInitials(t.name || "—")}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[var(--color-text)]">{t.name}</span>
+                  <span className="text-xs text-amber-500">{"★".repeat(t.rating ?? 5)}</span>
+                </div>
+                <p className="text-xs text-[var(--color-muted-text)] mt-0.5 line-clamp-2">{t.comment}</p>
+              </div>
+              <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-text)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={t.isPublished}
+                  onChange={(e) => upsertTestimonial({ ...t, isPublished: e.target.checked })}
+                  className="w-3.5 h-3.5 accent-[var(--color-primary)]"
+                />
+                Visible
+              </label>
+              <button onClick={() => deleteTestimonial(t.id)} className="text-red-400 hover:text-red-600 p-1" aria-label="Eliminar">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Agregar testimonio">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Nombre del paciente" required>
+            <input value={draft.name} onChange={(e) => set("name", e.target.value)} className={inputCls()} placeholder="Ej. María F." />
+          </Field>
+          <Field label="Calificación">
+            <select value={draft.rating ?? 5} onChange={(e) => set("rating", Number(e.target.value))} className={inputCls()}>
+              {[5, 4, 3, 2, 1].map((n) => (
+                <option key={n} value={n}>{n} estrellas</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="mt-4">
+          <Field label="Comentario" required>
+            <textarea rows={3} value={draft.comment} onChange={(e) => set("comment", e.target.value)} className={inputCls()} placeholder="Lo que dice el paciente…" />
+          </Field>
+        </div>
+        <button
+          onClick={handleAdd}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+        >
+          <Plus className="w-4 h-4" /> Agregar testimonio
+        </button>
+      </SectionCard>
+    </div>
+  );
+}
+
+// ── Tab: Preguntas frecuentes (CRUD) ───────────────────────────────────────────
+
+const emptyFAQ = (): PublicFAQ => ({
+  id: `f-${Date.now()}`,
+  question: "",
+  answer: "",
+  isPublished: true,
+});
+
+function PreguntasTab() {
+  const { faqs, upsertFAQ, deleteFAQ } = useExtraProfile();
+  const [draft, setDraft] = useState<PublicFAQ>(emptyFAQ());
+
+  function set<K extends keyof PublicFAQ>(k: K, v: PublicFAQ[K]) {
+    setDraft((d) => ({ ...d, [k]: v }));
+  }
+
+  function handleAdd() {
+    if (!draft.question.trim() || !draft.answer.trim()) return;
+    upsertFAQ(draft);
+    setDraft(emptyFAQ());
+  }
+
+  return (
+    <div className="space-y-5">
+      <SectionCard title="Preguntas frecuentes">
+        {faqs.length === 0 && (
+          <p className="text-sm text-[var(--color-muted-text)]/70">Aún no hay preguntas.</p>
+        )}
+        <div className="space-y-3">
+          {faqs.map((f) => (
+            <div key={f.id} className="border border-[var(--color-border)] rounded-xl p-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-text)]">{f.question}</p>
+                  <p className="text-xs text-[var(--color-muted-text)] mt-0.5">{f.answer}</p>
+                </div>
+                <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-text)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={f.isPublished}
+                    onChange={(e) => upsertFAQ({ ...f, isPublished: e.target.checked })}
+                    className="w-3.5 h-3.5 accent-[var(--color-primary)]"
+                  />
+                  Visible
+                </label>
+                <button onClick={() => deleteFAQ(f.id)} className="text-red-400 hover:text-red-600 p-1" aria-label="Eliminar">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Agregar pregunta">
+        <div className="space-y-4">
+          <Field label="Pregunta" required>
+            <input value={draft.question} onChange={(e) => set("question", e.target.value)} className={inputCls()} placeholder="¿Necesito cita previa?" />
+          </Field>
+          <Field label="Respuesta" required>
+            <textarea rows={3} value={draft.answer} onChange={(e) => set("answer", e.target.value)} className={inputCls()} placeholder="Sí, recomendamos agendar para…" />
+          </Field>
+        </div>
+        <button
+          onClick={handleAdd}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+        >
+          <Plus className="w-4 h-4" /> Agregar pregunta
+        </button>
+      </SectionCard>
+    </div>
+  );
+}
+
+// ── Tab: Página pública (estado, acción, secciones, template) ───────────────────
+
+function PaginaTab() {
+  const { publicPage, updatePublicPage } = useExtraProfile();
+  const sections = publicPage.sectionVisibility;
+  const sectionLabels: { key: keyof typeof sections; label: string }[] = [
+    { key: "specialist", label: "Especialista" },
+    { key: "services", label: "Servicios" },
+    { key: "benefits", label: "Beneficios" },
+    { key: "testimonials", label: "Testimonios" },
+    { key: "faqs", label: "Preguntas frecuentes" },
+    { key: "gallery", label: "Galería" },
+    { key: "payments", label: "Formas de pago" },
+    { key: "processStages", label: "Proceso" },
+    { key: "location", label: "Ubicación" },
+    { key: "emergencies", label: "Urgencias" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <SectionCard title="Estado y acción principal">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Estado de la página">
+            <select
+              value={publicPage.status}
+              onChange={(e) => updatePublicPage({ status: e.target.value as "draft" | "published" })}
+              className={inputCls()}
+            >
+              <option value="published">Publicada</option>
+              <option value="draft">Borrador</option>
+            </select>
+          </Field>
+          <Field label="Acción principal del botón">
+            <select
+              value={publicPage.primaryAction}
+              onChange={(e) => updatePublicPage({ primaryAction: e.target.value as "appointment" | "whatsapp" | "phone" })}
+              className={inputCls()}
+            >
+              <option value="appointment">Agendar cita</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="phone">Llamar</option>
+            </select>
+          </Field>
+          <Field label="Texto del botón principal">
+            <input value={publicPage.primaryButtonLabel} onChange={(e) => updatePublicPage({ primaryButtonLabel: e.target.value })} className={inputCls()} placeholder="Agendar cita" />
+          </Field>
+          <Field label="Texto del botón secundario">
+            <input value={publicPage.secondaryButtonLabel ?? ""} onChange={(e) => updatePublicPage({ secondaryButtonLabel: e.target.value })} className={inputCls()} placeholder="Enviar WhatsApp" />
+          </Field>
+        </div>
+        <div className="mt-4">
+          <Field label="Mensaje predefinido de WhatsApp">
+            <textarea rows={2} value={publicPage.whatsappPrefilledMessage ?? ""} onChange={(e) => updatePublicPage({ whatsappPrefilledMessage: e.target.value })} className={inputCls()} placeholder="Hola, me gustaría agendar una cita…" />
+          </Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Secciones visibles">
+        <div className="grid sm:grid-cols-2 gap-2">
+          {sectionLabels.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-3 cursor-pointer py-1">
+              <input
+                type="checkbox"
+                checked={sections[key]}
+                onChange={(e) => updatePublicPage({ sectionVisibility: { ...sections, [key]: e.target.checked } })}
+                className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+              />
+              <span className="text-sm text-[var(--color-muted-text)] font-medium">{label}</span>
+            </label>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function ConfiguracionPage() {
@@ -894,10 +1848,15 @@ export default function ConfiguracionPage() {
 
       {/* Tab content */}
       {activeTab === "general"        && <GeneralTab />}
+      {activeTab === "especialista"   && <EspecialistaTab />}
       {activeTab === "contacto"       && <ContactTab />}
+      {activeTab === "redes"          && <RedesTab />}
       {activeTab === "horarios"       && <HoursTab />}
       {activeTab === "pagos"          && <PaymentsTab />}
       {activeTab === "apariencia"     && <AppearanceTab />}
+      {activeTab === "pagina"         && <PaginaTab />}
+      {activeTab === "testimonios"    && <TestimoniosTab />}
+      {activeTab === "preguntas"      && <PreguntasTab />}
       {activeTab === "imagenes"       && <ImagesTab />}
       {activeTab === "seo"            && <SeoTab />}
       {activeTab === "mensajes"       && <MessagesTab />}

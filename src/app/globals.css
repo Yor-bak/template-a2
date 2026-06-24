@@ -11,6 +11,61 @@
   --color-border: #E8ECEF;
   --color-text: #102A33;
   --color-muted-text: #5F737C;
+
+  /* César's template tokens */
+  --color-ivory: #faf7f0;
+  --color-ink: #1b2430;
+  --color-meridian: #2f5d62;
+  --color-meridian-deep: #203f42;
+  --color-steel: #c7d1d3;
+  --color-steel-soft: #e7ebec;
+  --color-calibration: #bfa15a;
+  --color-urgent: #d85c3e;
+  --color-urgent-deep: #b6452d;
+
+  /* Médico palette tokens (paleta 1 / "Azul clínico", the default) */
+  --color-medico-bg: #f4f7f6;
+  --color-medico-ink: #15324a;
+  --color-medico-accent: #2563a8;
+  --color-medico-accent-deep: #1d4e88;
+  --color-medico-accent-soft: #7fb1e0;
+  --color-medico-urgent: #c23a32;
+}
+
+/* ── Admin panel design tokens — Midnight Ink ────────────────────────────── */
+:root {
+  --bg-base:     #0f0e17;
+  --bg-surface:  #1a1b1f;
+  --bg-elevated: #24262b;
+  --accent:      #c9a84c;
+  --accent-muted:#c9a84c44;
+  --text-primary:#f5f0e8;
+  --text-muted:  #9a9ca3;
+  --border:      #34373e;
+  --danger:      #e05a5a;
+}
+
+@theme inline {
+  --color-ivory: var(--color-ivory);
+  --color-ink: var(--color-ink);
+  --color-meridian: var(--color-meridian);
+  --color-meridian-deep: var(--color-meridian-deep);
+  --color-steel: var(--color-steel);
+  --color-steel-soft: var(--color-steel-soft);
+  --color-calibration: var(--color-calibration);
+  --color-urgent: var(--color-urgent);
+  --color-urgent-deep: var(--color-urgent-deep);
+
+  --color-medico-bg: var(--color-medico-bg);
+  --color-medico-ink: var(--color-medico-ink);
+  --color-medico-accent: var(--color-medico-accent);
+  --color-medico-accent-deep: var(--color-medico-accent-deep);
+  --color-medico-accent-soft: var(--color-medico-accent-soft);
+  --color-medico-urgent: var(--color-medico-urgent);
+
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-inter);
+  --font-data: var(--font-plex-mono);
 }
 
 body {
@@ -34,20 +89,72 @@ html {
   border-radius: 3px;
 }
 
-/* ── Admin panel design tokens — Midnight Ink ────────────────────────────── */
-:root {
-  --bg-base:     #0f0e17;
-  --bg-surface:  #1a1b1f;
-  --bg-elevated: #24262b;
-  --accent:      #c9a84c;
-  --accent-muted:#c9a84c44;
-  --text-primary:#f5f0e8;
-  --text-muted:  #9a9ca3;
-  --border:      #34373e;
-  --danger:      #e05a5a;
-}
-
 /* Admin-section scrollbar */
 .adm-scroll::-webkit-scrollbar { width: 4px; }
 .adm-scroll::-webkit-scrollbar-track { background: var(--bg-base); }
 .adm-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Calibration rule: the recurring tick-marked midline motif */
+.rule {
+  position: relative;
+  height: 1px;
+  background: var(--color-steel);
+}
+
+.rule::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-ink) 0,
+    var(--color-ink) 1px,
+    transparent 1px,
+    transparent 24px
+  );
+  opacity: 0.18;
+}
+
+.tick-label {
+  font-family: var(--font-data), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Suture stitch: a dashed cross-hatched divider */
+.suture {
+  position: relative;
+  height: 1px;
+}
+
+.suture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    115deg,
+    currentColor 0,
+    currentColor 2px,
+    transparent 2px,
+    transparent 10px
+  );
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    animation: reveal 0.7s ease-out both;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

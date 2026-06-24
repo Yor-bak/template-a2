@@ -24,7 +24,6 @@ import {
 } from "@/services/calendarService";
 import { DEMO_TODAY, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
 import { formatTime } from "@/lib/utils";
-import { WeeklyEditor } from "@/components/calendar/WeeklyEditor";
 import { BlockTimeModal } from "@/components/calendar/BlockTimeModal";
 import { CloseDayModal } from "@/components/calendar/CloseDayModal";
 
@@ -41,7 +40,7 @@ export default function CalendarioPage() {
   const [calYear, setCalYear] = useState(2025);
   const [calMonth, setCalMonth] = useState(5); // Junio
   const [selectedDate, setSelectedDate] = useState(DEMO_TODAY);
-  const [tab, setTab] = useState<"agenda" | "horarios">("agenda");
+  const [tab] = useState<"agenda">("agenda");
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
 
@@ -197,31 +196,6 @@ export default function CalendarioPage() {
 
         {/* ── PANEL DERECHO ─────────────────────────────────────── */}
         <div>
-          {/* Tabs */}
-          <div className="flex gap-1 bg-white border border-[var(--color-border)] rounded-xl p-1 mb-5 shadow-sm w-fit">
-            <button
-              onClick={() => setTab("agenda")}
-              className={[
-                "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-                tab === "agenda"
-                  ? "bg-[var(--color-primary)] text-white shadow-sm"
-                  : "text-[var(--color-muted-text)] hover:text-[var(--color-text)]",
-              ].join(" ")}
-            >
-              Agenda del día
-            </button>
-            <button
-              onClick={() => setTab("horarios")}
-              className={[
-                "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-                tab === "horarios"
-                  ? "bg-[var(--color-primary)] text-white shadow-sm"
-                  : "text-[var(--color-muted-text)] hover:text-[var(--color-text)]",
-              ].join(" ")}
-            >
-              Horarios semanales
-            </button>
-          </div>
 
           {/* ── AGENDA DEL DÍA ──────────────────────────────────── */}
           {tab === "agenda" && (
@@ -371,15 +345,6 @@ export default function CalendarioPage() {
             </div>
           )}
 
-          {/* ── HORARIOS SEMANALES ───────────────────────────────── */}
-          {tab === "horarios" && (
-            <div>
-              <p className="text-sm text-[var(--color-muted-text)] mb-5 max-w-lg">
-                Define los horarios de atención para cada día. Los pacientes solo podrán elegir horarios dentro de estas ventanas al agendar en línea.
-              </p>
-              <WeeklyEditor />
-            </div>
-          )}
         </div>
       </div>
 
