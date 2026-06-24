@@ -68,7 +68,7 @@ export default function DashboardPage() {
               Buenos días, {config.dentistName}
             </h1>
             <p className="text-white/50 text-sm">
-              Gestiona tus citas, pacientes e ingresos desde un solo lugar.
+              Gestiona tus citas, clientes e ingresos desde un solo lugar.
             </p>
             <p className="text-white/30 text-xs mt-2 capitalize">{dateStr}</p>
           </div>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Ingresos registrados" value={formatCurrency(monthIncome)} icon={DollarSign} color="green" sub="Pagos marcados como pagados" />
-          <StatCard label="Pacientes" value={patients.length} icon={Users} color="purple" />
+          <StatCard label="Clientes" value={patients.length} icon={Users} color="purple" />
 
           {/* Origen de citas */}
           <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-5">
@@ -168,7 +168,7 @@ export default function DashboardPage() {
             <div>
               <p className="font-bold text-base">Agenda Inteligente con WhatsApp</p>
               <p className="text-white/70 text-sm mt-0.5">
-                Permite que una IA responda a tus pacientes, recopile sus datos y cree citas automáticamente en tu panel.
+                Permite que una IA responda a tus clientes, recopile sus datos y cree citas automáticamente en tu panel.
               </p>
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function DashboardPage() {
             <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="bg-[var(--color-background)] border-b border-[var(--color-border)] text-xs text-[var(--color-muted-text)] uppercase tracking-wide">
-                  <th className="text-left px-5 py-3 font-semibold">Paciente</th>
+                  <th className="text-left px-5 py-3 font-semibold">Cliente</th>
                   <th className="text-left px-5 py-3 font-semibold">Servicio</th>
                   <th className="text-left px-5 py-3 font-semibold">Fecha</th>
                   <th className="text-left px-5 py-3 font-semibold">Estado</th>

@@ -176,10 +176,14 @@ export interface DashboardColorSet {
 }
 
 export interface DashboardTheme {
+  selectedThemeId: string;
   mode: "light" | "dark" | "system";
   lightColors: DashboardColorSet;
   darkColors: DashboardColorSet;
 }
+
+// Per-template, per-service image storage (does not alter the service data model)
+export type ServiceTemplateMedia = Record<string, Record<string, Record<string, string | string[]>>>;
 
 export interface SectionVisibility {
   specialist: boolean;

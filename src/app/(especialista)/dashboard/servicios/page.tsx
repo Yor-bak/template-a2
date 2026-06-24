@@ -151,7 +151,7 @@ export default function DashboardServiciosPage() {
       <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Servicios del consultorio</h1>
-          <p className="text-[var(--color-muted-text)] text-sm">Administra los tratamientos que tus pacientes pueden consultar y agendar. ·
+          <p className="text-[var(--color-muted-text)] text-sm">Administra los tratamientos que tus clientes pueden consultar y agendar. ·
             {services.length} servicios · {active} activos · {inactive} inactivos
           </p>
         </div>
@@ -194,7 +194,7 @@ export default function DashboardServiciosPage() {
           </div>
           <p className="font-bold text-[var(--color-text)] mb-2">Sin servicios configurados</p>
           <p className="text-sm text-[var(--color-muted-text)] text-center max-w-xs mb-6">
-            Agrega tu primer servicio para que los pacientes puedan verlo y solicitar una cita.
+            Agrega tu primer servicio para que los clientes puedan verlo y solicitar una cita.
           </p>
           <button
             onClick={openCreate}

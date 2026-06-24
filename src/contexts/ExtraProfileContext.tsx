@@ -4,7 +4,9 @@ import type {
   PublicTestimonial, PublicFAQ, Benefit, ProcessStage,
   AppearanceConfig, PublicPageConfig, Address, SocialLinks,
   TemplateImages, DashboardTheme, DashboardColorSet, PaymentInstructions,
+  ServiceTemplateMedia,
 } from "@/types/profile";
+import { getThemePreset, DEFAULT_THEME_ID } from "@/lib/dashboardThemes";
 import { DEFAULT_PUBLIC_PROFILE } from "@/data/defaultProfile";
 
 const STORAGE_KEY = "template-a2-public-profile";
@@ -27,34 +29,15 @@ interface BusinessExtra {
   accessibilityDetails?: string;
 }
 
-export const DEFAULT_DASHBOARD_LIGHT: DashboardColorSet = {
-  background: "#f8f9fa",
-  surface: "#ffffff",
-  surfaceMuted: "#f1f3f4",
-  primary: "#173B45",
-  primaryForeground: "#ffffff",
-  accent: "#70D6C7",
-  text: "#102A33",
-  textMuted: "#5F737C",
-  border: "#E8ECEF",
-};
-
-export const DEFAULT_DASHBOARD_DARK: DashboardColorSet = {
-  background: "#0f1117",
-  surface: "#1a1d27",
-  surfaceMuted: "#252836",
-  primary: "#70D6C7",
-  primaryForeground: "#0f1117",
-  accent: "#4ec9bc",
-  text: "#e8ecef",
-  textMuted: "#8a9aaa",
-  border: "#2a2f3e",
-};
+const _defaultPreset = getThemePreset(DEFAULT_THEME_ID);
+export const DEFAULT_DASHBOARD_LIGHT: DashboardColorSet = _defaultPreset.light;
+export const DEFAULT_DASHBOARD_DARK: DashboardColorSet = _defaultPreset.dark;
 
 const DEFAULT_DASHBOARD_THEME: DashboardTheme = {
+  selectedThemeId: DEFAULT_THEME_ID,
   mode: "light",
-  lightColors: DEFAULT_DASHBOARD_LIGHT,
-  darkColors: DEFAULT_DASHBOARD_DARK,
+  lightColors: _defaultPreset.light,
+  darkColors: _defaultPreset.dark,
 };
 
 export interface ExtraProfileState {
@@ -68,6 +51,7 @@ export interface ExtraProfileState {
   appearance: AppearanceConfig;
   publicPage: PublicPageConfig;
   templateImages: TemplateImages;
+  serviceTemplateMedia: ServiceTemplateMedia;
   dashboardTheme: DashboardTheme;
 }
 
@@ -77,6 +61,7 @@ interface ExtraProfileContextValue extends ExtraProfileState {
   updatePaymentInstructions: (partial: Partial<PaymentInstructions>) => void;
   updateAppearance: (partial: Partial<AppearanceConfig>) => void;
   updatePublicPage: (partial: Partial<PublicPageConfig>) => void;
+  updateServiceTemplateMedia: (templateId: string, serviceId: string, fields: Record<string, string | string[]>) => void;
   upsertTestimonial: (t: PublicTestimonial) => void;
   deleteTestimonial: (id: string) => void;
   upsertFAQ: (f: PublicFAQ) => void;
@@ -126,6 +111,7 @@ const DEFAULT_EXTRA: ExtraProfileState = {
   appearance: DEF.appearance,
   publicPage: DEF.publicPage,
   templateImages: {},
+  serviceTemplateMedia: {},
   dashboardTheme: DEFAULT_DASHBOARD_THEME,
 };
 
@@ -277,6 +263,21 @@ export function ExtraProfileProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateServiceTemplateMedia = useCallback((templateId: string, serviceId: string, fields: Record<string, string | string[]>) => {
+    setState((prev) => {
+      const tpl = prev.serviceTemplateMedia[templateId] ?? {};
+      const next = {
+        ...prev,
+        serviceTemplateMedia: {
+          ...prev.serviceTemplateMedia,
+          [templateId]: { ...tpl, [serviceId]: fields },
+        },
+      };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
   const updateDashboardTheme = useCallback((partial: Partial<DashboardTheme>) => {
     setState((prev) => {
       const next = { ...prev, dashboardTheme: { ...prev.dashboardTheme, ...partial } };
@@ -296,6 +297,7 @@ export function ExtraProfileProvider({ children }: { children: ReactNode }) {
       updateSpecialistExtra,
       updateBusinessExtra,
       updatePaymentInstructions,
+      updateServiceTemplateMedia,
       updateAppearance,
       updatePublicPage,
       upsertTestimonial,

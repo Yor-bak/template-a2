@@ -10,7 +10,7 @@ import { exportToCSV } from "@/lib/exportUtils";
 
 function exportCSV() {
   exportToCSV("ingresos", [
-    ["Paciente", "Servicio", "Fecha", "Estado", "Pago", "Monto"],
+    ["Cliente", "Servicio", "Fecha", "Estado", "Pago", "Monto"],
     ...appointments.map((a) => [
       a.patientName,
       a.serviceName,
@@ -120,7 +120,7 @@ export default function IngresosPage() {
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="bg-[var(--color-background)] text-xs text-[var(--color-muted-text)] uppercase tracking-wide border-b border-[var(--color-border)]">
-                <th className="text-left px-5 py-3 font-semibold">Paciente</th>
+                <th className="text-left px-5 py-3 font-semibold">Cliente</th>
                 <th className="text-left px-5 py-3 font-semibold">Servicio</th>
                 <th className="text-left px-5 py-3 font-semibold">Fecha</th>
                 <th className="text-left px-5 py-3 font-semibold">Estado cita</th>

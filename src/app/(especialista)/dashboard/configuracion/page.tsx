@@ -13,9 +13,10 @@ import type { MessageTemplates } from "@/types/clinic";
 import { DEFAULT_MESSAGE_TEMPLATES, MESSAGE_TEMPLATE_LABELS } from "@/lib/messageUtils";
 import { useClinicConfig } from "@/contexts/ClinicConfigContext";
 import { useExtraProfile } from "@/contexts/ExtraProfileContext";
-import type { PublicTestimonial, PublicFAQ, DashboardColorSet, DashboardTheme } from "@/types/profile";
+import type { PublicTestimonial, PublicFAQ, DashboardTheme } from "@/types/profile";
 import { getInitials } from "@/lib/profileUtils";
 import { TEMPLATE_REGISTRY, getTemplate } from "@/templates/registry";
+import { DASHBOARD_THEME_PRESETS, getThemePreset } from "@/lib/dashboardThemes";
 import type { TemplateImageField } from "@/templates/types";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { DEFAULT_CLINIC_CONFIG as legacyClinic } from "@/config/defaultClinicData";
@@ -81,16 +82,16 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 function SaveRow({
-  onSave, saved, saving, errors,
+  onSave, saved, saving, errors, dirty = true,
 }: {
-  onSave: () => void; saved: boolean; saving: boolean; errors: string[];
+  onSave: () => void; saved: boolean; saving: boolean; errors: string[]; dirty?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between flex-wrap gap-3 pt-4">
       {saved && (
         <span className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
           <CheckCircle2 className="w-4 h-4" />
-          Configuración actualizada correctamente.
+          Cambios guardados.
         </span>
       )}
       {errors.length > 0 && (
@@ -98,11 +99,15 @@ function SaveRow({
           {errors.map((e) => <li key={e} className="flex items-center gap-1"><AlertCircle className="w-3 h-3 flex-shrink-0" />{e}</li>)}
         </ul>
       )}
-      {!saved && errors.length === 0 && <span />}
+      {!saved && errors.length === 0 && (
+        dirty
+          ? <span className="text-xs text-amber-600 font-medium flex items-center gap-1"><Info className="w-3.5 h-3.5" />Cambios sin guardar</span>
+          : <span />
+      )}
       <button
         onClick={onSave}
-        disabled={saving}
-        className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-50"
+        disabled={saving || !dirty}
+        className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Save className="w-4 h-4" />
         {saving ? "Guardando…" : "Guardar cambios"}
@@ -115,18 +120,21 @@ function SaveRow({
 
 function GeneralTab() {
   const { config, saveConfig } = useClinicConfig();
-  const [form, setForm] = useState({
+  const initial = {
     clinicName: config.clinicName,
     shortDescription: config.shortDescription,
     welcomeMessage: config.welcomeMessage,
     showPrices: config.showPrices,
-  });
+  };
+  const [form, setForm] = useState(initial);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const dirty = JSON.stringify(form) !== JSON.stringify(initial);
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
     setErrors((e) => ({ ...e, [k]: "" }));
+    setSaved(false);
   }
 
   async function handleSave() {
@@ -158,7 +166,7 @@ function GeneralTab() {
           </label>
         </div>
       </SectionCard>
-      <SaveRow onSave={handleSave} saved={saved} saving={false} errors={Object.values(errors).filter(Boolean)} />
+      <SaveRow onSave={handleSave} saved={saved} saving={false} errors={Object.values(errors).filter(Boolean)} dirty={dirty} />
     </div>
   );
 }
@@ -277,7 +285,7 @@ function ContactTab() {
             </span>
           </label>
           {form.parkingAvailable && (
-            <Field label="Detalles del estacionamiento" hint="Opcional — descripción que verá el paciente.">
+            <Field label="Detalles del estacionamiento" hint="Opcional — descripción que verá el cliente.">
               <input value={form.parkingDetails} onChange={(e) => set("parkingDetails", e.target.value)} className={inputCls()} placeholder="Estacionamiento frente al consultorio, sin costo." />
             </Field>
           )}
@@ -845,32 +853,15 @@ function TemplateImagesSection({
   );
 }
 
-const DS_COLOR_FIELDS: { key: keyof DashboardColorSet; label: string }[] = [
-  { key: "background",       label: "Fondo principal"       },
-  { key: "surface",          label: "Superficie (tarjetas)" },
-  { key: "surfaceMuted",     label: "Superficie secundaria" },
-  { key: "primary",          label: "Color primario"        },
-  { key: "primaryForeground",label: "Texto sobre primario"  },
-  { key: "accent",           label: "Acento / Botones"      },
-  { key: "text",             label: "Texto principal"       },
-  { key: "textMuted",        label: "Texto secundario"      },
-  { key: "border",           label: "Bordes"                },
-];
-
 function DashboardThemeSection({ theme, onChange }: {
   theme: DashboardTheme;
   onChange: (partial: Partial<DashboardTheme>) => void;
 }) {
-  const [editingMode, setEditingMode] = useState<"light" | "dark">("light");
-  const { mode, lightColors, darkColors } = theme;
-  const colors = editingMode === "light" ? lightColors : darkColors;
+  const { mode, selectedThemeId } = theme;
 
-  function updateColors(partial: Partial<DashboardColorSet>) {
-    if (editingMode === "light") {
-      onChange({ lightColors: { ...lightColors, ...partial } });
-    } else {
-      onChange({ darkColors: { ...darkColors, ...partial } });
-    }
+  function selectTheme(id: string) {
+    const preset = getThemePreset(id);
+    onChange({ selectedThemeId: id, lightColors: preset.light, darkColors: preset.dark });
   }
 
   const MODE_OPTIONS: { value: DashboardTheme["mode"]; label: string; Icon: React.ElementType }[] = [
@@ -882,61 +873,51 @@ function DashboardThemeSection({ theme, onChange }: {
   return (
     <SectionCard title="Tema del panel">
       <p className="text-xs text-[var(--color-muted-text)]/70 mb-4">
-        Colores exclusivos de tu panel privado — no afectan la página pública.
+        Apariencia exclusiva de tu panel privado — no afecta la página pública ni las paletas de los templates.
       </p>
 
-      <div className="flex gap-2 mb-5">
-        {MODE_OPTIONS.map(({ value, label, Icon }) => (
-          <button
-            key={value}
-            onClick={() => onChange({ mode: value })}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition ${
-              mode === value
-                ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-primary)]"
-                : "border-[var(--color-border)] text-[var(--color-muted-text)] hover:border-[var(--color-accent)]/40"
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" /> {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Color editor — always visible so user can prep both modes */}
-      <div>
-        <div className="flex border-b border-[var(--color-border)] mb-4">
-          {(["light", "dark"] as const).map(m => (
+      {/* Theme picker */}
+      <div className="space-y-1.5 mb-5">
+        {DASHBOARD_THEME_PRESETS.map((preset) => {
+          const active = (selectedThemeId ?? "marfil") === preset.id;
+          return (
             <button
-              key={m}
-              onClick={() => setEditingMode(m)}
-              className={`px-4 py-2 text-xs font-medium border-b-2 transition ${
-                editingMode === m
-                  ? "border-[var(--color-accent)] text-[var(--color-primary)]"
-                  : "border-transparent text-[var(--color-muted-text)]"
+              key={preset.id}
+              onClick={() => selectTheme(preset.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
+                active
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent)]/8"
+                  : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40"
               }`}
             >
-              {m === "light" ? "Colores claros" : "Colores oscuros"}
-            </button>
-          ))}
-        </div>
-        <div className="space-y-2.5">
-          {DS_COLOR_FIELDS.map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-3">
-              <input
-                type="color"
-                value={colors[key]}
-                onChange={e => updateColors({ [key]: e.target.value })}
-                className="w-8 h-8 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5 flex-shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[var(--color-text)]">{label}</p>
+              <div className="flex gap-1 flex-shrink-0">
+                {preset.previewColors.map((c, i) => (
+                  <span key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10" style={{ background: c }} />
+                ))}
               </div>
-              <input
-                type="text"
-                value={colors[key]}
-                onChange={e => updateColors({ [key]: e.target.value })}
-                className="w-24 text-xs font-mono border border-[var(--color-border)] rounded-lg px-2 py-1 text-[var(--color-text)] bg-[var(--color-background)]"
-              />
-            </div>
+              <span className="text-sm font-medium text-[var(--color-text)]">{preset.name}</span>
+              {active && <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)] ml-auto" />}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mode selector */}
+      <div>
+        <p className="text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide mb-2">Modo</p>
+        <div className="flex gap-2">
+          {MODE_OPTIONS.map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              onClick={() => onChange({ mode: value })}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition ${
+                mode === value
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] text-[var(--color-muted-text)] hover:border-[var(--color-accent)]/40"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
           ))}
         </div>
       </div>
@@ -1446,7 +1427,7 @@ function EspecialistaTab() {
           <Field label="Años de experiencia">
             <input type="number" min={0} value={coreForm.yearsExperience} onChange={(e) => setCore("yearsExperience", Number(e.target.value))} className={inputCls()} />
           </Field>
-          <Field label="Pacientes atendidos">
+          <Field label="Clientes atendidos">
             <input type="number" min={0} value={coreForm.patientsServed} onChange={(e) => setCore("patientsServed", Number(e.target.value))} className={inputCls()} />
           </Field>
           <Field label="Cédula de especialidad">
@@ -1458,7 +1439,7 @@ function EspecialistaTab() {
         </div>
         <div className="mt-4 space-y-4">
           <Field label="Biografía" hint="Texto más extenso sobre tu trayectoria y enfoque.">
-            <textarea rows={4} value={extraForm.biography} onChange={(e) => setExtra("biography", e.target.value)} className={inputCls()} placeholder="Cuéntale a tus pacientes sobre tu formación y forma de trabajar…" />
+            <textarea rows={4} value={extraForm.biography} onChange={(e) => setExtra("biography", e.target.value)} className={inputCls()} placeholder="Cuéntale a tus clientes sobre tu formación y forma de trabajar…" />
           </Field>
           <Field label="Certificaciones" hint="Una por línea.">
             <textarea rows={3} value={extraForm.certifications} onChange={(e) => setExtra("certifications", e.target.value)} className={inputCls()} placeholder={"Diplomado en Ortodoncia\nMiembro del Colegio…"} />
@@ -1602,7 +1583,7 @@ function TestimoniosTab() {
 
       <SectionCard title="Agregar testimonio">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Nombre del paciente" required>
+          <Field label="Nombre del cliente" required>
             <input value={draft.name} onChange={(e) => set("name", e.target.value)} className={inputCls()} placeholder="Ej. María F." />
           </Field>
           <Field label="Calificación">
@@ -1615,7 +1596,7 @@ function TestimoniosTab() {
         </div>
         <div className="mt-4">
           <Field label="Comentario" required>
-            <textarea rows={3} value={draft.comment} onChange={(e) => set("comment", e.target.value)} className={inputCls()} placeholder="Lo que dice el paciente…" />
+            <textarea rows={3} value={draft.comment} onChange={(e) => set("comment", e.target.value)} className={inputCls()} placeholder="Lo que dice el cliente…" />
           </Field>
         </div>
         <button

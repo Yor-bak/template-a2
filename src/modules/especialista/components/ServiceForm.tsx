@@ -1,6 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { X, Plus, Trash2, CheckCircle2, Smile, Star, Clock, Activity,
+  Heart, ShieldCheck, Sparkles, Stethoscope, Brain, MessageCircle, Users,
+  Moon, BookOpen, Apple, Utensils, Flame, Droplets, PawPrint, Dog, Cat,
+  Syringe, Scissors, Sun, Eye, Zap, Pill, Bone, Microscope, Aperture,
+  SmilePlus, Baby, Target, Dumbbell, Hand, Weight, Move, BadgeCheck,
+  Waves, RotateCcw, Calendar, AlertTriangle, ScanLine, TestTube,
+  Salad, User } from "lucide-react";
 import type { Service, PriceType } from "@/types";
 import {
   useServices,
@@ -9,6 +15,10 @@ import {
   PRICE_TYPE_LABELS,
   PRICE_TYPE_HINTS,
 } from "@/contexts/ServicesContext";
+import { useClinicConfig } from "@/contexts/ClinicConfigContext";
+import { useExtraProfile } from "@/contexts/ExtraProfileContext";
+import { getTemplate } from "@/templates/registry";
+import { getIconsForCategory } from "@/lib/serviceIcons";
 
 // ── Tipos internos ───────────────────────────────────────────────────────────
 
@@ -25,6 +35,7 @@ type FormData = {
   whenRecommended: string;
   includes: string[];
   recommendations: string[];
+  icon: string;
 };
 
 type FormErrors = Partial<Record<keyof FormData | "root", string>>;
@@ -42,6 +53,7 @@ const emptyForm: FormData = {
   whenRecommended: "",
   includes: [""],
   recommendations: [""],
+  icon: "",
 };
 
 function serviceToForm(svc: Service): FormData {
@@ -58,8 +70,21 @@ function serviceToForm(svc: Service): FormData {
     whenRecommended: svc.whenRecommended ?? "",
     includes: svc.includes?.length ? svc.includes : [""],
     recommendations: svc.recommendations?.length ? svc.recommendations : [""],
+    icon: svc.icon ?? "",
   };
 }
+
+// Mapa de nombre → componente para renderizar íconos dinámicamente
+const ICON_COMPONENTS: Record<string, React.ElementType> = {
+  Smile, SmilePlus, Aperture, Zap, Shield: ShieldCheck, Scissors, ScanLine, Baby,
+  Stethoscope, Pill, Activity, Microscope, Brain, Bone, Eye, TestTube,
+  MessageCircle, Heart, Users, User, Moon, BookOpen,
+  Apple, Salad, Weight, Flame, Droplets, Utensils,
+  Move, Target, Dumbbell, Hand, Waves, RotateCcw,
+  PawPrint, Dog, Cat, Syringe, AlertTriangle,
+  Sparkles, Sun,
+  Star, CheckCircle2, Clock, Calendar, BadgeCheck, ShieldCheck,
+};
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -73,11 +98,31 @@ interface ServiceFormProps {
 
 export function ServiceForm({ open, editingService, onClose }: ServiceFormProps) {
   const { services, createService, updateService } = useServices();
+  const { config } = useClinicConfig();
+  const { appearance, serviceTemplateMedia, updateServiceTemplateMedia } = useExtraProfile();
+
+  const activeTemplateId = appearance.selectedTemplateId ?? "dentista-01";
+  const templateDef = getTemplate(activeTemplateId);
+  const svcImageFields = templateDef?.serviceImageFields ?? [];
+
+  // Category derived from specialty (simplistic: extract category key)
+  const specialty = (config.specialty ?? "").toLowerCase();
+  const category = specialty.includes("psic") ? "psicologo"
+    : specialty.includes("nutri") ? "nutriologo"
+    : specialty.includes("fisio") || specialty.includes("rehab") ? "fisioterapia"
+    : specialty.includes("vet") ? "veterinario"
+    : specialty.includes("estet") || specialty.includes("belleza") ? "estetica"
+    : specialty.includes("méd") || specialty.includes("med") || specialty.includes("intern") ? "medico"
+    : templateDef?.category ?? "dentista";
+
+  const iconOptions = getIconsForCategory(category);
 
   const [form, setForm] = useState<FormData>(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // template-specific media for this service
+  const [svcMedia, setSvcMedia] = useState<Record<string, string>>({});
   const [slugManual, setSlugManual] = useState(false);
 
   // Inicializar form cuando abre
@@ -86,13 +131,17 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
     if (editingService) {
       setForm(serviceToForm(editingService));
       setSlugManual(true);
+      // Load existing template media for this service
+      const existing = serviceTemplateMedia[activeTemplateId]?.[editingService.id] ?? {};
+      setSvcMedia(existing as Record<string, string>);
     } else {
       setForm(emptyForm);
       setSlugManual(false);
+      setSvcMedia({});
     }
     setErrors({});
     setDone(false);
-  }, [open, editingService]);
+  }, [open, editingService, activeTemplateId, serviceTemplateMedia]);
 
   // Cerrar con Escape
   useEffect(() => {
@@ -187,14 +236,22 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
       whenRecommended: form.whenRecommended.trim() || undefined,
       includes: form.includes.filter((i) => i.trim()),
       recommendations: form.recommendations.filter((r) => r.trim()),
+      icon: form.icon || undefined,
     };
 
     setSubmitting(true);
     try {
+      let savedId: string;
       if (editingService) {
         await updateService(editingService.id, payload);
+        savedId = editingService.id;
       } else {
-        await createService(payload);
+        const created = await createService(payload);
+        savedId = (created as { id?: string })?.id ?? `svc-${Date.now()}`;
+      }
+      // Persist template-specific service media
+      if (svcImageFields.length > 0 && Object.keys(svcMedia).length > 0) {
+        updateServiceTemplateMedia(activeTemplateId, savedId, svcMedia);
       }
       setDone(true);
       setTimeout(() => {
@@ -445,6 +502,72 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
               </button>
             </div>
           </FieldGroup>
+
+          {/* ── Símbolo del servicio ───────────────────────────── */}
+          {iconOptions.length > 0 && (
+            <FieldGroup title="Símbolo del servicio">
+              <p className="text-xs text-gray-400 mb-2">Selecciona un ícono representativo para este servicio.</p>
+              <div className="grid grid-cols-6 gap-1.5">
+                {iconOptions.map((opt) => {
+                  const IconComp = ICON_COMPONENTS[opt.value];
+                  if (!IconComp) return null;
+                  const selected = form.icon === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      title={opt.label}
+                      onClick={() => set("icon", selected ? "" : opt.value)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${
+                        selected
+                          ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/40 text-[var(--color-primary)]"
+                          : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40 text-gray-500"
+                      }`}
+                    >
+                      <IconComp className="w-4 h-4" />
+                      <span className="text-[9px] leading-tight text-center line-clamp-1">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {form.icon && (
+                <button
+                  type="button"
+                  onClick={() => set("icon", "")}
+                  className="mt-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  Quitar símbolo
+                </button>
+              )}
+            </FieldGroup>
+          )}
+
+          {/* ── Imágenes para el template actual ──────────────── */}
+          {svcImageFields.length > 0 && (
+            <FieldGroup title={`Imágenes para el template`}>
+              <p className="text-xs text-gray-400 mb-2">
+                Imágenes específicas del template activo ({activeTemplateId}).
+              </p>
+              <div className="space-y-3">
+                {svcImageFields.map((field) => (
+                  <Field
+                    key={field.key}
+                    label={field.label}
+                    required={field.required}
+                    hint={[field.description, field.recommendedAspectRatio ? `Proporción recomendada: ${field.recommendedAspectRatio}` : ""].filter(Boolean).join(" · ")}
+                  >
+                    <input
+                      type="url"
+                      value={(svcMedia[field.key] as string) ?? ""}
+                      onChange={(e) => setSvcMedia((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder="https://..."
+                      className={inp(false)}
+                    />
+                  </Field>
+                ))}
+              </div>
+            </FieldGroup>
+          )}
         </form>
 
         {/* Footer fijo */}

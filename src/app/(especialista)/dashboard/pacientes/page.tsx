@@ -5,10 +5,12 @@ import { patients } from "@/data/patients";
 import { appointments } from "@/data/appointments";
 import { formatCurrency, formatShortDate } from "@/lib/utils";
 import { exportToCSV } from "@/lib/exportUtils";
-import { Users, Search, Phone, Mail, CalendarDays, Download } from "lucide-react";
+import { Users, Search, Phone, CalendarDays, Download, Plus } from "lucide-react";
+import { NewClientModal } from "@/modules/especialista/components/NewClientModal";
 
-export default function PacientesPage() {
+export default function ClientesPage() {
   const [search, setSearch] = useState("");
+  const [showNew, setShowNew] = useState(false);
 
   const enriched = patients
     .map((p) => {
@@ -19,14 +21,13 @@ export default function PacientesPage() {
     .filter((p) =>
       !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.phone.includes(search) ||
-      p.email.toLowerCase().includes(search.toLowerCase())
+      p.phone.includes(search)
     );
 
   function handleExport() {
-    exportToCSV("pacientes", [
-      ["Nombre", "Teléfono", "Email", "Citas", "Total gastado", "Primera visita"],
-      ...patients.map((p) => [p.name, p.phone, p.email, appointments.filter((a) => a.patientId === p.id).length, p.totalSpent, p.firstVisitAt]),
+    exportToCSV("clientes", [
+      ["Nombre", "Teléfono", "Citas", "Total gastado", "Primera visita"],
+      ...patients.map((p) => [p.name, p.phone, appointments.filter((a) => a.patientId === p.id).length, p.totalSpent, p.firstVisitAt]),
     ]);
   }
 
@@ -34,8 +35,8 @@ export default function PacientesPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Pacientes</h1>
-          <p className="text-[var(--color-muted-text)] text-sm">{patients.length} pacientes registrados</p>
+          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Clientes</h1>
+          <p className="text-[var(--color-muted-text)] text-sm">{patients.length} clientes registrados</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -45,10 +46,13 @@ export default function PacientesPage() {
             <Download className="w-4 h-4" />
             CSV
           </button>
-          <div className="flex items-center gap-2 text-xs text-[var(--color-muted-text)]">
-            <Users className="w-4 h-4" />
-            <span>CRM ligero</span>
-          </div>
+          <button
+            onClick={() => setShowNew(true)}
+            className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo cliente
+          </button>
         </div>
       </div>
 
@@ -61,7 +65,7 @@ export default function PacientesPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar paciente por nombre, teléfono o correo..."
+              placeholder="Buscar cliente por nombre o teléfono..."
               className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] bg-[var(--color-background)] transition-colors"
             />
           </div>
@@ -84,9 +88,6 @@ export default function PacientesPage() {
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                   <span className="text-xs text-[var(--color-muted-text)] flex items-center gap-1">
                     <Phone className="w-3 h-3" />{p.phone}
-                  </span>
-                  <span className="text-xs text-[var(--color-muted-text)] flex items-center gap-1 hidden sm:flex">
-                    <Mail className="w-3 h-3" />{p.email}
                   </span>
                 </div>
               </div>
@@ -118,10 +119,13 @@ export default function PacientesPage() {
         {enriched.length === 0 && (
           <div className="py-16 text-center text-[var(--color-muted-text)]">
             <Users className="w-8 h-8 mx-auto mb-3 opacity-30" strokeWidth={1.5} />
-            <p className="font-semibold text-sm">No se encontraron pacientes</p>
+            <p className="font-semibold text-sm">No se encontraron clientes</p>
+            <p className="text-xs mt-1 opacity-60">Agrega clientes manualmente con el botón "Nuevo cliente"</p>
           </div>
         )}
       </div>
+
+      <NewClientModal open={showNew} onClose={() => setShowNew(false)} />
     </div>
   );
 }

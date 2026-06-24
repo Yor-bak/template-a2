@@ -7,6 +7,7 @@ import {
   PAYMENT_META, CLIENT_META, ONBOARDING_META,
   fmtDate,
 } from "@/modules/admin/components/adminUi";
+import { loadGlobalSettings, saveGlobalSettings } from "@/lib/globalSettings";
 import { ClientDrawer } from "@/modules/admin/components/ClientDrawer";
 import { SalesRepView } from "@/modules/admin/components/SalesRepView";
 import { TransfersView } from "@/modules/admin/components/TransfersView";
@@ -300,7 +301,7 @@ function StatCards({ clients }: { clients: AdminClient[] }) {
 
 // ── Clients tab ───────────────────────────────────────────────────────────────
 
-type MainTab = "clients" | "preclients" | "transfers" | "vendors" | "finance";
+type MainTab = "clients" | "preclients" | "transfers" | "vendors" | "finance" | "settings";
 
 const MAIN_TABS: { key: MainTab; label: string }[] = [
   { key: "clients",    label: "Clientes"       },
@@ -308,6 +309,7 @@ const MAIN_TABS: { key: MainTab; label: string }[] = [
   { key: "transfers",  label: "Transferencias" },
   { key: "vendors",    label: "Vendedores"     },
   { key: "finance",    label: "Finanzas"       },
+  { key: "settings",   label: "Configuración"  },
 ];
 
 function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
@@ -506,6 +508,49 @@ function ClientsTab({ onOpenClient }: { onOpenClient: (id: string) => void }) {
   );
 }
 
+// ── Settings tab ─────────────────────────────────────────────────────────────
+
+function SettingsView() {
+  const [phone, setPhone] = useState(() => loadGlobalSettings().customerSupport.phone);
+  const [saved, setSaved] = useState(false);
+
+  function handleSave() {
+    saveGlobalSettings({ customerSupport: { phone: phone.trim() } });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
+
+  return (
+    <div className="max-w-md space-y-6">
+      <div>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Configuración global</h2>
+        <p className="text-[11px] text-[var(--text-muted)]">Estos valores se muestran a todos los especialistas de la plataforma.</p>
+      </div>
+
+      <div className="rounded-xl p-5 bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] space-y-4">
+        <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">Atención a cliente</p>
+        <div>
+          <label className="text-[11px] text-[var(--text-muted)] block mb-1.5">Número telefónico</label>
+          <input
+            className={S.input}
+            type="tel"
+            placeholder="55 1234 5678"
+            value={phone}
+            onChange={(e) => { setPhone(e.target.value); setSaved(false); }}
+          />
+          <p className="text-[10px] text-[var(--text-muted)] mt-1">Se mostrará en la sección "Atención a cliente" de cada especialista.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={handleSave} className={`${S.btnPrimary} px-5`}>
+            Guardar
+          </button>
+          {saved && <span className="text-[11px] text-[var(--accent)]">¡Guardado correctamente!</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 function AdminDashboard() {
@@ -551,6 +596,7 @@ function AdminDashboard() {
         {mainTab === "transfers" && <TransfersView />}
         {mainTab === "vendors"   && <SalesRepView />}
         {mainTab === "finance"   && <FinanceView />}
+        {mainTab === "settings"  && <SettingsView />}
       </main>
 
       {selectedId && <ClientDrawer clientId={selectedId} onClose={() => setSelectedId(null)} />}

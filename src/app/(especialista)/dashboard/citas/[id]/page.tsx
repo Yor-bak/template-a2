@@ -118,9 +118,9 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
       <div className="grid md:grid-cols-3 gap-6">
         {/* Columna principal */}
         <div className="md:col-span-2 space-y-5">
-          {/* Datos del paciente */}
+          {/* Datos del cliente */}
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-            <h2 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Datos del paciente</h2>
+            <h2 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Datos del cliente</h2>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <Info label="Nombre" value={apt.patientName} />
               <Info label="Teléfono" value={apt.patientPhone} />
@@ -178,7 +178,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Agrega notas internas (no visibles para el paciente)..."
+              placeholder="Agrega notas internas (no visibles para el cliente)..."
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 resize-none"
             />
             <div className="flex items-center gap-3 mt-2">

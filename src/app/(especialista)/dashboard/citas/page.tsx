@@ -127,12 +127,12 @@ export default function CitasPage() {
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Citas</h1>
-          <p className="text-[var(--color-muted-text)] text-sm">Organiza tu agenda diaria y da seguimiento a cada paciente.</p>
+          <p className="text-[var(--color-muted-text)] text-sm">Organiza tu agenda diaria y da seguimiento a cada cliente.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => exportToCSV("citas", [
-              ["Paciente", "Servicio", "Fecha", "Hora", "Estado", "Pago", "Monto"],
+              ["Cliente", "Servicio", "Fecha", "Hora", "Estado", "Pago", "Monto"],
               ...apts.map((a) => [a.patientName, a.serviceName, a.desiredDate, a.desiredTime, STATUS_LABELS[a.status], PAYMENT_LABELS[a.paymentStatus], a.chargedAmount ?? a.estimatedAmount ?? 0]),
             ])}
             className="inline-flex items-center gap-2 border border-[var(--color-border)] text-[var(--color-muted-text)] px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-[var(--color-background)] transition-colors"
@@ -159,7 +159,7 @@ export default function CitasPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por paciente, servicio o teléfono..."
+              placeholder="Buscar por cliente, servicio o teléfono..."
               className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] bg-[var(--color-background)] transition-colors"
             />
           </div>

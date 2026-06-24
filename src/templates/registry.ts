@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { TemplateProps, TemplatePalette, TemplateImageField } from "./types";
+import type { TemplateProps, TemplatePalette, TemplateImageField, ServiceImageFieldDefinition } from "./types";
 
 import { DentistaTemplate01, PALETTES as DENTISTA_01_PALETTES, DEFAULT_PALETTE_ID as DENTISTA_01_DEFAULT } from "./dentista/Template01";
 import { DentistaTemplate02, PALETTES as DENTISTA_02_PALETTES, DEFAULT_PALETTE_ID as DENTISTA_02_DEFAULT } from "./dentista/Template02";
@@ -39,6 +39,7 @@ export interface TemplateDefinition {
   palettes: readonly TemplatePalette[];
   defaultPaletteId: string;
   imageFields: TemplateImageField[];
+  serviceImageFields?: ServiceImageFieldDefinition[];
 }
 
 // ── Shared field presets ────────────────────────────────────────────────────────
@@ -94,12 +95,41 @@ const FISIO_03_FIELDS = [FIELD_SPECIALIST, FIELD_BG];
 // Veterinario T02 (bento grid) benefits from gallery
 const VET_02_FIELDS = [FIELD_LOGO, FIELD_SPECIALIST, FIELD_GALLERY];
 
+// ── Service image fields (per template, when that template uses service images) ─
+const ESTETICA_SERVICE_FIELDS: ServiceImageFieldDefinition[] = [
+  {
+    key: "mainImage",
+    label: "Imagen principal del servicio",
+    description: "Imagen destacada que aparece en la tarjeta del servicio.",
+    required: true,
+    recommendedAspectRatio: "4:3",
+  },
+  {
+    key: "secondaryImage",
+    label: "Imagen adicional (antes/después)",
+    description: "Imagen de resultado o comparativa, opcional.",
+    required: false,
+    recommendedAspectRatio: "1:1",
+  },
+];
+
+const DENTISTA_01_SERVICE_FIELDS: ServiceImageFieldDefinition[] = [
+  {
+    key: "mainImage",
+    label: "Imagen del tratamiento",
+    description: "Foto representativa del tratamiento dental.",
+    required: false,
+    recommendedAspectRatio: "16:9",
+  },
+];
+
 export const TEMPLATE_REGISTRY: Record<string, TemplateDefinition> = {
   "dentista-01": {
     id: "dentista-01", name: "Dentista", description: "Rehabilitación oral · switch de paleta en vivo",
     category: "dentista", publicPath: "/dentista",
     component: DentistaTemplate01, palettes: DENTISTA_01_PALETTES, defaultPaletteId: DENTISTA_01_DEFAULT,
     imageFields: T01_FIELDS,
+    serviceImageFields: DENTISTA_01_SERVICE_FIELDS,
   },
   "dentista-02": {
     id: "dentista-02", name: "Dentista (alterno B)", description: "Expediente clínico",
@@ -208,18 +238,21 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateDefinition> = {
     category: "estetica", publicPath: "/estetica",
     component: EsteticaTemplate01, palettes: ESTETICA_01_PALETTES, defaultPaletteId: ESTETICA_01_DEFAULT,
     imageFields: ESTETICA_01_FIELDS,
+    serviceImageFields: ESTETICA_SERVICE_FIELDS,
   },
   "estetica-02": {
     id: "estetica-02", name: "Estética (alterno B)", description: "Diseño elegante en tonos nude",
     category: "estetica", publicPath: "/estetica-template-02",
     component: EsteticaTemplate02, palettes: ESTETICA_02_PALETTES, defaultPaletteId: ESTETICA_02_DEFAULT,
     imageFields: ESTETICA_02_FIELDS,
+    serviceImageFields: ESTETICA_SERVICE_FIELDS,
   },
   "estetica-03": {
     id: "estetica-03", name: "Estética (alterno C)", description: "Diseño premium noir & oro",
     category: "estetica", publicPath: "/estetica-template-03",
     component: EsteticaTemplate03, palettes: ESTETICA_03_PALETTES, defaultPaletteId: ESTETICA_03_DEFAULT,
     imageFields: ESTETICA_03_FIELDS,
+    serviceImageFields: ESTETICA_SERVICE_FIELDS,
   },
 };
 

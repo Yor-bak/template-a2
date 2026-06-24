@@ -55,7 +55,7 @@ export default function ReportesPage() {
         <MetricCard label="Ingresos totales" value={formatCurrency(totalIncome)} icon={DollarSign} sub="Pagos recibidos" />
         <MetricCard label="Citas finalizadas" value={completedApts} icon={CalendarDays} />
         <MetricCard label="Canceladas" value={cancelledApts} icon={CalendarDays} />
-        <MetricCard label="Pacientes" value={patients.length} icon={Users} />
+        <MetricCard label="Clientes" value={patients.length} icon={Users} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -113,7 +113,7 @@ export default function ReportesPage() {
             Reportes avanzados — Plan Premium
           </h3>
           <p className="text-sm text-[var(--color-muted-text)] max-w-sm mx-auto">
-            Accede a gráficas por período, exportes avanzados, comparativa de meses, métricas de retención de pacientes y más.
+            Accede a gráficas por período, exportes avanzados, comparativa de meses, métricas de retención de clientes y más.
           </p>
         </div>
       )}

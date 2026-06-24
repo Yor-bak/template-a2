@@ -28,6 +28,16 @@ export interface TemplateImageField {
   recommendedAspectRatio?: string;
 }
 
+export interface ServiceImageFieldDefinition {
+  key: string;
+  label: string;
+  description?: string;
+  required: boolean;
+  multiple?: boolean;
+  maxItems?: number;
+  recommendedAspectRatio?: string;
+}
+
 export interface TemplateProps {
   profile: PublicBusinessProfile;
   onPaletteChange?: (paletteId: string) => void;

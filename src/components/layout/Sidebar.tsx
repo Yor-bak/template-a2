@@ -14,17 +14,19 @@ import {
   BarChart2,
   LogOut,
   X,
+  HeadsetIcon,
 } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/citas", label: "Citas", icon: CalendarDays },
   { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
-  { href: "/dashboard/pacientes", label: "Pacientes", icon: Users },
+  { href: "/dashboard/pacientes", label: "Clientes", icon: Users },
   { href: "/dashboard/ingresos", label: "Ingresos", icon: DollarSign },
   { href: "/dashboard/reportes", label: "Reportes", icon: BarChart2 },
   { href: "/dashboard/servicios", label: "Servicios", icon: Stethoscope },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
+  { href: "/dashboard/atencion", label: "Atención a cliente", icon: HeadsetIcon },
 ];
 
 interface SidebarProps {

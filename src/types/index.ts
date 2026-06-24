@@ -63,7 +63,7 @@ export interface Patient {
   id: string;
   name: string;
   phone: string;
-  email: string;
+  dateOfBirth?: string;
   firstVisitAt: string;
   notes?: string;
   totalAppointments: number;
