@@ -62,29 +62,6 @@ export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 // Structure for this specialty: a "tablero nutricional" bento grid — stats, schedule, location
 // and the plate graphic all live as tiles in one mixed grid instead of stacked full-width
 // sections, echoing the dashboards nutrition apps use rather than a clinic brochure layout.
-const clinic = {
-  name: "Plato Consciente",
-  doctor: "Nutr. Camila Reyes Aguilar",
-  specialty: "Nutrición clínica y deportiva",
-  school: "Escuela de Dietética y Nutrición, INCMNSZ",
-  license: "6190284",
-  experienceYears: "8",
-  patients: "1,250",
-  welcomeMessage:
-    "Planes de alimentación reales, hechos para tu rutina y tus gustos — no dietas genéricas de internet.",
-  address: {
-    street: "Calle Tamaulipas 66, piso 2",
-    neighborhood: "Condesa, Cuauhtémoc",
-    zip: "06140 CDMX",
-    reference: "Arriba del café Tamaulipas",
-    mapsUrl: "https://maps.google.com/?q=Tamaulipas+66+CDMX",
-  },
-  phone: "55 6671 2290",
-  phoneHref: "5566712290",
-  whatsapp: "https://wa.me/525566712290",
-  email: "hola@platoconsciente.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@platoconsciente" },
-};
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "sesión", from: "desde", consult: "a consulta" };
@@ -153,8 +130,8 @@ export function NutriologoTemplate01({ profile, onPaletteChange, isPreview = fal
       )}
       <header className="border-b border-[var(--c-ink)]/10">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <h1 className="text-lg" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.name}</h1>
-          <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-accent)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
+          <h1 className="text-lg" style={{ fontFamily: "var(--f-dm-serif)" }}>{business.name}</h1>
+          <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-accent)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
             Agendar consulta
           </a>
         </div>
@@ -164,16 +141,16 @@ export function NutriologoTemplate01({ profile, onPaletteChange, isPreview = fal
         {/* Hero */}
         <section className="pb-10">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{specialist.specialty}</p>
             <h2 className="mt-4 max-w-xl text-4xl leading-[1.15] md:text-5xl" style={{ fontFamily: "var(--f-dm-serif)" }}>
               Comer bien, sin reglas imposibles de seguir.
             </h2>
-            <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+            <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
+              <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
                 Agendar consulta
               </a>
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[var(--c-ink)]/20 px-6 py-3 text-sm font-medium transition hover:border-[var(--c-ink)]/50">
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full border border-[var(--c-ink)]/20 px-6 py-3 text-sm font-medium transition hover:border-[var(--c-ink)]/50">
                 Llamar al consultorio
               </a>
             </div>
@@ -184,9 +161,9 @@ export function NutriologoTemplate01({ profile, onPaletteChange, isPreview = fal
         <section className="grid gap-5 py-10 md:grid-cols-4 md:grid-rows-2">
           <div className="rounded-3xl bg-[var(--c-accent)] p-6 text-white md:col-span-2">
             <p className="text-xs uppercase tracking-[0.2em] text-white/70">Especialista</p>
-            <h3 className="mt-2 text-xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.doctor}</h3>
+            <h3 className="mt-2 text-xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{specialist.displayName}</h3>
             <p className="mt-2 text-sm text-white/80">
-              Nutrióloga clínica egresada de {clinic.school}. Cédula profesional {clinic.license}.
+              Nutrióloga clínica egresada de {specialist.school ?? ""}. Cédula profesional {specialist.professionalLicense}.
             </p>
             {specialist.biography && (
               <p className="mt-3 text-sm leading-relaxed text-white/80">{specialist.biography}</p>
@@ -202,21 +179,21 @@ export function NutriologoTemplate01({ profile, onPaletteChange, isPreview = fal
           </div>
 
           <div className="rounded-3xl bg-white p-6">
-            <p className="text-3xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.experienceYears}</p>
+            <p className="text-3xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{specialist.yearsExperience?.toString() ?? "–"}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Años de práctica</p>
           </div>
 
           <div className="rounded-3xl bg-white p-6">
-            <p className="text-3xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{clinic.patients}</p>
+            <p className="text-3xl" style={{ fontFamily: "var(--f-dm-serif)" }}>{specialist.patientsServed?.toLocaleString("es-MX") ?? "–"}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Pacientes atendidos</p>
           </div>
 
           <div id="ubicacion" className="rounded-3xl bg-[var(--c-accent2)]/10 p-6 md:col-span-2">
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent2)]">Ubicación</p>
             <address className="mt-2 not-italic text-sm text-[var(--c-ink)]/75">
-              {clinic.address.street}, {clinic.address.neighborhood}, {clinic.address.zip}
+              {business.address.street}, {business.address.neighborhood}, {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <a href={clinic.address.mapsUrl} className="mt-2 inline-block text-sm font-medium text-[var(--c-accent2)] underline-offset-4 hover:underline">
+            <a href={business.address.mapsUrl} className="mt-2 inline-block text-sm font-medium text-[var(--c-accent2)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
           </div>
@@ -300,15 +277,15 @@ export function NutriologoTemplate01({ profile, onPaletteChange, isPreview = fal
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>
               <div className="text-[var(--c-ink)]/50">Teléfono</div>
-              <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-medium">{clinic.phone}</a>
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 block font-medium">{business.phone}</a>
             </div>
             <div>
               <div className="text-[var(--c-ink)]/50">WhatsApp</div>
-              <a href={clinic.whatsapp} className="mt-1 block font-medium">{clinic.phone}</a>
+              <a href={`https://wa.me/${business.whatsapp}`} className="mt-1 block font-medium">{business.phone}</a>
             </div>
             <div>
               <div className="text-[var(--c-ink)]/50">Correo</div>
-              <a href={`mailto:${clinic.email}`} className="mt-1 block font-medium">{clinic.email}</a>
+              <a href={`mailto:${business.email ?? ""}`} className="mt-1 block font-medium">{business.email ?? ""}</a>
             </div>
             <div>
               <div className="text-[var(--c-ink)]/50">Redes sociales</div>

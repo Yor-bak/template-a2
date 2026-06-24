@@ -68,35 +68,7 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Veterinaria Huella Sana",
-  doctor: "MVZ. Ariadna Robles Cuéllar",
-  specialty: "Medicina veterinaria de pequeñas especies",
-  school: "Facultad de Medicina Veterinaria y Zootecnia, UNAM",
-  license: "4471829",
-  experienceYears: "9",
-  patients: "3,600",
-  welcomeMessage:
-    "Consulta, vacunación, cirugía y hospitalización para perros y gatos, en un espacio pensado para que tu mascota llegue tranquila.",
-  address: {
-    street: "Calle Pino Suárez 88",
-    neighborhood: "Coyoacán Centro",
-    zip: "04000 CDMX",
-    reference: "Frente al Mercado de Coyoacán",
-    mapsUrl: "https://maps.google.com/?q=Pino+Suarez+88+CDMX",
-  },
-  phone: "55 3398 1120",
-  phoneHref: "5533981120",
-  whatsapp: "https://wa.me/525533981120",
-  email: "hola@huellasana.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@huellasana" },
-};
 
-const stamps = [
-  { label: "Años atendiendo mascotas", value: clinic.experienceYears },
-  { label: "Pacientes con cartilla", value: clinic.patients },
-  { label: "Cédula profesional", value: clinic.license },
-];
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "precio fijo", from: "desde", consult: "a consulta" };
@@ -145,6 +117,12 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
     appearance,
   } = profile;
   const socialLinks = business.socialLinks ?? {};
+
+  const stamps = [
+    { label: "Años atendiendo mascotas", value: specialist.yearsExperience?.toString() ?? "–" },
+    { label: "Pacientes con cartilla", value: specialist.patientsServed?.toLocaleString("es-MX") ?? "–" },
+    { label: "Cédula profesional", value: specialist.professionalLicense },
+  ];
 
   const activePalette = PALETTES.find((p) => p.id === appearance.selectedPaletteId) ?? PALETTES[0];
   const active = PALETTES.indexOf(activePalette);
@@ -198,7 +176,7 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
             <Paw className="h-6 w-6" />
           </span>
           <span className="text-lg font-extrabold tracking-tight" style={display}>
-            {clinic.name}
+            {business.name}
           </span>
         </div>
 
@@ -208,22 +186,22 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
           <section className="col-span-2 row-span-2 flex flex-col justify-between overflow-hidden rounded-3xl border-2 border-[var(--c-ink)]/10 bg-[var(--c-accent)] p-7 text-[var(--c-bg)] shadow-md md:p-9">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--c-bg)]/80">
-                {clinic.specialty}
+                {specialist.specialty}
               </p>
               <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] md:text-5xl" style={display}>
                 Cuidamos a quien te recibe moviendo la cola.
               </h1>
-              <p className="mt-5 max-w-md text-[var(--c-bg)]/90">{clinic.welcomeMessage}</p>
+              <p className="mt-5 max-w-md text-[var(--c-bg)]/90">{specialist.shortDescription}</p>
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href={clinic.whatsapp}
+                href={`https://wa.me/${business.whatsapp}`}
                 className="inline-flex min-h-[44px] items-center rounded-2xl bg-[var(--c-bg)] px-6 text-sm font-extrabold text-[var(--c-accent)] shadow-sm transition hover:bg-[var(--c-soft)]"
               >
                 Agendar cita
               </a>
               <a
-                href={`tel:${clinic.phoneHref}`}
+                href={`tel:${business.phone.replace(/\D/g, "")}`}
                 className="inline-flex min-h-[44px] items-center rounded-2xl border-2 border-[var(--c-bg)]/50 px-6 text-sm font-extrabold text-[var(--c-bg)] transition hover:border-[var(--c-bg)]"
               >
                 Llamar a la clínica
@@ -242,13 +220,13 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
-                href={`tel:${clinic.phoneHref}`}
+                href={`tel:${business.phone.replace(/\D/g, "")}`}
                 className="inline-flex min-h-[44px] items-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[var(--c-urgent)] transition hover:bg-white/90"
               >
                 Llamar ahora
               </a>
               <a
-                href={clinic.whatsapp}
+                href={`https://wa.me/${business.whatsapp}`}
                 className="inline-flex min-h-[44px] items-center rounded-2xl border-2 border-white/60 px-5 text-sm font-extrabold text-white transition hover:border-white"
               >
                 WhatsApp
@@ -273,11 +251,22 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
           <section className="flex flex-col justify-center rounded-3xl border-2 border-[var(--c-ink)]/10 bg-[var(--c-tile)] p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--c-accent)]">Te atiende</p>
             <p className="mt-2 text-base font-extrabold leading-tight" style={display}>
-              {clinic.doctor}
+              {specialist.displayName}
             </p>
             <p className="mt-2 text-xs text-[var(--c-ink)]/60">
-              Egresada de la {clinic.school}. Cédula {clinic.license}.
+              Egresada de la {specialist.school ?? ""}. Cédula {specialist.professionalLicense}.
             </p>
+            {specialist.biography && (
+              <p className="mt-3 text-xs leading-relaxed text-[var(--c-ink)]/60">{specialist.biography}</p>
+            )}
+            {specialist.school && (
+              <p className="mt-2 text-xs text-[var(--c-ink)]/60">Formación: {specialist.school}</p>
+            )}
+            {specialist.certifications && specialist.certifications.length > 0 && (
+              <ul className="mt-2 list-disc list-inside space-y-0.5 text-xs text-[var(--c-ink)]/60">
+                {specialist.certifications.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            )}
           </section>
 
           {/* FEATURED SERVICES — three tiles */}
@@ -360,6 +349,22 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
                 </span>
               ))}
             </div>
+            {paymentInstructions.showTransferDetails && (
+              <div className="mt-4 rounded-2xl border-2 border-[var(--c-ink)]/15 bg-[var(--c-soft)] p-4 text-xs text-[var(--c-ink)]/70">
+                <p className="font-bold text-[var(--c-ink)]">Transferencia bancaria</p>
+                {paymentInstructions.bankName && <p className="mt-1">Banco: {paymentInstructions.bankName}</p>}
+                {paymentInstructions.accountHolder && <p>Titular: {paymentInstructions.accountHolder}</p>}
+                {paymentInstructions.clabe && <p>CLABE: {paymentInstructions.clabe}</p>}
+                {paymentInstructions.accountNumber && <p>Cuenta: {paymentInstructions.accountNumber}</p>}
+                {paymentInstructions.cardLastFourDigits && <p>Tarjeta terminación: ••••{paymentInstructions.cardLastFourDigits}</p>}
+                {paymentInstructions.paymentLink && (
+                  <a href={paymentInstructions.paymentLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-bold text-[var(--c-accent)] underline-offset-4 hover:underline">Pagar en línea</a>
+                )}
+                {paymentInstructions.transferReferenceInstructions && (
+                  <p className="mt-2 italic">{paymentInstructions.transferReferenceInstructions}</p>
+                )}
+              </div>
+            )}
           </section>
 
           {/* CONTACTO tile */}
@@ -371,36 +376,36 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
               <div>
                 <dt className="text-xs text-[var(--c-ink)]/50">Teléfono</dt>
                 <dd>
-                  <a href={`tel:${clinic.phoneHref}`} className="font-bold hover:text-[var(--c-accent)]">
-                    {clinic.phone}
+                  <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="font-bold hover:text-[var(--c-accent)]">
+                    {business.phone}
                   </a>
                 </dd>
               </div>
               <div>
                 <dt className="text-xs text-[var(--c-ink)]/50">WhatsApp</dt>
                 <dd>
-                  <a href={clinic.whatsapp} className="font-bold hover:text-[var(--c-accent)]">
-                    {clinic.phone}
+                  <a href={`https://wa.me/${business.whatsapp}`} className="font-bold hover:text-[var(--c-accent)]">
+                    {business.phone}
                   </a>
                 </dd>
               </div>
               <div>
                 <dt className="text-xs text-[var(--c-ink)]/50">Correo</dt>
                 <dd>
-                  <a href={`mailto:${clinic.email}`} className="font-bold hover:text-[var(--c-accent)]">
-                    {clinic.email}
+                  <a href={`mailto:${business.email ?? ""}`} className="font-bold hover:text-[var(--c-accent)]">
+                    {business.email ?? ""}
                   </a>
                 </dd>
               </div>
               <div>
                 <dt className="text-xs text-[var(--c-ink)]/50">Redes</dt>
                 <dd className="flex flex-col">
-                  <a href={clinic.social.facebook} className="font-bold hover:text-[var(--c-accent)]">
-                    Facebook
-                  </a>
-                  <a href={clinic.social.instagram} className="font-bold hover:text-[var(--c-accent)]">
-                    Instagram {clinic.social.instagramHandle}
-                  </a>
+                  {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">Instagram</a>}
+                  {socialLinks.facebook && <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">Facebook</a>}
+                  {socialLinks.tiktok && <a href={socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">TikTok</a>}
+                  {socialLinks.youtube && <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">YouTube</a>}
+                  {socialLinks.linkedin && <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">LinkedIn</a>}
+                  {socialLinks.website && <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">Sitio web</a>}
                 </dd>
               </div>
             </dl>
@@ -419,13 +424,13 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
                 Ubicación
               </h2>
               <address className="mt-3 not-italic text-sm text-[var(--c-ink)]/70">
-                {clinic.address.street}
+                {business.address.street}
                 <br />
-                {clinic.address.neighborhood}, {clinic.address.zip}
+                {business.address.neighborhood}, {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
               </address>
-              <p className="mt-1 text-xs text-[var(--c-ink)]/55">{clinic.address.reference}</p>
+              <p className="mt-1 text-xs text-[var(--c-ink)]/55">{business.address.references}</p>
               <a
-                href={clinic.address.mapsUrl}
+                href={business.address.mapsUrl}
                 className="mt-3 inline-flex min-h-[44px] items-center text-sm font-extrabold text-[var(--c-accent)] underline-offset-4 hover:underline"
               >
                 Ver en Google Maps →

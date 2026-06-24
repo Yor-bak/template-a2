@@ -64,29 +64,6 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Plato Consciente",
-  doctor: "Nutr. Camila Reyes Aguilar",
-  specialty: "Nutrición clínica y deportiva",
-  school: "Escuela de Dietética y Nutrición, INCMNSZ",
-  license: "6190284",
-  experienceYears: "8",
-  patients: "1,250",
-  welcomeMessage:
-    "Planes de alimentación reales, hechos para tu rutina y tus gustos — no dietas genéricas de internet.",
-  address: {
-    street: "Calle Tamaulipas 66, piso 2",
-    neighborhood: "Condesa, Cuauhtémoc",
-    zip: "06140 CDMX",
-    reference: "Arriba del café Tamaulipas",
-    mapsUrl: "https://maps.google.com/?q=Tamaulipas+66+CDMX",
-  },
-  phone: "55 6671 2290",
-  phoneHref: "5566712290",
-  whatsapp: "https://wa.me/525566712290",
-  email: "hola@platoconsciente.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@platoconsciente" },
-};
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "sesión", from: "desde", consult: "a consulta" };
@@ -206,10 +183,10 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
                 <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" /><path d="M5 4v13" /><path d="M11 9h5M11 13h5" />
               </svg>
             </span>
-            <span className="text-lg font-bold" style={round}>{clinic.name}</span>
+            <span className="text-lg font-bold" style={round}>{business.name}</span>
           </div>
           <a
-            href={clinic.whatsapp}
+            href={`https://wa.me/${business.whatsapp}`}
             className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-accent)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]"
             style={round}
           >
@@ -221,23 +198,23 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
       {/* Hero corto */}
       <section className="mx-auto max-w-5xl px-5 pt-12 sm:px-6">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--c-accent)]" style={round}>
-          {clinic.specialty}
+          {specialist.specialty}
         </p>
         <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-[1.15] sm:text-4xl md:text-5xl" style={round}>
           Tu semana, planeada con calma y comida de verdad.
         </h1>
-        <p className="mt-4 max-w-xl text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+        <p className="mt-4 max-w-xl text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
 
         {/* Stickers de metas */}
         <div className="mt-6 flex flex-wrap gap-3">
           <span className="inline-flex items-center gap-2 rounded-full bg-[var(--c-soft)] px-4 py-2 text-sm font-semibold text-[var(--c-accent-deep)]" style={round}>
-            <span className="text-base" aria-hidden>✦</span> {clinic.experienceYears} años acompañando
+            <span className="text-base" aria-hidden>✦</span> {specialist.yearsExperience?.toString() ?? "–"} años acompañando
           </span>
           <span className="inline-flex items-center gap-2 rounded-full bg-[var(--c-soft)] px-4 py-2 text-sm font-semibold text-[var(--c-accent-deep)]" style={round}>
-            <span className="text-base" aria-hidden>♡</span> {clinic.patients} pacientes
+            <span className="text-base" aria-hidden>♡</span> {specialist.patientsServed?.toLocaleString("es-MX") ?? "–"} pacientes
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-dashed border-[var(--c-ink)]/25 px-4 py-2 text-sm font-semibold text-[var(--c-ink)]/70" style={round}>
-            {clinic.doctor}
+            {specialist.displayName}
           </span>
         </div>
         {specialist.biography && (
@@ -324,7 +301,7 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
               <h3 className="mt-3 font-bold leading-snug" style={round}>{urgency.name}</h3>
               <p className="mt-2 flex-1 text-sm text-[var(--c-ink)]/70">{urgency.description}</p>
               <div className="mt-4 flex items-end justify-between border-t border-dashed border-[var(--c-accent)]/30 pt-3">
-                <a href={`tel:${clinic.phoneHref}`} className="inline-flex min-h-[44px] items-center text-sm font-bold text-[var(--c-accent-deep)]" style={round}>
+                <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="inline-flex min-h-[44px] items-center text-sm font-bold text-[var(--c-accent-deep)]" style={round}>
                   Llamar ahora →
                 </a>
                 <span className="text-xs uppercase tracking-wide text-[var(--c-ink)]/45">{priceTypeLabel[urgency.priceType]}</span>
@@ -413,11 +390,11 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wide text-[var(--c-accent)]" style={round}>Dónde estamos</h3>
               <address className="mt-3 not-italic text-sm leading-relaxed text-[var(--c-ink)]/70">
-                {clinic.address.street}<br />
-                {clinic.address.neighborhood} · {clinic.address.zip}<br />
-                {clinic.address.reference}
+                {business.address.street}<br />
+                {business.address.neighborhood} · {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}<br />
+                {business.address.references}
               </address>
-              <a href={clinic.address.mapsUrl} className="mt-3 inline-flex min-h-[44px] items-center text-sm font-bold text-[var(--c-accent)] underline-offset-4 hover:underline" style={round}>
+              <a href={business.address.mapsUrl} className="mt-3 inline-flex min-h-[44px] items-center text-sm font-bold text-[var(--c-accent)] underline-offset-4 hover:underline" style={round}>
                 Ver en Google Maps →
               </a>
             </div>
@@ -426,17 +403,17 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wide text-[var(--c-accent)]" style={round}>Contacto</h3>
               <div className="mt-3 flex flex-col gap-2 text-sm">
-                <a href={`tel:${clinic.phoneHref}`} className="inline-flex min-h-[44px] items-center gap-2">
+                <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="inline-flex min-h-[44px] items-center gap-2">
                   <span className="text-[var(--c-ink)]/50">Tel</span>
-                  <span className="font-semibold text-[var(--c-accent)]">{clinic.phone}</span>
+                  <span className="font-semibold text-[var(--c-accent)]">{business.phone}</span>
                 </a>
-                <a href={clinic.whatsapp} className="inline-flex min-h-[44px] items-center gap-2">
+                <a href={`https://wa.me/${business.whatsapp}`} className="inline-flex min-h-[44px] items-center gap-2">
                   <span className="text-[var(--c-ink)]/50">WhatsApp</span>
-                  <span className="font-semibold text-[var(--c-accent)]">{clinic.phone}</span>
+                  <span className="font-semibold text-[var(--c-accent)]">{business.phone}</span>
                 </a>
-                <a href={`mailto:${clinic.email}`} className="inline-flex min-h-[44px] items-center gap-2">
+                <a href={`mailto:${business.email ?? ""}`} className="inline-flex min-h-[44px] items-center gap-2">
                   <span className="text-[var(--c-ink)]/50">Correo</span>
-                  <span className="break-all font-semibold text-[var(--c-accent)]">{clinic.email}</span>
+                  <span className="break-all font-semibold text-[var(--c-accent)]">{business.email ?? ""}</span>
                 </a>
                 <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                   {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center text-[var(--c-ink)]/70 hover:text-[var(--c-accent)]">Instagram</a>}
@@ -451,7 +428,7 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
           </div>
 
           <div className="mt-8 border-t-2 border-dotted border-[var(--c-ink)]/15 pt-5 text-center text-xs text-[var(--c-ink)]/50">
-            {clinic.name} · {clinic.doctor} · Céd. {clinic.license} · {clinic.school}
+            {business.name} · {specialist.displayName} · Céd. {specialist.professionalLicense} · {specialist.school ?? ""}
           </div>
         </div>
       </footer>

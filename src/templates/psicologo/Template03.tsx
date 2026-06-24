@@ -63,25 +63,6 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Daniela Fuentes",
-  doctor: "Psic. Daniela Fuentes Marín",
-  specialty: "Psicología clínica y terapia de adultos",
-  school: "Facultad de Psicología, UNAM",
-  license: "7726154",
-  experienceYears: "11",
-  patients: "780",
-  address: {
-    street: "Av. Insurgentes Sur 1457, piso 4",
-    neighborhood: "Insurgentes Mixcoac, CDMX",
-    reference: "Edificio con acceso directo desde el metro Mixcoac",
-    mapsUrl: "https://maps.google.com/?q=Insurgentes+Sur+1457+CDMX",
-  },
-  phone: "55 4002 7731",
-  phoneHref: "5540027731",
-  whatsapp: "https://wa.me/525540027731",
-  email: "hola@danielafuentes.mx",
-};
 
 
 
@@ -158,10 +139,10 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
       {/* Barra superior mínima: nombre a la izquierda, enlace discreto a la derecha */}
       <header className="relative z-10 mx-auto flex max-w-2xl items-center justify-between px-6 py-6">
         <span className="text-sm tracking-wide text-[var(--c-ink)]/70" style={serif}>
-          {clinic.name}
+          {business.name}
         </span>
         <a
-          href={clinic.whatsapp}
+          href={`https://wa.me/${business.whatsapp}`}
           className="inline-flex min-h-[44px] items-center text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline"
         >
           Agendar sesión
@@ -185,8 +166,8 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
 
           <div className="mt-8 space-y-5 text-lg leading-relaxed text-[var(--c-ink)]/75">
             <p>
-              Llevo {clinic.experienceYears} años acompañando a adultos en terapia individual y de pareja.
-              Estudié en la {clinic.school} y, con el tiempo, fui afinando una forma de trabajar
+              Llevo {specialist.yearsExperience?.toString() ?? "–"} años acompañando a adultos en terapia individual y de pareja.
+              Estudié en la {specialist.school ?? ""} y, con el tiempo, fui afinando una forma de trabajar
               desde lo humanista: sin diagnósticos que te etiqueten ni prisas por &ldquo;arreglarte&rdquo;.
             </p>
             <p>
@@ -195,7 +176,7 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
               sin que nadie te apure.
             </p>
             <p>
-              Hago {clinic.specialty.toLowerCase()}. Si quieres, te cuento aquí mismo cómo es
+              Hago {specialist.specialty.toLowerCase()}. Si quieres, te cuento aquí mismo cómo es
               trabajar conmigo, para que decidas con calma y sin presión.
             </p>
           </div>
@@ -250,7 +231,7 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
                 ¿En línea o presencial?
               </h2>
               <p className="mt-3 leading-relaxed text-[var(--c-ink)]/75">
-                Como prefieras. Atiendo en consultorio en {clinic.address.neighborhood}, y también
+                Como prefieras. Atiendo en consultorio en {business.address.neighborhood}, y también
                 por videollamada con la misma cercanía de siempre. Muchas personas combinan ambas
                 según su semana; lo importante es que la terapia se acomode a tu vida, no al revés.
               </p>
@@ -294,11 +275,11 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
             .
           </p>
           <p className="mt-3 leading-relaxed text-[var(--c-ink)]/75">
-            El consultorio está en {clinic.address.street}, {clinic.address.neighborhood}.{" "}
-            {clinic.address.reference}.
+            El consultorio está en {business.address.street}, {business.address.neighborhood}.{" "}
+            {business.address.references}.
           </p>
           <a
-            href={clinic.address.mapsUrl}
+            href={business.address.mapsUrl}
             className="mt-3 inline-flex min-h-[44px] items-center text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline"
           >
             Ver en Google Maps →
@@ -340,22 +321,22 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
 
           <div className="mt-7 flex flex-wrap gap-3">
             <a
-              href={clinic.whatsapp}
+              href={`https://wa.me/${business.whatsapp}`}
               className="inline-flex min-h-[44px] items-center rounded-xl bg-[var(--c-accent)] px-6 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
             >
               Escribir por WhatsApp
             </a>
             <a
-              href={`tel:${clinic.phoneHref}`}
+              href={`tel:${business.phone.replace(/\D/g, "")}`}
               className="inline-flex min-h-[44px] items-center rounded-xl border border-[var(--c-ink)]/20 px-6 text-sm font-medium transition hover:border-[var(--c-ink)]/40"
             >
-              Llamar · {clinic.phone}
+              Llamar · {business.phone}
             </a>
             <a
-              href={`mailto:${clinic.email}`}
+              href={`mailto:${business.email ?? ""}`}
               className="inline-flex min-h-[44px] items-center rounded-xl border border-[var(--c-ink)]/20 px-6 text-sm font-medium transition hover:border-[var(--c-ink)]/40"
             >
-              {clinic.email}
+              {business.email ?? ""}
             </a>
           </div>
 
@@ -398,8 +379,8 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
           )}
 
           <p className="mt-12 text-sm leading-relaxed text-[var(--c-ink)]/50">
-            {clinic.doctor} · {clinic.school} · Cédula profesional {clinic.license} ·{" "}
-            {clinic.patients} personas acompañadas en {clinic.experienceYears} años.
+            {specialist.displayName} · {specialist.school ?? ""} · Cédula profesional {specialist.professionalLicense} ·{" "}
+            {specialist.patientsServed?.toLocaleString("es-MX") ?? "–"} personas acompañadas en {specialist.yearsExperience?.toString() ?? "–"} años.
           </p>
         </section>
         </div>

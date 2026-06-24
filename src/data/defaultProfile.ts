@@ -161,6 +161,9 @@ export const DEFAULT_PUBLIC_PROFILE: PublicBusinessProfile = {
       displayOrder: 3,
     },
   ],
+  paymentInstructions: {
+    showTransferDetails: false,
+  },
   paymentMethods: ["cash", "credit_card", "debit_card", "transfer"],
   openingHours: [
     { dayOfWeek: 1, dayLabel: "Lunes", isOpen: true, blocks: [{ startTime: "09:00", endTime: "19:00" }] },

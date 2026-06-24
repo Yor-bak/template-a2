@@ -65,29 +65,6 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Lumière Estética",
-  doctor: "Dra. Renata Solís Vargas",
-  specialty: "Medicina estética facial y corporal",
-  school: "Facultad de Medicina, Universidad La Salle",
-  license: "8814502",
-  experienceYears: "12",
-  patients: "4,300",
-  welcomeMessage:
-    "Procedimientos estéticos con resultados naturales: cada plan se diseña sobre tu rostro, no sobre una plantilla.",
-  address: {
-    street: "Av. Presidente Masaryk 380, piso 1",
-    neighborhood: "Polanco, Miguel Hidalgo",
-    zip: "11560 CDMX",
-    reference: "Junto a la boutique Dior",
-    mapsUrl: "https://maps.google.com/?q=Masaryk+380+CDMX",
-  },
-  phone: "55 2208 6671",
-  phoneHref: "5522086671",
-  whatsapp: "https://wa.me/525522086671",
-  email: "hola@lumiereestetica.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@lumiereestetica" },
-};
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "sesión", from: "desde", consult: "a consulta" };
@@ -165,6 +142,10 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
 
   const paymentMethods = profilePayments.map((m) => PAYMENT_METHOD_LABEL[m]);
 
+  const igHandle = socialLinks.instagram
+    ? "@" + socialLinks.instagram.replace(/.*instagram\.com\//, "").replace(/\/?$/, "")
+    : "";
+
   const testimonials = profileTestimonials
     .filter((t) => t.isPublished)
     .sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99))
@@ -187,7 +168,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
       <header className="sticky top-0 z-30 border-b border-[var(--c-ink)]/10 bg-[var(--c-bg)]/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex flex-col leading-none">
-            <span className="text-2xl tracking-wide" style={cormorantStyle}>{clinic.name}</span>
+            <span className="text-2xl tracking-wide" style={cormorantStyle}>{business.name}</span>
             <span className="mt-1 text-[0.62rem] uppercase tracking-[0.32em] text-[var(--c-ink)]/55">Estudio de belleza</span>
           </div>
           <nav className="hidden items-center gap-8 text-sm text-[var(--c-ink)]/70 md:flex">
@@ -197,7 +178,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
             <a href="#contacto" className="transition hover:text-[var(--c-accent)]">Contacto</a>
           </nav>
           <a
-            href={clinic.whatsapp}
+            href={`https://wa.me/${business.whatsapp}`}
             className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-accent)] px-6 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
           >
             Agendar cita
@@ -212,20 +193,20 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
         <div className="absolute left-1/2 top-1/2 -z-10 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--c-accent)]/15 blur-3xl" aria-hidden />
         <div className="absolute left-1/2 top-1/2 -z-10 h-[20rem] w-[20rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--c-surface)]/40" aria-hidden />
         <div className="max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.36em] text-[var(--c-accent-deep)]">{clinic.specialty}</p>
+          <p className="text-xs font-medium uppercase tracking-[0.36em] text-[var(--c-accent-deep)]">{specialist.specialty}</p>
           <h1 className="mt-6 text-5xl leading-[1.02] sm:text-6xl md:text-7xl" style={cormorantStyle}>
             Realza tu belleza,<br />sin perder tu esencia.
           </h1>
-          <p className="mx-auto mt-7 max-w-md text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+          <p className="mx-auto mt-7 max-w-md text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
           <div className="mt-9 flex flex-wrap justify-center gap-4">
             <a
-              href={clinic.whatsapp}
+              href={`https://wa.me/${business.whatsapp}`}
               className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-ink)] px-8 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent)]"
             >
               Agendar cita
             </a>
             <a
-              href={`tel:${clinic.phoneHref}`}
+              href={`tel:${business.phone.replace(/\D/g, "")}`}
               className="inline-flex min-h-[44px] items-center rounded-full border border-[var(--c-ink)]/30 px-8 text-sm font-medium transition hover:border-[var(--c-ink)]/60"
             >
               Llamar al estudio
@@ -271,7 +252,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
                     <span className="text-2xl text-[var(--c-accent-deep)]" style={cormorantStyle}>{s.price}</span>
                   </div>
                   <a
-                    href={s.isUrgency ? `tel:${clinic.phoneHref}` : clinic.whatsapp}
+                    href={s.isUrgency ? `tel:${business.phone.replace(/\D/g, "")}` : `https://wa.me/${business.whatsapp}`}
                     className={`inline-flex min-h-[44px] items-center rounded-full px-5 text-sm font-medium transition ${
                       s.isUrgency
                         ? "bg-[var(--c-accent)] text-[var(--c-surface)] hover:bg-[var(--c-accent-deep)]"
@@ -291,9 +272,9 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
       <section className="bg-[var(--c-soft)]">
         <div className="mx-auto grid max-w-5xl gap-8 px-6 py-16 text-center sm:grid-cols-3">
           {[
-            { value: `${clinic.experienceYears} años`, label: "perfeccionando el detalle" },
-            { value: `+${clinic.patients}`, label: "pacientes atendidas" },
-            { value: `Céd. ${clinic.license}`, label: "respaldo profesional" },
+            { value: `${specialist.yearsExperience?.toString() ?? "–"} años`, label: "perfeccionando el detalle" },
+            { value: `+${specialist.patientsServed?.toLocaleString("es-MX") ?? "–"}`, label: "pacientes atendidas" },
+            { value: `Céd. ${specialist.professionalLicense}`, label: "respaldo profesional" },
           ].map((stat) => (
             <div key={stat.label}>
               <div className="text-4xl text-[var(--c-accent-deep)] md:text-5xl" style={cormorantStyle}>{stat.value}</div>
@@ -311,10 +292,10 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
           </span>
           <h2 className="text-4xl md:text-5xl" style={cormorantStyle}>Nuestra comunidad</h2>
           <a
-            href={clinic.social.instagram}
+            href={socialLinks.instagram ?? "#"}
             className="text-sm font-medium text-[var(--c-accent-deep)] underline-offset-4 hover:underline"
           >
-            {clinic.social.instagramHandle} · Síguenos →
+            {igHandle} · Síguenos →
           </a>
         </div>
 
@@ -322,7 +303,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
           {Array.from({ length: 6 }).map((_, i) => (
             <a
               key={i}
-              href={clinic.social.instagram}
+              href={socialLinks.instagram ?? "#"}
               className="group relative aspect-square overflow-hidden rounded-2xl bg-[var(--c-soft)]"
               aria-label={`Ver publicación ${i + 1} en Instagram`}
             >
@@ -342,12 +323,12 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
           <PhotoTile label="R" className="aspect-square rounded-3xl" />
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.3em] text-[var(--c-accent-deep)]">Tu especialista</p>
-            <h2 className="mt-3 text-4xl md:text-5xl" style={cormorantStyle}>{clinic.doctor}</h2>
+            <h2 className="mt-3 text-4xl md:text-5xl" style={cormorantStyle}>{specialist.displayName}</h2>
             <p className="mt-5 max-w-md text-[var(--c-ink)]/70">
-              Médica cirujana egresada de la {clinic.school}, especializada en {clinic.specialty.toLowerCase()}. Su filosofía:
+              Médica cirujana egresada de la {specialist.school}, especializada en {specialist.specialty.toLowerCase()}. Su filosofía:
               realzar lo que ya eres con técnica y mesura.
             </p>
-            <p className="mt-3 text-sm text-[var(--c-ink)]/50">Cédula profesional {clinic.license}</p>
+            <p className="mt-3 text-sm text-[var(--c-ink)]/50">Cédula profesional {specialist.professionalLicense}</p>
             {specialist.biography && (
               <p className="mt-5 max-w-md text-sm leading-relaxed text-[var(--c-ink)]/70">{specialist.biography}</p>
             )}
@@ -360,7 +341,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
               </ul>
             )}
             <a
-              href={clinic.whatsapp}
+              href={`https://wa.me/${business.whatsapp}`}
               className="mt-7 inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-ink)] px-7 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent)]"
             >
               Agendar cita con la Dra.
@@ -403,7 +384,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
             Te asesoramos para elegir el tratamiento ideal para tu piel y tus objetivos.
           </p>
           <a
-            href={clinic.whatsapp}
+            href={`https://wa.me/${business.whatsapp}`}
             className="mt-8 inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-accent)] px-9 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
           >
             Agendar cita
@@ -417,13 +398,13 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
           <div>
             <h3 className="text-2xl" style={cormorantStyle}>Ubicación</h3>
             <address className="mt-4 not-italic text-sm text-[var(--c-ink)]/70">
-              {clinic.address.street}<br />
-              {clinic.address.neighborhood}<br />
-              {clinic.address.zip}
+              {business.address.street}<br />
+              {business.address.neighborhood}<br />
+              {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <p className="mt-2 text-sm text-[var(--c-ink)]/50">{clinic.address.reference}</p>
+            <p className="mt-2 text-sm text-[var(--c-ink)]/50">{business.address.references}</p>
             <a
-              href={clinic.address.mapsUrl}
+              href={business.address.mapsUrl}
               className="mt-3 inline-block text-sm font-medium text-[var(--c-accent-deep)] underline-offset-4 hover:underline"
             >
               Ver en Google Maps →
@@ -468,15 +449,15 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-[var(--c-ink)]/45">Teléfono</dt>
-                <dd><a href={`tel:${clinic.phoneHref}`} className="font-medium text-[var(--c-accent-deep)]">{clinic.phone}</a></dd>
+                <dd><a href={`tel:${business.phone.replace(/\D/g, "")}`} className="font-medium text-[var(--c-accent-deep)]">{business.phone}</a></dd>
               </div>
               <div>
                 <dt className="text-[var(--c-ink)]/45">WhatsApp</dt>
-                <dd><a href={clinic.whatsapp} className="font-medium text-[var(--c-accent-deep)]">{clinic.phone}</a></dd>
+                <dd><a href={`https://wa.me/${business.whatsapp}`} className="font-medium text-[var(--c-accent-deep)]">{business.phone}</a></dd>
               </div>
               <div>
                 <dt className="text-[var(--c-ink)]/45">Correo</dt>
-                <dd><a href={`mailto:${clinic.email}`} className="font-medium text-[var(--c-accent-deep)]">{clinic.email}</a></dd>
+                <dd><a href={`mailto:${business.email ?? ""}`} className="font-medium text-[var(--c-accent-deep)]">{business.email ?? ""}</a></dd>
               </div>
               <div>
                 <dt className="text-[var(--c-ink)]/45">Redes sociales</dt>
@@ -493,7 +474,7 @@ export function EsteticaTemplate02({ profile, onPaletteChange, isPreview = false
           </div>
         </div>
         <div className="border-t border-[var(--c-ink)]/10 px-6 py-6 text-center text-xs text-[var(--c-ink)]/50">
-          {clinic.name} · {clinic.doctor} · Polanco, CDMX
+          {business.name} · {specialist.displayName} · Polanco, CDMX
         </div>
       </footer>
     </div>

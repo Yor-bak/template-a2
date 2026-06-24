@@ -61,25 +61,6 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Daniela Fuentes",
-  doctor: "Psic. Daniela Fuentes Marín",
-  specialty: "Psicología clínica y terapia de adultos",
-  school: "Facultad de Psicología, UNAM",
-  license: "7726154",
-  experienceYears: "11",
-  patients: "780",
-  address: {
-    street: "Av. Insurgentes Sur 1457, piso 4",
-    neighborhood: "Insurgentes Mixcoac, CDMX",
-    reference: "Edificio con acceso directo desde el metro Mixcoac",
-    mapsUrl: "https://maps.google.com/?q=Insurgentes+Sur+1457+CDMX",
-  },
-  phone: "55 4002 7731",
-  phoneHref: "5540027731",
-  whatsapp: "https://wa.me/525540027731",
-  email: "hola@danielafuentes.mx",
-};
 
 
 
@@ -149,10 +130,10 @@ export function PsicologoTemplate02({ profile, onPaletteChange, isPreview = fals
       {/* Header calmado: nombre + un solo CTA */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-8">
         <span className="text-xl tracking-tight" style={{ fontFamily: "var(--f-newsreader)" }}>
-          {clinic.name}
+          {business.name}
         </span>
         <a
-          href={clinic.whatsapp}
+          href={`https://wa.me/${business.whatsapp}`}
           className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-accent)] px-6 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
         >
           Agendar sesión
@@ -169,7 +150,7 @@ export function PsicologoTemplate02({ profile, onPaletteChange, isPreview = fals
           Ir a terapia no es un salto al vacío. Es un camino que recorremos juntos, paso a paso.
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-[var(--c-ink)]/70">
-          Soy {clinic.doctor}. Acompaño a adultos en procesos individuales y de pareja con un enfoque humanista,
+          Soy {specialist.displayName}. Acompaño a adultos en procesos individuales y de pareja con un enfoque humanista,
           en consultorio o en línea. Aquí no hay prisa: empezamos por escucharte.
         </p>
       </section>
@@ -304,7 +285,7 @@ export function PsicologoTemplate02({ profile, onPaletteChange, isPreview = fals
           &ldquo;Mi trabajo no es darte respuestas, sino acompañarte mientras encuentras las tuyas.&rdquo;
         </p>
         <p className="mt-5 text-sm text-[var(--c-ink)]/55">
-          {clinic.doctor} · {specialist.school ?? clinic.school} · Cédula {clinic.license}
+          {specialist.displayName} · {specialist.school ?? ""} · Cédula {specialist.professionalLicense}
         </p>
         {specialist.biography && (
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-[var(--c-ink)]/60">{specialist.biography}</p>
@@ -339,13 +320,13 @@ export function PsicologoTemplate02({ profile, onPaletteChange, isPreview = fals
               Dónde nos vemos
             </h2>
             <address className="mt-4 not-italic text-sm leading-relaxed text-[var(--c-ink)]/70">
-              {clinic.address.street}
+              {business.address.street}
               <br />
-              {clinic.address.neighborhood}
+              {business.address.neighborhood}
             </address>
-            <p className="mt-2 text-xs text-[var(--c-ink)]/50">{clinic.address.reference}</p>
+            <p className="mt-2 text-xs text-[var(--c-ink)]/50">{business.address.references}</p>
             <a
-              href={clinic.address.mapsUrl}
+              href={business.address.mapsUrl}
               className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline"
             >
               Ver en Google Maps →
@@ -391,22 +372,22 @@ export function PsicologoTemplate02({ profile, onPaletteChange, isPreview = fals
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a
-              href={clinic.whatsapp}
+              href={`https://wa.me/${business.whatsapp}`}
               className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--c-accent)] px-6 text-sm font-medium text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
             >
               Escribir por WhatsApp
             </a>
             <a
-              href={`tel:${clinic.phoneHref}`}
+              href={`tel:${business.phone.replace(/\D/g, "")}`}
               className="inline-flex min-h-[44px] items-center rounded-full border border-[var(--c-ink)]/20 px-6 text-sm font-medium transition hover:border-[var(--c-ink)]/40"
             >
-              Llamar · {clinic.phone}
+              Llamar · {business.phone}
             </a>
             <a
-              href={`mailto:${clinic.email}`}
+              href={`mailto:${business.email ?? ""}`}
               className="inline-flex min-h-[44px] items-center rounded-full border border-[var(--c-ink)]/20 px-6 text-sm font-medium transition hover:border-[var(--c-ink)]/40"
             >
-              {clinic.email}
+              {business.email ?? ""}
             </a>
           </div>
         </div>
@@ -450,7 +431,7 @@ export function PsicologoTemplate02({ profile, onPaletteChange, isPreview = fals
         )}
 
         <p className="mt-12 text-center text-sm text-[var(--c-ink)]/50">
-          {clinic.name} · {clinic.specialty} · {clinic.experienceYears} años de práctica · {clinic.patients} personas acompañadas
+          {business.name} · {specialist.specialty} · {specialist.yearsExperience?.toString() ?? "–"} años de práctica · {specialist.patientsServed?.toLocaleString("es-MX") ?? "–"} personas acompañadas
         </p>
       </section>
     </div>

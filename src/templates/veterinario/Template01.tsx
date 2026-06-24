@@ -61,35 +61,7 @@ export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
 // Signature motifs for this specialty: a paw-print bullet/divider (instead of a generic dot or rule)
 // and a "cartilla de vacunación" stamp-card layout for services, evoking a pet's actual vaccination booklet.
-const clinic = {
-  name: "Veterinaria Huella Sana",
-  doctor: "MVZ. Ariadna Robles Cuéllar",
-  specialty: "Medicina veterinaria de pequeñas especies",
-  school: "Facultad de Medicina Veterinaria y Zootecnia, UNAM",
-  license: "4471829",
-  experienceYears: "9",
-  patients: "3,600",
-  welcomeMessage:
-    "Consulta, vacunación, cirugía y hospitalización para perros y gatos, en un espacio pensado para que tu mascota llegue tranquila.",
-  address: {
-    street: "Calle Pino Suárez 88",
-    neighborhood: "Coyoacán Centro",
-    zip: "04000 CDMX",
-    reference: "Frente al Mercado de Coyoacán",
-    mapsUrl: "https://maps.google.com/?q=Pino+Suarez+88+CDMX",
-  },
-  phone: "55 3398 1120",
-  phoneHref: "5533981120",
-  whatsapp: "https://wa.me/525533981120",
-  email: "hola@huellasana.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@huellasana" },
-};
 
-const stamps = [
-  { label: "Años atendiendo mascotas", value: clinic.experienceYears },
-  { label: "Pacientes con cartilla", value: clinic.patients },
-  { label: "Cédula profesional", value: clinic.license },
-];
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "precio fijo", from: "desde", consult: "a consulta" };
@@ -137,6 +109,12 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
   } = profile;
   const socialLinks = business.socialLinks ?? {};
 
+  const stamps = [
+    { label: "Años atendiendo mascotas", value: specialist.yearsExperience?.toString() ?? "–" },
+    { label: "Pacientes con cartilla", value: specialist.patientsServed?.toLocaleString("es-MX") ?? "–" },
+    { label: "Cédula profesional", value: specialist.professionalLicense },
+  ];
+
   const activePalette = PALETTES.find((p) => p.id === appearance.selectedPaletteId) ?? PALETTES[0];
   const active = PALETTES.indexOf(activePalette);
   const setActive = (idx: number) => {
@@ -183,10 +161,10 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
           <div className="flex items-center gap-3">
             <Paw className="h-7 w-7 text-[var(--c-ink)]" />
             <h1 className="text-lg font-black uppercase tracking-tight" style={{ fontFamily: "var(--f-archivo)" }}>
-              {clinic.name}
+              {business.name}
             </h1>
           </div>
-          <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-ink)] px-5 py-2.5 text-sm font-bold text-[var(--c-bg)] transition hover:bg-[var(--c-ink-deep)]">
+          <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-ink)] px-5 py-2.5 text-sm font-bold text-[var(--c-bg)] transition hover:bg-[var(--c-ink-deep)]">
             Agendar cita
           </a>
         </div>
@@ -196,19 +174,19 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
         {/* Hero */}
         <section className="grid gap-10 pb-14 md:grid-cols-[1.3fr_1fr] md:items-center">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--c-accent)]">{specialist.specialty}</p>
             <h2
               className="mt-4 max-w-xl text-4xl font-black leading-[1.1] md:text-5xl"
               style={{ fontFamily: "var(--f-archivo)" }}
             >
               Para tu mascota, no para cualquier paciente.
             </h2>
-            <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+            <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-ink)] px-6 py-3 text-sm font-bold text-[var(--c-bg)] transition hover:bg-[var(--c-ink-deep)]">
+              <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-ink)] px-6 py-3 text-sm font-bold text-[var(--c-bg)] transition hover:bg-[var(--c-ink-deep)]">
                 Agendar cita
               </a>
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border-2 border-[var(--c-ink)]/30 px-6 py-3 text-sm font-bold transition hover:border-[var(--c-ink)]/60">
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full border-2 border-[var(--c-ink)]/30 px-6 py-3 text-sm font-bold transition hover:border-[var(--c-ink)]/60">
                 Llamar a la clínica
               </a>
             </div>
@@ -232,16 +210,27 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
         <section id="especialista" className="grid gap-10 border-t-2 border-dashed border-[var(--c-ink)]/20 py-14 md:grid-cols-[1fr_1.4fr]">
           <div className="aspect-square rounded-[2rem] bg-[var(--c-header)]/30" aria-hidden />
           <div>
-            <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>{clinic.doctor}</h3>
+            <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>{specialist.displayName}</h3>
             <p className="mt-3 max-w-lg text-[var(--c-ink)]/70">
-              Médica veterinaria zootecnista con especialidad en {clinic.specialty}, egresada de la {clinic.school}.
-              Cédula profesional {clinic.license}.
+              Médica veterinaria zootecnista con especialidad en {specialist.specialty}, egresada de la {specialist.school ?? ""}.
+              Cédula profesional {specialist.professionalLicense}.
             </p>
             <ul className="mt-6 space-y-2 text-sm text-[var(--c-ink)]/70">
               <li>🐾 Manejo de bajo estrés para perros y gatos.</li>
               <li>🐾 Hospitalización con monitoreo permanente.</li>
               <li>🐾 Cartilla digital con historial completo de cada mascota.</li>
             </ul>
+            {specialist.biography && (
+              <p className="mt-5 text-sm leading-relaxed text-[var(--c-ink)]/70">{specialist.biography}</p>
+            )}
+            {specialist.school && (
+              <p className="mt-3 text-sm text-[var(--c-ink)]/70">Formación: {specialist.school}</p>
+            )}
+            {specialist.certifications && specialist.certifications.length > 0 && (
+              <ul className="mt-3 list-disc list-inside space-y-1 text-sm text-[var(--c-ink)]/70">
+                {specialist.certifications.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            )}
           </div>
         </section>
 
@@ -273,12 +262,12 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
           <div>
             <h3 className="text-2xl font-black" style={{ fontFamily: "var(--f-archivo)" }}>Ubicación y horario</h3>
             <address className="mt-4 not-italic text-[var(--c-ink)]/70">
-              {clinic.address.street}<br />
-              {clinic.address.neighborhood}<br />
-              {clinic.address.zip}
+              {business.address.street}<br />
+              {business.address.neighborhood}<br />
+              {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <p className="mt-2 text-sm text-[var(--c-ink)]/60">{clinic.address.reference}</p>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-bold text-[var(--c-accent)] underline-offset-4 hover:underline">
+            <p className="mt-2 text-sm text-[var(--c-ink)]/60">{business.address.references}</p>
+            <a href={business.address.mapsUrl} className="mt-3 inline-block text-sm font-bold text-[var(--c-accent)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-8 flex flex-wrap gap-2">
@@ -286,6 +275,22 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
                 <span key={m} className="rounded-full border-2 border-[var(--c-ink)]/15 px-3 py-1 text-xs font-bold text-[var(--c-ink)]/70">{m}</span>
               ))}
             </div>
+            {paymentInstructions.showTransferDetails && (
+              <div className="mt-4 rounded-2xl border-2 border-[var(--c-ink)]/15 bg-white p-4 text-sm text-[var(--c-ink)]/70">
+                <p className="font-bold text-[var(--c-ink)]">Transferencia bancaria</p>
+                {paymentInstructions.bankName && <p className="mt-1">Banco: {paymentInstructions.bankName}</p>}
+                {paymentInstructions.accountHolder && <p>Titular: {paymentInstructions.accountHolder}</p>}
+                {paymentInstructions.clabe && <p>CLABE: {paymentInstructions.clabe}</p>}
+                {paymentInstructions.accountNumber && <p>Cuenta: {paymentInstructions.accountNumber}</p>}
+                {paymentInstructions.cardLastFourDigits && <p>Tarjeta terminación: ••••{paymentInstructions.cardLastFourDigits}</p>}
+                {paymentInstructions.paymentLink && (
+                  <a href={paymentInstructions.paymentLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-bold text-[var(--c-accent)] underline-offset-4 hover:underline">Pagar en línea</a>
+                )}
+                {paymentInstructions.transferReferenceInstructions && (
+                  <p className="mt-2 italic">{paymentInstructions.transferReferenceInstructions}</p>
+                )}
+              </div>
+            )}
           </div>
           <div className="divide-y-2 divide-dashed divide-[var(--c-ink)]/15 self-start rounded-2xl border-2 border-[var(--c-ink)]/15 bg-white p-6 text-sm">
             {schedule.map((row) => (
@@ -304,8 +309,8 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
             Intoxicación, trauma o dificultad para respirar no esperan.
           </h3>
           <div className="mt-6 flex gap-4">
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-bold text-white">Llamar ahora</a>
-            <a href={clinic.whatsapp} className="rounded-full border-2 border-[var(--c-bg)]/40 px-6 py-3 text-sm font-bold">WhatsApp de urgencias</a>
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-bold text-white">Llamar ahora</a>
+            <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full border-2 border-[var(--c-bg)]/40 px-6 py-3 text-sm font-bold">WhatsApp de urgencias</a>
           </div>
         </section>
 
@@ -328,21 +333,25 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>
               <div className="text-[var(--c-ink)]/50">Teléfono</div>
-              <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-bold">{clinic.phone}</a>
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 block font-bold">{business.phone}</a>
             </div>
             <div>
               <div className="text-[var(--c-ink)]/50">WhatsApp</div>
-              <a href={clinic.whatsapp} className="mt-1 block font-bold">{clinic.phone}</a>
+              <a href={`https://wa.me/${business.whatsapp}`} className="mt-1 block font-bold">{business.phone}</a>
             </div>
             <div>
               <div className="text-[var(--c-ink)]/50">Correo</div>
-              <a href={`mailto:${clinic.email}`} className="mt-1 block font-bold">{clinic.email}</a>
+              <a href={`mailto:${business.email ?? ""}`} className="mt-1 block font-bold">{business.email ?? ""}</a>
             </div>
             <div>
               <div className="text-[var(--c-ink)]/50">Redes</div>
               <div className="mt-1 flex flex-col gap-1">
-                <a href={clinic.social.facebook}>Facebook</a>
-                <a href={clinic.social.instagram}>Instagram {clinic.social.instagramHandle}</a>
+                {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">Instagram</a>}
+                {socialLinks.facebook && <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">Facebook</a>}
+                {socialLinks.tiktok && <a href={socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">TikTok</a>}
+                {socialLinks.youtube && <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">YouTube</a>}
+                {socialLinks.linkedin && <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">LinkedIn</a>}
+                {socialLinks.website && <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="font-bold hover:text-[var(--c-accent)]">Sitio web</a>}
               </div>
             </div>
           </div>

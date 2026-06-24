@@ -1,9 +1,16 @@
 "use client";
 
 import { outfit, plusJakarta } from "@/lib/fonts";
-import { clinic, services, priceTypeLabel, schedule, paymentMethods, testimonials, milestones } from "@/lib/mockClinic";
 import { PaletteSwitcher } from "@/components/PaletteSwitcher";
 import type { TemplateProps, TemplatePalette } from "@/templates/types";
+import { PAYMENT_METHOD_LABEL, formatPriceString, scheduleFromOpeningHours } from "@/lib/profileUtils";
+
+type LocalPriceType = "fixed" | "from" | "consult";
+const localPriceTypeLabel: Record<LocalPriceType, string> = {
+  fixed: "precio fijo",
+  from: "desde",
+  consult: "a consulta",
+};
 
 // Alterno C — rediseño inspirado en sitios de marketing dental tipo "clínica grande"
 // (hero con gradiente, antes/después, CTA de alto contraste, servicios en acordeón,
@@ -76,9 +83,27 @@ const highlights = [
 const stars = "★★★★★";
 
 export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false }: TemplateProps) {
-  const { specialist, business, paymentMethods: profilePayments, paymentInstructions, appearance } = profile;
+  const { specialist, business, services: profileServices, testimonials: profileTestimonials, paymentMethods: profilePayments, paymentInstructions, openingHours, appearance } = profile;
   const socialLinks = business.socialLinks ?? {};
-  const paymentMethodLabels = profilePayments.map((m) => ({ cash: "Efectivo", card: "Tarjeta", transfer: "Transferencia", paypal: "PayPal", stripe: "Stripe" } as Record<string, string>)[m] ?? m);
+  const paymentMethodLabels = profilePayments.map((m) => PAYMENT_METHOD_LABEL[m]);
+  const schedule = scheduleFromOpeningHours(openingHours);
+  const services = profileServices.filter((s) => s.isActive).map((s) => ({
+    name: s.name,
+    price: s.priceType === "assessment_required" ? "Requiere valoración" : formatPriceString(s.priceType, s.estimatedPrice) || "Consultar",
+    priceType: (s.priceType === "fixed" ? "fixed" : s.priceType === "assessment_required" ? "consult" : "from") as LocalPriceType,
+    description: s.shortDescription,
+    isUrgency: s.isEmergency,
+  }));
+  const testimonials = profileTestimonials.filter((t) => t.isPublished).sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99)).map((t) => ({
+    quote: t.comment,
+    name: t.name,
+    treatment: profileServices.find((s) => s.id === t.serviceId)?.name ?? "Paciente",
+  }));
+  const milestones = [
+    { value: specialist.yearsExperience?.toString() ?? "–", label: "años de práctica" },
+    { value: specialist.patientsServed?.toLocaleString("es-MX") ?? "–", label: "pacientes atendidos" },
+    { value: specialist.professionalLicense, label: "cédula profesional" },
+  ];
   const activePalette = PALETTES.find((p) => p.id === appearance.selectedPaletteId) ?? PALETTES[0];
   const active = PALETTES.indexOf(activePalette);
   const setActive = (idx: number) => {
@@ -96,14 +121,14 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
       {/* Header: fijo, con CTA de llamada de alto contraste como en la referencia */}
       <header className="sticky top-0 z-30 border-b border-[var(--c-ink)]/10 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-          <span className="text-base font-semibold" style={{ fontFamily: "var(--f-outfit)" }}>{clinic.name}</span>
+          <span className="text-base font-semibold" style={{ fontFamily: "var(--f-outfit)" }}>{business.name}</span>
           <nav className="hidden items-center gap-6 text-sm text-[var(--c-ink)]/60 lg:flex">
             <a href="#especialista" className="hover:text-[var(--c-ink)]">Especialista</a>
             <a href="#servicios" className="hover:text-[var(--c-ink)]">Servicios</a>
             <a href="#testimonios" className="hover:text-[var(--c-ink)]">Testimonios</a>
             <a href="#ubicacion" className="hover:text-[var(--c-ink)]">Ubicación</a>
           </nav>
-          <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[var(--c-cta)] px-5 py-2.5 text-sm font-semibold text-[var(--c-ink)] transition hover:bg-[var(--c-cta-deep)]">
+          <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full bg-[var(--c-cta)] px-5 py-2.5 text-sm font-semibold text-[var(--c-ink)] transition hover:bg-[var(--c-cta-deep)]">
             Llámanos
           </a>
         </div>
@@ -113,16 +138,16 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
       <section className="relative overflow-hidden bg-gradient-to-br from-[var(--c-g1)] via-[var(--c-g2)] to-[var(--c-accent)] px-6 py-20 text-white md:px-16 md:py-28">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--c-cta)]">{clinic.specialty}</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--c-cta)]">{specialist.specialty}</p>
             <h1 className="mt-4 max-w-xl text-4xl leading-[1.1] md:text-5xl" style={{ fontFamily: "var(--f-outfit)" }}>
               La sonrisa que evitabas mostrar, hoy con un plan claro.
             </h1>
-            <p className="mt-5 max-w-lg text-white/80">{clinic.welcomeMessage}</p>
+            <p className="mt-5 max-w-lg text-white/80">{specialist.shortDescription}</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-cta)] px-6 py-3 text-sm font-semibold text-[var(--c-ink)] transition hover:bg-[var(--c-cta-deep)]">
+              <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-cta)] px-6 py-3 text-sm font-semibold text-[var(--c-ink)] transition hover:bg-[var(--c-cta-deep)]">
                 Agendar valoración
               </a>
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-white/40 px-6 py-3 text-sm font-medium transition hover:border-white/70">
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full border border-white/40 px-6 py-3 text-sm font-medium transition hover:border-white/70">
                 Llamar al consultorio
               </a>
             </div>
@@ -169,10 +194,10 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
           <div className="aspect-square rounded-3xl bg-gradient-to-br from-[var(--c-g2)]/15 to-[var(--c-accent)]/15" aria-hidden />
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">La especialista</p>
-            <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>{clinic.doctor}</h2>
+            <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>{specialist.displayName}</h2>
             <p className="mt-4 max-w-lg text-[var(--c-ink)]/70">
-              Especialidad en {clinic.specialty} por la {clinic.school}. Cédula profesional {clinic.license},
-              cédula de especialidad {clinic.specialtyLicense}.
+              Especialidad en {specialist.specialty} por la {specialist.school}. Cédula profesional {specialist.professionalLicense},
+              cédula de especialidad {specialist.specialtyLicense}.
             </p>
             <ul className="mt-6 space-y-2 text-sm text-[var(--c-ink)]/70">
               <li>· Plan de tratamiento por escrito, con precios desglosados antes de empezar.</li>
@@ -219,7 +244,7 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
                 </summary>
                 <div className="px-5 pb-5">
                   <p className="text-sm text-[var(--c-ink)]/65">{s.description}</p>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/55">{priceTypeLabel[s.priceType]}</p>
+                  <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/55">{localPriceTypeLabel[s.priceType]}</p>
                 </div>
               </details>
             ))}
@@ -232,12 +257,12 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">Visítanos</p>
             <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>Ubicación y horario</h2>
             <address className="mt-4 not-italic text-[var(--c-ink)]/70">
-              {clinic.address.street}<br />
-              {clinic.address.neighborhood}<br />
-              {clinic.address.zip}
+              {business.address.street}<br />
+              {business.address.neighborhood}<br />
+              {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{clinic.address.reference}</p>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
+            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{business.address.references}</p>
+            <a href={business.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-8 flex flex-wrap gap-2">
@@ -279,10 +304,10 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
             Dolor agudo, fractura o golpe no esperan turno.
           </h2>
           <div className="mt-6 flex gap-4">
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--c-urgent)]">
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--c-urgent)]">
               Llamar ahora
             </a>
-            <a href={clinic.whatsapp} className="rounded-full border border-white/40 px-6 py-3 text-sm font-medium">
+            <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full border border-white/40 px-6 py-3 text-sm font-medium">
               WhatsApp
             </a>
           </div>
@@ -316,15 +341,15 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
           <div className="mt-6 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>
               <div className="text-white/60">Teléfono</div>
-              <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-medium">{clinic.phone}</a>
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 block font-medium">{business.phone}</a>
             </div>
             <div>
               <div className="text-white/60">WhatsApp</div>
-              <a href={clinic.whatsapp} className="mt-1 block font-medium">{clinic.phone}</a>
+              <a href={`https://wa.me/${business.whatsapp}`} className="mt-1 block font-medium">{business.phone}</a>
             </div>
             <div>
               <div className="text-white/60">Correo</div>
-              <a href={`mailto:${clinic.email}`} className="mt-1 block font-medium">{clinic.email}</a>
+              <a href={`mailto:${business.email ?? ""}`} className="mt-1 block font-medium">{business.email ?? ""}</a>
             </div>
             <div>
               <div className="text-white/60">Redes sociales</div>
@@ -338,7 +363,7 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
               </div>
             </div>
           </div>
-          <a href={clinic.whatsapp} className="mt-8 inline-block rounded-full bg-[var(--c-cta)] px-7 py-3 text-sm font-semibold text-[var(--c-ink)] transition hover:bg-[var(--c-cta-deep)]">
+          <a href={`https://wa.me/${business.whatsapp}`} className="mt-8 inline-block rounded-full bg-[var(--c-cta)] px-7 py-3 text-sm font-semibold text-[var(--c-ink)] transition hover:bg-[var(--c-cta-deep)]">
             Agendar valoración
           </a>
         </div>

@@ -62,36 +62,7 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Hospital Veterinario Huella Sana",
-  doctor: "MVZ. Ariadna Robles Cuéllar",
-  specialty: "Hospital veterinario de pequeñas especies · 24 horas",
-  school: "Facultad de Medicina Veterinaria y Zootecnia, UNAM",
-  license: "4471829",
-  experienceYears: "9",
-  patients: "3,600",
-  welcomeMessage:
-    "Atención hospitalaria para perros y gatos con cultura de prevención: consulta, cirugía, hospitalización, laboratorio e imagenología bajo un mismo techo, con urgencias las 24 horas.",
-  address: {
-    street: "Calle Pino Suárez 88",
-    neighborhood: "Coyoacán Centro",
-    zip: "04000 CDMX",
-    reference: "Frente al Mercado de Coyoacán",
-    mapsUrl: "https://maps.google.com/?q=Pino+Suarez+88+CDMX",
-  },
-  phone: "55 3398 1120",
-  phoneHref: "5533981120",
-  whatsapp: "https://wa.me/525533981120",
-  email: "hola@huellasana.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@huellasana" },
-};
 
-const stats = [
-  { value: clinic.experienceYears + " años", label: "de operación" },
-  { value: clinic.patients, label: "pacientes en expediente" },
-  { value: "24/7", label: "urgencias" },
-  { value: "12", label: "especialidades" },
-];
 
 type Svg = { className?: string };
 const IconStethoscope = ({ className = "" }: Svg) => (
@@ -203,6 +174,13 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
   } = profile;
   const socialLinks = business.socialLinks ?? {};
 
+  const stats = [
+    { value: (specialist.yearsExperience?.toString() ?? "–") + " años", label: "de operación" },
+    { value: specialist.patientsServed?.toLocaleString("es-MX") ?? "–", label: "pacientes en expediente" },
+    { value: "24/7", label: "urgencias" },
+    { value: "12", label: "especialidades" },
+  ];
+
   const activePalette = PALETTES.find((p) => p.id === appearance.selectedPaletteId) ?? PALETTES[0];
   const active = PALETTES.indexOf(activePalette);
   const setActive = (idx: number) => {
@@ -236,8 +214,8 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
       <div className="bg-[var(--c-primary-deep)] text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-6 py-2 text-xs">
           <span className="inline-flex items-center gap-2"><IconClock className="h-4 w-4" /> Lun–Vie 9–20 · Sáb 9–17 · Dom 10–14</span>
-          <a href={`tel:${clinic.phoneHref}`} className="inline-flex items-center gap-2 font-semibold">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--c-urgent)]" /> Urgencias 24 h · {clinic.phone}
+          <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="inline-flex items-center gap-2 font-semibold">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--c-urgent)]" /> Urgencias 24 h · {business.phone}
           </a>
         </div>
       </div>
@@ -250,7 +228,7 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
               <Paw className="h-5 w-5" />
             </span>
             <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "var(--f-libre)" }}>
-              {clinic.name}
+              {business.name}
             </span>
           </div>
           <nav className="hidden items-center gap-7 text-sm font-medium text-[var(--c-ink)]/70 lg:flex">
@@ -259,7 +237,7 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
             <a href="#publicaciones" className="hover:text-[var(--c-primary)]">Publicaciones</a>
             <a href="#contacto" className="hover:text-[var(--c-primary)]">Contacto</a>
           </nav>
-          <a href={clinic.whatsapp} className="inline-flex min-h-[44px] items-center rounded-md bg-[var(--c-primary)] px-5 text-sm font-bold text-white transition hover:bg-[var(--c-primary-deep)]">
+          <a href={`https://wa.me/${business.whatsapp}`} className="inline-flex min-h-[44px] items-center rounded-md bg-[var(--c-primary)] px-5 text-sm font-bold text-white transition hover:bg-[var(--c-primary-deep)]">
             Agendar cita
           </a>
         </div>
@@ -268,16 +246,16 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
       {/* Hero institucional: titular + tarjeta de horario/urgencias */}
       <section className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-[1.25fr_1fr] md:items-center">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--c-primary)]">{clinic.specialty}</p>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--c-primary)]">{specialist.specialty}</p>
           <h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-[1.1] tracking-tight md:text-5xl" style={{ fontFamily: "var(--f-libre)" }}>
             Un hospital completo para perros y gatos.
           </h1>
-          <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+          <p className="mt-5 max-w-lg text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href={clinic.whatsapp} className="inline-flex min-h-[44px] items-center rounded-md bg-[var(--c-primary)] px-6 text-sm font-bold text-white transition hover:bg-[var(--c-primary-deep)]">
+            <a href={`https://wa.me/${business.whatsapp}`} className="inline-flex min-h-[44px] items-center rounded-md bg-[var(--c-primary)] px-6 text-sm font-bold text-white transition hover:bg-[var(--c-primary-deep)]">
               Agendar cita
             </a>
-            <a href={`tel:${clinic.phoneHref}`} className="inline-flex min-h-[44px] items-center rounded-md border border-[var(--c-ink)]/25 px-6 text-sm font-bold transition hover:border-[var(--c-primary)] hover:text-[var(--c-primary)]">
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="inline-flex min-h-[44px] items-center rounded-md border border-[var(--c-ink)]/25 px-6 text-sm font-bold transition hover:border-[var(--c-primary)] hover:text-[var(--c-primary)]">
               Llamar al hospital
             </a>
           </div>
@@ -301,7 +279,7 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
               </div>
             ))}
           </div>
-          <a href={clinic.address.mapsUrl} className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-[var(--c-primary)] underline-offset-4 hover:underline">
+          <a href={business.address.mapsUrl} className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-[var(--c-primary)] underline-offset-4 hover:underline">
             Ver ubicación en el mapa →
           </a>
         </div>
@@ -336,7 +314,7 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
                 <h3 className="mt-4 font-bold" style={{ fontFamily: "var(--f-libre)" }}>{s.title}</h3>
                 <p className="mt-1 text-sm text-[var(--c-ink)]/65">{s.desc}</p>
                 <a
-                  href={s.urgent ? `tel:${clinic.phoneHref}` : clinic.whatsapp}
+                  href={s.urgent ? `tel:${business.phone.replace(/\D/g, "")}` : `https://wa.me/${business.whatsapp}`}
                   className={`mt-3 inline-flex items-center gap-1 text-sm font-bold ${s.urgent ? "text-[var(--c-urgent)]" : "text-[var(--c-primary)]"}`}
                 >
                   {s.urgent ? "Llamar ahora" : "Detalles"} <span aria-hidden>→</span>
@@ -356,9 +334,20 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
               Prevenir cuesta menos que tratar.
             </h2>
             <p className="mt-4 max-w-lg text-white/85">
-              {clinic.doctor}, {clinic.school.toLowerCase()} (cédula {clinic.license}), encabeza un equipo que prioriza
+              {specialist.displayName}, {(specialist.school ?? "").toLowerCase()} (cédula {specialist.professionalLicense}), encabeza un equipo que prioriza
               chequeos a tiempo, expediente digital y planes de salud por etapa de vida de tu mascota.
             </p>
+            {specialist.biography && (
+              <p className="mt-4 max-w-lg text-sm text-white/80">{specialist.biography}</p>
+            )}
+            {specialist.school && (
+              <p className="mt-2 text-sm text-white/70">Formación: {specialist.school}</p>
+            )}
+            {specialist.certifications && specialist.certifications.length > 0 && (
+              <ul className="mt-2 list-disc list-inside space-y-0.5 text-sm text-white/70">
+                {specialist.certifications.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            )}
           </div>
           <ul className="space-y-3 text-sm">
             {[
@@ -391,7 +380,7 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
                 </span>
                 <h3 className="mt-4 font-bold leading-snug" style={{ fontFamily: "var(--f-libre)" }}>{p.title}</h3>
                 <p className="mt-2 flex-1 text-sm text-[var(--c-ink)]/65">{p.excerpt}</p>
-                <a href={clinic.social.facebook} className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--c-primary)]">
+                <a href={socialLinks.facebook ?? "#"} className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--c-primary)]">
                   Leer más <span aria-hidden>→</span>
                 </a>
               </article>
@@ -414,8 +403,8 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
               </p>
             </div>
           </div>
-          <a href={`tel:${clinic.phoneHref}`} className="inline-flex min-h-[44px] shrink-0 items-center rounded-md bg-[var(--c-urgent)] px-6 text-sm font-bold text-white">
-            Llamar ahora · {clinic.phone}
+          <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="inline-flex min-h-[44px] shrink-0 items-center rounded-md bg-[var(--c-urgent)] px-6 text-sm font-bold text-white">
+            Llamar ahora · {business.phone}
           </a>
         </div>
       </section>
@@ -426,14 +415,14 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
           <div>
             <div className="flex items-center gap-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--c-primary)] text-white"><Paw className="h-5 w-5" /></span>
-              <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "var(--f-libre)" }}>{clinic.name}</span>
+              <span className="text-lg font-extrabold tracking-tight" style={{ fontFamily: "var(--f-libre)" }}>{business.name}</span>
             </div>
             <address className="mt-4 not-italic text-sm text-[var(--c-ink)]/70">
-              {clinic.address.street}<br />
-              {clinic.address.neighborhood} · {clinic.address.zip}<br />
-              {clinic.address.reference}
+              {business.address.street}<br />
+              {business.address.neighborhood} · {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}<br />
+              {business.address.references}
             </address>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-bold text-[var(--c-primary)] underline-offset-4 hover:underline">
+            <a href={business.address.mapsUrl} className="mt-3 inline-block text-sm font-bold text-[var(--c-primary)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-6 flex flex-wrap gap-2">
@@ -441,32 +430,52 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
                 <span key={m} className="rounded-full border border-[var(--c-ink)]/15 px-3 py-1 text-xs font-semibold text-[var(--c-ink)]/70">{m}</span>
               ))}
             </div>
+            {paymentInstructions.showTransferDetails && (
+              <div className="mt-4 rounded-xl border border-[var(--c-ink)]/15 bg-[var(--c-bg)] p-4 text-sm text-[var(--c-ink)]/70">
+                <p className="font-bold text-[var(--c-ink)]">Transferencia bancaria</p>
+                {paymentInstructions.bankName && <p className="mt-1">Banco: {paymentInstructions.bankName}</p>}
+                {paymentInstructions.accountHolder && <p>Titular: {paymentInstructions.accountHolder}</p>}
+                {paymentInstructions.clabe && <p>CLABE: {paymentInstructions.clabe}</p>}
+                {paymentInstructions.accountNumber && <p>Cuenta: {paymentInstructions.accountNumber}</p>}
+                {paymentInstructions.cardLastFourDigits && <p>Tarjeta terminación: ••••{paymentInstructions.cardLastFourDigits}</p>}
+                {paymentInstructions.paymentLink && (
+                  <a href={paymentInstructions.paymentLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-bold text-[var(--c-primary)] underline-offset-4 hover:underline">Pagar en línea</a>
+                )}
+                {paymentInstructions.transferReferenceInstructions && (
+                  <p className="mt-2 italic">{paymentInstructions.transferReferenceInstructions}</p>
+                )}
+              </div>
+            )}
           </div>
 
           <dl className="grid grid-cols-2 gap-6 text-sm">
             <div>
               <dt className="text-[var(--c-ink)]/50">Teléfono</dt>
-              <dd><a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-bold text-[var(--c-primary)]">{clinic.phone}</a></dd>
+              <dd><a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 block font-bold text-[var(--c-primary)]">{business.phone}</a></dd>
             </div>
             <div>
               <dt className="text-[var(--c-ink)]/50">WhatsApp</dt>
-              <dd><a href={clinic.whatsapp} className="mt-1 block font-bold text-[var(--c-primary)]">{clinic.phone}</a></dd>
+              <dd><a href={`https://wa.me/${business.whatsapp}`} className="mt-1 block font-bold text-[var(--c-primary)]">{business.phone}</a></dd>
             </div>
             <div>
               <dt className="text-[var(--c-ink)]/50">Correo</dt>
-              <dd><a href={`mailto:${clinic.email}`} className="mt-1 block font-bold text-[var(--c-primary)]">{clinic.email}</a></dd>
+              <dd><a href={`mailto:${business.email ?? ""}`} className="mt-1 block font-bold text-[var(--c-primary)]">{business.email ?? ""}</a></dd>
             </div>
             <div>
               <dt className="text-[var(--c-ink)]/50">Redes</dt>
               <dd className="mt-1 flex flex-col gap-1">
-                <a href={clinic.social.facebook}>Facebook</a>
-                <a href={clinic.social.instagram}>Instagram {clinic.social.instagramHandle}</a>
+                {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--c-primary)] hover:underline">Instagram</a>}
+                {socialLinks.facebook && <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--c-primary)] hover:underline">Facebook</a>}
+                {socialLinks.tiktok && <a href={socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--c-primary)] hover:underline">TikTok</a>}
+                {socialLinks.youtube && <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--c-primary)] hover:underline">YouTube</a>}
+                {socialLinks.linkedin && <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--c-primary)] hover:underline">LinkedIn</a>}
+                {socialLinks.website && <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--c-primary)] hover:underline">Sitio web</a>}
               </dd>
             </div>
           </dl>
         </div>
         <div className="border-t border-[var(--c-ink)]/10 px-6 py-6 pb-28 text-center text-xs text-[var(--c-ink)]/50">
-          {clinic.name} · {clinic.doctor} · Coyoacán, CDMX
+          {business.name} · {specialist.displayName} · Coyoacán, CDMX
         </div>
       </footer>
     </div>

@@ -63,29 +63,6 @@ export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 // alternating left/right milestone rows for services, and a horizontal snap-scroll strip for
 // testimonials. The signature motif is a stepped recovery curve (not an arc) used as a recurring
 // background watermark instead of a small icon.
-const clinic = {
-  name: "Núcleo Fisioterapia",
-  doctor: "Fis. Tomás Vidal Esparza",
-  specialty: "Rehabilitación física y deportiva",
-  school: "Escuela Nacional de Medicina y Homeopatía, IPN",
-  license: "5390271",
-  experienceYears: "10",
-  patients: "2,100",
-  welcomeMessage:
-    "Rehabilitación con objetivos medibles: rango de movimiento, fuerza y vuelta a tu actividad, sesión por sesión.",
-  address: {
-    street: "Av. Revolución 1450, local 3",
-    neighborhood: "San Ángel, Álvaro Obregón",
-    zip: "01000 CDMX",
-    reference: "Junto al gimnasio Vértice",
-    mapsUrl: "https://maps.google.com/?q=Av+Revolucion+1450+CDMX",
-  },
-  phone: "55 7710 4482",
-  phoneHref: "5577104482",
-  whatsapp: "https://wa.me/525577104482",
-  email: "contacto@nucleofisio.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@nucleofisio" },
-};
 
 const stages = [
   { code: "01", label: "Valoración" },
@@ -174,7 +151,7 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
       )}
       {/* Thin progress rail instead of a header or sidebar nav */}
       <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[var(--c-ink)]/10 bg-[var(--c-bg)]/95 px-6 py-3 backdrop-blur md:px-12">
-        <span className="text-sm font-semibold" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.name}</span>
+        <span className="text-sm font-semibold" style={{ fontFamily: "var(--f-spectral)" }}>{business.name}</span>
         <div className="hidden items-center gap-0 md:flex">
           {stages.map((s, i) => (
             <div key={s.code} className="flex items-center">
@@ -186,7 +163,7 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
             </div>
           ))}
         </div>
-        <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-ink)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--c-ink-deep)]">
+        <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-ink)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--c-ink-deep)]">
           Agendar
         </a>
       </div>
@@ -195,31 +172,31 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
       <section className="relative overflow-hidden px-6 py-20 md:px-12">
         <RecoveryCurve className="pointer-events-none absolute -bottom-4 left-0 h-32 w-full text-[var(--c-accent)]/10" />
         <div className="relative max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{specialist.specialty}</p>
           <h1 className="mt-5 text-5xl leading-[1.1] md:text-6xl" style={{ fontFamily: "var(--f-spectral)" }}>
             Cada sesión avanza la curva.
           </h1>
-          <p className="mt-6 max-w-lg text-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+          <p className="mt-6 max-w-lg text-lg text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
           <div className="mt-9 flex flex-wrap gap-4">
-            <a href={clinic.whatsapp} className="rounded-full bg-[var(--c-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
+            <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
               Agendar sesión
             </a>
-            <a href={`tel:${clinic.phoneHref}`} className="rounded-full border border-[var(--c-ink)]/25 px-7 py-3.5 text-sm font-semibold transition hover:border-[var(--c-ink)]/50">
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full border border-[var(--c-ink)]/25 px-7 py-3.5 text-sm font-semibold transition hover:border-[var(--c-ink)]/50">
               Llamar al consultorio
             </a>
           </div>
         </div>
         <div className="relative mt-16 grid grid-cols-3 gap-6 border-t border-[var(--c-ink)]/10 pt-8 max-w-2xl">
           <div>
-            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.experienceYears}</p>
+            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{specialist.yearsExperience?.toString() ?? "–"}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Años de práctica</p>
           </div>
           <div>
-            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.patients}</p>
+            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{specialist.patientsServed?.toLocaleString("es-MX") ?? "–"}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Pacientes rehabilitados</p>
           </div>
           <div>
-            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.license}</p>
+            <p className="text-3xl font-semibold text-[var(--c-accent)]" style={{ fontFamily: "var(--f-spectral)" }}>{specialist.professionalLicense}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-[var(--c-ink)]/50">Cédula profesional</p>
           </div>
         </div>
@@ -231,9 +208,9 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
           <div className="aspect-square w-40 rounded-full bg-[var(--c-accent)]/15" aria-hidden />
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent)]">Tu fisioterapeuta</p>
-            <h2 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>{clinic.doctor}</h2>
+            <h2 className="mt-2 text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>{specialist.displayName}</h2>
             <p className="mt-3 max-w-lg text-[var(--c-ink)]/70">
-              Egresado de la {clinic.school}, especializado en {clinic.specialty.toLowerCase()}.
+              Egresado de la {specialist.school ?? ""}, especializado en {specialist.specialty.toLowerCase()}.
             </p>
             <ul className="mt-5 space-y-1.5 text-sm text-[var(--c-ink)]/70">
               <li>— Medición de rango de movimiento en cada sesión.</li>
@@ -306,14 +283,14 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
           <div>
             <h2 className="text-2xl" style={{ fontFamily: "var(--f-spectral)" }}>Ubicación y horario</h2>
             <address className="mt-4 not-italic text-[var(--c-ink)]/70">
-              {clinic.address.street}
+              {business.address.street}
               <br />
-              {clinic.address.neighborhood}
+              {business.address.neighborhood}
               <br />
-              {clinic.address.zip}
+              {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{clinic.address.reference}</p>
-            <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-semibold text-[var(--c-accent)] underline-offset-4 hover:underline">
+            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{business.address.references}</p>
+            <a href={business.address.mapsUrl} className="mt-3 inline-block text-sm font-semibold text-[var(--c-accent)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-7 divide-y divide-[var(--c-ink)]/10 text-sm">
@@ -353,10 +330,10 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
               Un esguince o bloqueo reciente no espera a la próxima cita.
             </h2>
             <div className="mt-7 flex flex-wrap gap-3">
-              <a href={`tel:${clinic.phoneHref}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-semibold text-white">
+              <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full bg-[var(--c-accent)] px-6 py-3 text-sm font-semibold text-white">
                 Llamar ahora
               </a>
-              <a href={clinic.whatsapp} className="rounded-full border border-[var(--c-bg)]/30 px-6 py-3 text-sm font-semibold">
+              <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full border border-[var(--c-bg)]/30 px-6 py-3 text-sm font-semibold">
                 WhatsApp directo
               </a>
             </div>
@@ -387,15 +364,15 @@ export function FisioterapiaTemplate01({ profile, onPaletteChange, isPreview = f
         <div className="mt-7 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
           <div>
             <div className="text-[var(--c-ink)]/50">Teléfono</div>
-            <a href={`tel:${clinic.phoneHref}`} className="mt-1 block font-semibold">{clinic.phone}</a>
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 block font-semibold">{business.phone}</a>
           </div>
           <div>
             <div className="text-[var(--c-ink)]/50">WhatsApp</div>
-            <a href={clinic.whatsapp} className="mt-1 block font-semibold">{clinic.phone}</a>
+            <a href={`https://wa.me/${business.whatsapp}`} className="mt-1 block font-semibold">{business.phone}</a>
           </div>
           <div>
             <div className="text-[var(--c-ink)]/50">Correo</div>
-            <a href={`mailto:${clinic.email}`} className="mt-1 block font-semibold">{clinic.email}</a>
+            <a href={`mailto:${business.email ?? ""}`} className="mt-1 block font-semibold">{business.email ?? ""}</a>
           </div>
           <div>
             <div className="text-[var(--c-ink)]/50">Redes sociales</div>

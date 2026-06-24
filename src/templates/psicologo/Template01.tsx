@@ -58,25 +58,6 @@ export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 // every other template. Instead: a sticky profile card on the left that never scrolls away,
 // paired with a single switchable content panel on the right (tabs, not separate sections) —
 // closer to a patient-portal layout than a landing page.
-const clinic = {
-  name: "Daniela Fuentes",
-  doctor: "Psic. Daniela Fuentes Marín",
-  specialty: "Psicología clínica y terapia de adultos",
-  school: "Facultad de Psicología, UNAM",
-  license: "7726154",
-  experienceYears: "11",
-  patients: "780",
-  address: {
-    street: "Av. Insurgentes Sur 1457, piso 4",
-    neighborhood: "Insurgentes Mixcoac, CDMX",
-    reference: "Edificio con acceso directo desde el metro Mixcoac",
-    mapsUrl: "https://maps.google.com/?q=Insurgentes+Sur+1457+CDMX",
-  },
-  phone: "55 4002 7731",
-  phoneHref: "5540027731",
-  whatsapp: "https://wa.me/525540027731",
-  email: "hola@danielafuentes.mx",
-};
 
 
 
@@ -149,8 +130,8 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
       {/* Conventional header */}
       <header className="sticky top-0 z-20 border-b border-[var(--c-ink)]/10 bg-[var(--c-bg)]/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>{clinic.name}</span>
-          <a href={clinic.whatsapp} className="rounded-md bg-[var(--c-accent)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
+          <span className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>{business.name}</span>
+          <a href={`https://wa.me/${business.whatsapp}`} className="rounded-md bg-[var(--c-accent)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--c-accent-deep)]">
             Agendar sesión
           </a>
         </div>
@@ -161,21 +142,21 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
         <aside className="md:sticky md:top-24 md:self-start">
           <div className="rounded-2xl border border-[var(--c-ink)]/10 bg-white p-6">
             <div className="aspect-square rounded-xl bg-[var(--c-accent)]/15" aria-hidden />
-            <h1 className="mt-5 text-xl" style={{ fontFamily: "var(--f-lora)" }}>{clinic.doctor}</h1>
-            <p className="mt-1 text-sm text-[var(--c-ink)]/60">{clinic.specialty}</p>
+            <h1 className="mt-5 text-xl" style={{ fontFamily: "var(--f-lora)" }}>{specialist.displayName}</h1>
+            <p className="mt-1 text-sm text-[var(--c-ink)]/60">{specialist.specialty}</p>
 
             <dl className="mt-5 space-y-2 border-t border-[var(--c-ink)]/10 pt-4 text-sm">
               <div className="flex justify-between">
                 <dt className="text-[var(--c-ink)]/50">Cédula profesional</dt>
-                <dd className="font-medium">{clinic.license}</dd>
+                <dd className="font-medium">{specialist.professionalLicense}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-[var(--c-ink)]/50">Años de práctica</dt>
-                <dd className="font-medium">{clinic.experienceYears}</dd>
+                <dd className="font-medium">{specialist.yearsExperience?.toString() ?? "–"}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-[var(--c-ink)]/50">Personas acompañadas</dt>
-                <dd className="font-medium">{clinic.patients}</dd>
+                <dd className="font-medium">{specialist.patientsServed?.toLocaleString("es-MX") ?? "–"}</dd>
               </div>
             </dl>
 
@@ -190,10 +171,10 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
                 {specialist.certifications.map((c, i) => <li key={i}>{c}</li>)}
               </ul>
             )}
-            <a href={clinic.whatsapp} className="mt-6 block rounded-md bg-[var(--c-ink)] px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-[var(--c-ink-deep)]">
+            <a href={`https://wa.me/${business.whatsapp}`} className="mt-6 block rounded-md bg-[var(--c-ink)] px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-[var(--c-ink-deep)]">
               Agendar sesión
             </a>
-            <a href={`tel:${clinic.phoneHref}`} className="mt-2 block rounded-md border border-[var(--c-ink)]/20 px-4 py-2.5 text-center text-sm font-medium transition hover:border-[var(--c-ink)]/40">
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-2 block rounded-md border border-[var(--c-ink)]/20 px-4 py-2.5 text-center text-sm font-medium transition hover:border-[var(--c-ink)]/40">
               Llamar al consultorio
             </a>
           </div>
@@ -203,7 +184,7 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
             <p className="mt-2 text-sm text-[var(--c-ink)]/70">
               Si hoy es un día difícil, no esperes a tu próxima cita.
             </p>
-            <a href={clinic.whatsapp} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
+            <a href={`https://wa.me/${business.whatsapp}`} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
               Escribir ahora →
             </a>
           </div>
@@ -245,11 +226,11 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
             <div>
               <h2 className="text-lg" style={{ fontFamily: "var(--f-lora)" }}>Ubicación</h2>
               <address className="mt-3 not-italic text-sm text-[var(--c-ink)]/70">
-                {clinic.address.street}<br />
-                {clinic.address.neighborhood}
+                {business.address.street}<br />
+                {business.address.neighborhood}
               </address>
-              <p className="mt-2 text-xs text-[var(--c-ink)]/50">{clinic.address.reference}</p>
-              <a href={clinic.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
+              <p className="mt-2 text-xs text-[var(--c-ink)]/50">{business.address.references}</p>
+              <a href={business.address.mapsUrl} className="mt-3 inline-block text-sm font-medium text-[var(--c-accent)] underline-offset-4 hover:underline">
                 Ver en Google Maps →
               </a>
             </div>
@@ -320,7 +301,7 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
           )}
 
           <p className="mt-8 text-center text-sm text-[var(--c-ink)]/50">
-            ¿Dudas antes de agendar? Escribe a <a href={`mailto:${clinic.email}`} className="underline">{clinic.email}</a>
+            ¿Dudas antes de agendar? Escribe a <a href={`mailto:${business.email ?? ""}`} className="underline">{business.email ?? ""}</a>
           </p>
         </section>
       </main>

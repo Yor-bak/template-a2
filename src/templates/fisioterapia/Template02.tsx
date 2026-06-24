@@ -64,29 +64,6 @@ export const PALETTES: readonly TemplatePalette[] = [
 
 export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 
-const clinic = {
-  name: "Núcleo Fisioterapia",
-  doctor: "Fis. Tomás Vidal Esparza",
-  specialty: "Rehabilitación física y deportiva",
-  school: "Escuela Nacional de Medicina y Homeopatía, IPN",
-  license: "5390271",
-  experienceYears: "10",
-  patients: "2,100",
-  welcomeMessage:
-    "Rehabilitación con objetivos medibles: rango de movimiento, fuerza y vuelta a tu actividad, sesión por sesión.",
-  address: {
-    street: "Av. Revolución 1450, local 3",
-    neighborhood: "San Ángel, Álvaro Obregón",
-    zip: "01000 CDMX",
-    reference: "Junto al gimnasio Vértice",
-    mapsUrl: "https://maps.google.com/?q=Av+Revolucion+1450+CDMX",
-  },
-  phone: "55 7710 4482",
-  phoneHref: "5577104482",
-  whatsapp: "https://wa.me/525577104482",
-  email: "contacto@nucleofisio.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@nucleofisio" },
-};
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "por sesión", from: "desde", consult: "a consulta" };
@@ -191,9 +168,9 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
     }));
 
   const stats = [
-    { value: clinic.experienceYears, label: "años de práctica" },
-    { value: clinic.patients, label: "pacientes rehabilitados" },
-    { value: clinic.license, label: "cédula profesional" },
+    { value: specialist.yearsExperience?.toString() ?? "–", label: "años de práctica" },
+    { value: specialist.patientsServed?.toLocaleString("es-MX") ?? "–", label: "pacientes rehabilitados" },
+    { value: specialist.professionalLicense, label: "cédula profesional" },
   ];
 
   return (
@@ -216,11 +193,11 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
               </svg>
             </span>
             <span className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--f-bricolage)" }}>
-              {clinic.name}
+              {business.name}
             </span>
           </div>
           <a
-            href={clinic.whatsapp}
+            href={`https://wa.me/${business.whatsapp}`}
             className="inline-flex min-h-[44px] items-center rounded-xl bg-[var(--c-accent)] px-5 text-sm font-semibold text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
           >
             Agendar sesión
@@ -230,17 +207,17 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-12">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{clinic.specialty}</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">{specialist.specialty}</p>
         <h1
           className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight md:text-6xl"
           style={{ fontFamily: "var(--f-bricolage)" }}
         >
           Tratamos el dolor donde vive: zona por zona.
         </h1>
-        <p className="mt-6 max-w-xl text-lg text-[var(--c-ink)]/70">{clinic.welcomeMessage}</p>
+        <p className="mt-6 max-w-xl text-lg text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
         <div className="mt-8 flex flex-wrap gap-3">
           <a
-            href={clinic.whatsapp}
+            href={`https://wa.me/${business.whatsapp}`}
             className="inline-flex min-h-[44px] items-center rounded-xl bg-[var(--c-accent)] px-6 text-sm font-semibold text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
           >
             Agendar sesión
@@ -351,10 +328,10 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
                 </div>
                 {s.isUrgency && (
                   <a
-                    href={`tel:${clinic.phoneHref}`}
+                    href={`tel:${business.phone.replace(/\D/g, "")}`}
                     className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--c-accent)] px-5 text-sm font-semibold text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
                   >
-                    Llamar ahora · {clinic.phone}
+                    Llamar ahora · {business.phone}
                   </a>
                 )}
               </article>
@@ -375,10 +352,10 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">Tu fisioterapeuta</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl" style={{ fontFamily: "var(--f-bricolage)" }}>
-              {clinic.doctor}
+              {specialist.displayName}
             </h2>
             <p className="mt-3 max-w-xl text-[var(--c-ink)]/70">
-              Egresado de la {clinic.school}, especializado en {clinic.specialty.toLowerCase()}. Cédula profesional {clinic.license}.
+              Egresado de la {specialist.school ?? ""}, especializado en {specialist.specialty.toLowerCase()}. Cédula profesional {specialist.professionalLicense}.
             </p>
             <ul className="mt-5 grid gap-2 text-sm text-[var(--c-ink)]/70 sm:grid-cols-2">
               <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--c-accent)]" /> Medición de rango de movimiento en cada sesión.</li>
@@ -429,15 +406,15 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
               Ubicación
             </h2>
             <address className="mt-4 not-italic text-[var(--c-ink)]/70">
-              {clinic.address.street}
+              {business.address.street}
               <br />
-              {clinic.address.neighborhood}
+              {business.address.neighborhood}
               <br />
-              {clinic.address.zip}
+              {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{clinic.address.reference}</p>
+            <p className="mt-2 text-sm text-[var(--c-ink)]/55">{business.address.references}</p>
             <a
-              href={clinic.address.mapsUrl}
+              href={business.address.mapsUrl}
               className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-[var(--c-accent)] underline-offset-4 hover:underline"
             >
               Ver en Google Maps →
@@ -492,13 +469,13 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
           </div>
           <div className="flex flex-wrap gap-3">
             <a
-              href={`tel:${clinic.phoneHref}`}
+              href={`tel:${business.phone.replace(/\D/g, "")}`}
               className="inline-flex min-h-[44px] items-center rounded-xl bg-[var(--c-accent)] px-6 text-sm font-semibold text-[var(--c-surface)] transition hover:bg-[var(--c-accent-deep)]"
             >
               Llamar ahora
             </a>
             <a
-              href={clinic.whatsapp}
+              href={`https://wa.me/${business.whatsapp}`}
               className="inline-flex min-h-[44px] items-center rounded-xl border border-[var(--c-bg)]/30 px-6 text-sm font-semibold transition hover:border-[var(--c-bg)]/60"
             >
               WhatsApp directo
@@ -516,15 +493,15 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
           <dl className="mt-7 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
             <div>
               <dt className="text-[var(--c-ink)]/50">Teléfono</dt>
-              <dd><a href={`tel:${clinic.phoneHref}`} className="mt-1 inline-flex min-h-[44px] items-center font-semibold text-[var(--c-accent)]">{clinic.phone}</a></dd>
+              <dd><a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 inline-flex min-h-[44px] items-center font-semibold text-[var(--c-accent)]">{business.phone}</a></dd>
             </div>
             <div>
               <dt className="text-[var(--c-ink)]/50">WhatsApp</dt>
-              <dd><a href={clinic.whatsapp} className="mt-1 inline-flex min-h-[44px] items-center font-semibold text-[var(--c-accent)]">{clinic.phone}</a></dd>
+              <dd><a href={`https://wa.me/${business.whatsapp}`} className="mt-1 inline-flex min-h-[44px] items-center font-semibold text-[var(--c-accent)]">{business.phone}</a></dd>
             </div>
             <div>
               <dt className="text-[var(--c-ink)]/50">Correo</dt>
-              <dd><a href={`mailto:${clinic.email}`} className="mt-1 inline-flex min-h-[44px] items-center font-semibold text-[var(--c-accent)]">{clinic.email}</a></dd>
+              <dd><a href={`mailto:${business.email ?? ""}`} className="mt-1 inline-flex min-h-[44px] items-center font-semibold text-[var(--c-accent)]">{business.email ?? ""}</a></dd>
             </div>
             <div>
               <dt className="text-[var(--c-ink)]/50">Redes sociales</dt>
@@ -540,7 +517,7 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
           </dl>
         </div>
         <div className="border-t border-[var(--c-ink)]/12 px-6 py-6 text-center text-xs text-[var(--c-ink)]/50">
-          {clinic.name} · {clinic.doctor} · San Ángel, CDMX
+          {business.name} · {specialist.displayName} · San Ángel, CDMX
         </div>
       </footer>
     </div>

@@ -75,36 +75,6 @@ export const DEFAULT_PALETTE_ID = PALETTES[0].id;
 // bloques de Misión/Visión, galería de instalaciones, testimonios con estrellas y un
 // bloque de contacto completo. Paleta verde clínica sobre blanco (cálida pero profesional)
 // y tipografía Manrope + Karla, distinta del alterno B "tablero" y del médico principal.
-const doctor = {
-  name: "Centro Médico Altavista",
-  doctor: "Dr. Joaquín Lemus Ortega",
-  specialty: "Medicina Interna",
-  school: "Facultad de Medicina, UNAM",
-  license: "5821093",
-  specialtyLicense: "8834201",
-  experienceYears: "16",
-  patients: "9,200",
-  welcomeMessage:
-    "Atención médica integral para adultos, con trato humano y un plan claro: desde el chequeo anual hasta el seguimiento de enfermedades crónicas, explicado en lenguaje simple.",
-  address: {
-    street: "Av. Altavista 142, int. 3",
-    neighborhood: "San Ángel, Álvaro Obregón",
-    zip: "01060 CDMX",
-    reference: "A dos cuadras del Parque de la Bombilla",
-    mapsUrl: "https://maps.google.com/?q=Av+Altavista+142+CDMX",
-  },
-  phone: "55 2210 4477",
-  phoneHref: "5522104477",
-  whatsapp: "https://wa.me/525522104477",
-  email: "contacto@centromedicoaltavista.mx",
-  social: { facebook: "https://facebook.com", instagram: "https://instagram.com", instagramHandle: "@centroaltavista" },
-};
-
-const stats = [
-  { value: doctor.experienceYears, label: "años de práctica" },
-  { value: doctor.patients, label: "pacientes atendidos" },
-  { value: "98%", label: "pacientes que regresan" },
-];
 
 type PriceType = "fixed" | "from" | "consult";
 const priceTypeLabel: Record<PriceType, string> = { fixed: "precio fijo", from: "desde", consult: "a consulta" };
@@ -180,6 +150,12 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
 
   const socialLinks = business.socialLinks ?? {};
 
+  const stats = [
+    { value: specialist.yearsExperience?.toString() ?? "–", label: "años de práctica" },
+    { value: specialist.patientsServed?.toLocaleString("es-MX") ?? "–", label: "pacientes atendidos" },
+    { value: "98%", label: "pacientes que regresan" },
+  ];
+
   const activePalette = PALETTES.find((p) => p.id === appearance.selectedPaletteId) ?? PALETTES[0];
   const active = PALETTES.indexOf(activePalette);
   const setActive = (idx: number) => {
@@ -227,7 +203,7 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--c-soft)]">
               <IconCross />
             </span>
-            <span className="text-base font-bold text-[var(--c-ink)]" style={{ fontFamily: "var(--f-manrope)" }}>{doctor.name}</span>
+            <span className="text-base font-bold text-[var(--c-ink)]" style={{ fontFamily: "var(--f-manrope)" }}>{business.name}</span>
           </div>
           <nav className="hidden items-center gap-7 text-sm text-[var(--c-ink)]/65 lg:flex">
             <a href="#nosotros" className="hover:text-[var(--c-accent)]">Nosotros</a>
@@ -236,7 +212,7 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
             <a href="#testimonios" className="hover:text-[var(--c-accent)]">Testimonios</a>
             <a href="#contacto" className="hover:text-[var(--c-accent)]">Contacto</a>
           </nav>
-          <a href={doctor.whatsapp} className="rounded-full bg-[var(--c-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
+          <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
             Agendar
           </a>
         </div>
@@ -246,17 +222,17 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
       <section className="bg-gradient-to-b from-[var(--c-soft)] to-white px-6 py-20 text-center md:py-28">
         <div className="mx-auto max-w-3xl">
           <span className="inline-block rounded-full border border-[var(--c-accent)]/20 bg-white px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-[var(--c-accent)]">
-            {doctor.specialty} · CDMX
+            {specialist.specialty} · CDMX
           </span>
           <h1 className="mt-6 text-4xl font-extrabold leading-[1.1] md:text-6xl" style={{ fontFamily: "var(--f-manrope)" }}>
             Tu clínica de confianza, cerca de casa.
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-[var(--c-ink)]/70">{doctor.welcomeMessage}</p>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-[var(--c-ink)]/70">{specialist.shortDescription}</p>
           <div className="mt-9 flex flex-wrap justify-center gap-4">
-            <a href={doctor.whatsapp} className="rounded-full bg-[var(--c-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
+            <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full bg-[var(--c-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-deep)]">
               Conócenos
             </a>
-            <a href={`tel:${doctor.phoneHref}`} className="rounded-full border border-[var(--c-ink)]/20 px-7 py-3.5 text-sm font-semibold transition hover:border-[var(--c-accent)] hover:text-[var(--c-accent)]">
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full border border-[var(--c-ink)]/20 px-7 py-3.5 text-sm font-semibold transition hover:border-[var(--c-accent)] hover:text-[var(--c-accent)]">
               Llamar al consultorio
             </a>
           </div>
@@ -325,8 +301,8 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">Nosotros</p>
             <h2 className="mt-3 text-3xl font-bold md:text-4xl" style={{ fontFamily: "var(--f-manrope)" }}>Atención personalizada y humana</h2>
             <p className="mt-4 text-[var(--c-ink)]/70">
-              {doctor.doctor}, médico cirujano con especialidad en {doctor.specialty} por la {doctor.school}
-              {" "}(cédula de especialidad {doctor.specialtyLicense}). Cada paciente recibe un plan por escrito,
+              {specialist.displayName}, médico cirujano con especialidad en {specialist.specialty} por la {specialist.school}
+              {" "}(cédula de especialidad {specialist.specialtyLicense}). Cada paciente recibe un plan por escrito,
               estudios explicados y seguimiento real.
             </p>
             <div className="mt-8 grid gap-5 sm:grid-cols-2">
@@ -382,8 +358,8 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
             </h2>
           </div>
           <div className="flex shrink-0 gap-3">
-            <a href={`tel:${doctor.phoneHref}`} className="rounded-full bg-[var(--c-urgent)] px-6 py-3 text-sm font-semibold text-white">Llamar ahora</a>
-            <a href={doctor.whatsapp} className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold">WhatsApp</a>
+            <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="rounded-full bg-[var(--c-urgent)] px-6 py-3 text-sm font-semibold text-white">Llamar ahora</a>
+            <a href={`https://wa.me/${business.whatsapp}`} className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold">WhatsApp</a>
           </div>
         </div>
       </section>
@@ -421,15 +397,15 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
             <dl className="mt-8 grid gap-6 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-[var(--c-ink)]/50">Teléfono</dt>
-                <dd><a href={`tel:${doctor.phoneHref}`} className="mt-1 block font-semibold text-[var(--c-accent)]">{doctor.phone}</a></dd>
+                <dd><a href={`tel:${business.phone.replace(/\D/g, "")}`} className="mt-1 block font-semibold text-[var(--c-accent)]">{business.phone}</a></dd>
               </div>
               <div>
                 <dt className="text-[var(--c-ink)]/50">WhatsApp</dt>
-                <dd><a href={doctor.whatsapp} className="mt-1 block font-semibold text-[var(--c-accent)]">{doctor.phone}</a></dd>
+                <dd><a href={`https://wa.me/${business.whatsapp}`} className="mt-1 block font-semibold text-[var(--c-accent)]">{business.phone}</a></dd>
               </div>
               <div>
                 <dt className="text-[var(--c-ink)]/50">Correo</dt>
-                <dd><a href={`mailto:${doctor.email}`} className="mt-1 block font-semibold text-[var(--c-accent)]">{doctor.email}</a></dd>
+                <dd><a href={`mailto:${business.email ?? ""}`} className="mt-1 block font-semibold text-[var(--c-accent)]">{business.email ?? ""}</a></dd>
               </div>
               <div>
                 <dt className="text-[var(--c-ink)]/50">Redes sociales</dt>
@@ -473,12 +449,12 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
           <div className="rounded-3xl border border-[var(--c-ink)]/10 bg-white p-6">
             <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-[var(--c-soft)] to-[var(--c-soft2)]" aria-hidden />
             <address className="mt-5 not-italic text-sm text-[var(--c-ink)]/70">
-              {doctor.address.street}<br />
-              {doctor.address.neighborhood}<br />
-              {doctor.address.zip}
+              {business.address.street}<br />
+              {business.address.neighborhood}<br />
+              {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
             </address>
-            <p className="mt-1 text-xs text-[var(--c-ink)]/55">{doctor.address.reference}</p>
-            <a href={doctor.address.mapsUrl} className="mt-2 inline-block text-sm font-semibold text-[var(--c-accent)] underline-offset-4 hover:underline">
+            <p className="mt-1 text-xs text-[var(--c-ink)]/55">{business.address.references}</p>
+            <a href={business.address.mapsUrl} className="mt-2 inline-block text-sm font-semibold text-[var(--c-accent)] underline-offset-4 hover:underline">
               Ver en Google Maps →
             </a>
             <div className="mt-5 divide-y divide-[var(--c-ink)]/10 border-t border-[var(--c-ink)]/10 text-sm">
@@ -494,7 +470,7 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
       </section>
 
       <footer className="border-t border-[var(--c-ink)]/10 px-6 pt-8 pb-28 text-center text-sm text-[var(--c-ink)]/55">
-        {doctor.name} · {doctor.doctor} · CDMX
+        {business.name} · {specialist.displayName} · CDMX
       </footer>
     </div>
   );

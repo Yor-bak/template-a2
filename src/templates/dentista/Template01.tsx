@@ -158,7 +158,7 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
       <header className="sticky top-0 z-30 border-b border-steel/60 bg-ivory/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <a href="#top" className="font-display text-lg font-bold tracking-tight">
-            Estudio Dental Meridiano
+            {business.name}
           </a>
           <nav className="hidden gap-8 text-sm md:flex">
             {navLinks.map((link) => (
@@ -185,8 +185,7 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
               Cada sonrisa tiene una línea media. Encontramos la suya.
             </h1>
             <p className="reveal mt-6 max-w-xl text-lg text-ink/70">
-              Consultorio de la Dra. Renata Solís Vega en Mixcoac. Diagnóstico medido, tratamiento explicado y
-              seguimiento real — no una promesa genérica de &ldquo;sonrisa perfecta&rdquo;.
+              {specialist.shortDescription}
             </p>
 
             <div className="reveal mt-10 flex flex-wrap gap-4">
@@ -197,7 +196,7 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
                 Agendar consulta
               </a>
               <a
-                href="https://wa.me/525548213360"
+                href={`https://wa.me/${business.whatsapp}`}
                 className="rounded-full border border-ink/20 px-6 py-3 text-sm font-medium text-ink transition hover:border-ink/50"
               >
                 Preguntar por WhatsApp
@@ -240,7 +239,7 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
             <div className="aspect-[4/5] w-full rounded-2xl bg-steel-soft" aria-hidden />
             <div>
               <p className="tick-label text-meridian">La especialista</p>
-              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Dra. Renata Solís Vega</h2>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">{specialist.displayName}</h2>
               <p className="mt-4 max-w-xl text-ink/70">
                 Cirujana dentista con especialidad en Rehabilitación Oral y Estética Dental por la UNAM. Atiende
                 cada caso con el mismo principio: medir antes de proponer, y proponer antes de tocar un diente.
@@ -249,19 +248,19 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
               <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-steel pt-6 sm:grid-cols-4">
                 <div>
                   <dt className="tick-label text-ink/70">Experiencia</dt>
-                  <dd className="font-data mt-1 text-sm">12 años</dd>
+                  <dd className="font-data mt-1 text-sm">{specialist.yearsExperience?.toString() ?? "–"} años</dd>
                 </div>
                 <div>
                   <dt className="tick-label text-ink/70">Cédula profesional</dt>
-                  <dd className="font-data mt-1 text-sm">6512345</dd>
+                  <dd className="font-data mt-1 text-sm">{specialist.professionalLicense}</dd>
                 </div>
                 <div>
                   <dt className="tick-label text-ink/70">Cédula de especialidad</dt>
-                  <dd className="font-data mt-1 text-sm">9871234</dd>
+                  <dd className="font-data mt-1 text-sm">{specialist.specialtyLicense}</dd>
                 </div>
                 <div>
                   <dt className="tick-label text-ink/70">Pacientes atendidos</dt>
-                  <dd className="font-data mt-1 text-sm">1,840</dd>
+                  <dd className="font-data mt-1 text-sm">{specialist.patientsServed?.toLocaleString("es-MX") ?? "–"}</dd>
                 </div>
               </dl>
 
@@ -329,19 +328,19 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2">
             <div>
               <p className="tick-label text-meridian">Ubicación</p>
-              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Mixcoac, Ciudad de México</h2>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">{business.address.neighborhood}</h2>
               <address className="mt-4 not-italic text-ink/70">
-                Avenida Insurgentes Sur 1457, Int. 302
+                {business.address.street}
                 <br />
-                Col. Insurgentes Mixcoac, Alcaldía Benito Juárez
+                {business.address.neighborhood}
                 <br />
-                C.P. 03920, CDMX
+                {`${business.address.postalCode ?? ""} ${business.address.city}`.trim()}
               </address>
               <p className="mt-3 text-sm text-ink/70">
-                A dos cuadras del metro Mixcoac. Torre Cristal, planta baja, acceso directo desde la calle.
+                {business.address.references}
               </p>
               <a
-                href="https://maps.google.com/?q=Avenida+Insurgentes+Sur+1457+CDMX"
+                href={business.address.mapsUrl}
                 className="mt-4 inline-block text-sm font-medium text-meridian underline-offset-4 hover:underline"
               >
                 Ver en Google Maps →
@@ -406,13 +405,13 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
             </div>
             <div className="flex gap-4">
               <a
-                href="tel:+525548213360"
+                href={`tel:${business.phone.replace(/\D/g, "")}`}
                 className="rounded-full bg-urgent px-6 py-3 text-sm font-medium text-ivory transition hover:bg-urgent-deep"
               >
                 Llamar ahora
               </a>
               <a
-                href="https://wa.me/525548213360"
+                href={`https://wa.me/${business.whatsapp}`}
                 className="rounded-full border border-ivory/30 px-6 py-3 text-sm font-medium text-ivory transition hover:border-ivory/60"
               >
                 WhatsApp de urgencias
@@ -449,20 +448,20 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
             <div className="mt-8 grid gap-6 text-sm sm:grid-cols-2 md:grid-cols-4">
               <div>
                 <div className="tick-label text-ink/70">Teléfono</div>
-                <a href="tel:+525548213360" className="font-data mt-1 block">
-                  (55) 4821 3360
+                <a href={`tel:${business.phone.replace(/\D/g, "")}`} className="font-data mt-1 block">
+                  {business.phone}
                 </a>
               </div>
               <div>
                 <div className="tick-label text-ink/70">WhatsApp</div>
-                <a href="https://wa.me/525548213360" className="font-data mt-1 block">
-                  (55) 4821 3360
+                <a href={`https://wa.me/${business.whatsapp}`} className="font-data mt-1 block">
+                  {business.phone}
                 </a>
               </div>
               <div>
                 <div className="tick-label text-ink/70">Correo</div>
-                <a href="mailto:contacto@meridianodental.mx" className="font-data mt-1 block">
-                  contacto@meridianodental.mx
+                <a href={`mailto:${business.email ?? ""}`} className="font-data mt-1 block">
+                  {business.email ?? ""}
                 </a>
               </div>
               <div>
@@ -494,7 +493,7 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
       </main>
 
       <footer className="border-t border-steel/60 px-6 pt-8 pb-28 text-center text-sm text-ink/70">
-        Estudio Dental Meridiano · Dra. Renata Solís Vega · CDMX
+        {business.name} · {specialist.displayName} · CDMX
       </footer>
     </div>
   );
