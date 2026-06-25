@@ -9,26 +9,27 @@ interface StatCardProps {
   sub?: string;
 }
 
-const colorMap = {
-  blue:   { bg: "bg-[var(--color-accent-soft)]",      icon: "text-[var(--color-primary)]", value: "text-[var(--color-text)]" },
-  teal:   { bg: "bg-[var(--color-accent)]/20",   icon: "text-[var(--color-primary-dark)]", value: "text-[var(--color-primary-dark)]" },
-  green:  { bg: "bg-emerald-50",     icon: "text-emerald-600", value: "text-emerald-700" },
-  amber:  { bg: "bg-amber-50",       icon: "text-amber-600",   value: "text-amber-700" },
-  red:    { bg: "bg-red-50",         icon: "text-red-600",     value: "text-red-700" },
-  purple: { bg: "bg-violet-50",      icon: "text-violet-600",  value: "text-violet-700" },
+// All colors now use semantic ds-* tokens so they adapt to any theme / dark mode
+const colorMap: Record<string, { bg: string; icon: string; value: string }> = {
+  blue:   { bg: "bg-[var(--ds-accent)]/12",   icon: "text-[var(--ds-accent)]",   value: "text-[var(--ds-text)]" },
+  teal:   { bg: "bg-[var(--ds-accent)]/12",   icon: "text-[var(--ds-accent)]",   value: "text-[var(--ds-text)]" },
+  green:  { bg: "bg-[var(--ds-success)]/12",  icon: "text-[var(--ds-success)]",  value: "text-[var(--ds-success)]" },
+  amber:  { bg: "bg-[var(--ds-warning)]/12",  icon: "text-[var(--ds-warning)]",  value: "text-[var(--ds-warning)]" },
+  red:    { bg: "bg-[var(--ds-error)]/12",    icon: "text-[var(--ds-error)]",    value: "text-[var(--ds-error)]" },
+  purple: { bg: "bg-[var(--ds-surface-muted)]", icon: "text-[var(--ds-text-muted)]", value: "text-[var(--ds-text)]" },
 };
 
 export function StatCard({ label, value, icon: Icon, color = "blue", sub }: StatCardProps) {
-  const c = colorMap[color];
+  const c = colorMap[color] ?? colorMap.blue;
   return (
-    <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-5 flex items-center gap-4">
+    <div className="bg-[var(--ds-surface)] rounded-2xl border border-[var(--ds-border)] p-5 flex items-center gap-4">
       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0", c.bg)}>
         <Icon className={cn("w-6 h-6", c.icon)} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-[var(--color-muted-text)] font-medium uppercase tracking-wide truncate">{label}</p>
+        <p className="text-xs text-[var(--ds-text-muted)] font-medium uppercase tracking-wide truncate">{label}</p>
         <p className={cn("text-2xl font-bold leading-tight", c.value)}>{value}</p>
-        {sub && <p className="text-xs text-[var(--color-muted-text)]/70 mt-0.5">{sub}</p>}
+        {sub && <p className="text-xs text-[var(--ds-text-muted)]/70 mt-0.5">{sub}</p>}
       </div>
     </div>
   );

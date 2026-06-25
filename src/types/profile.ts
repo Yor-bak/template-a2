@@ -167,12 +167,18 @@ export interface DashboardColorSet {
   background: string;
   surface: string;
   surfaceMuted: string;
+  surfaceElevated?: string;
   primary: string;
   primaryForeground: string;
   accent: string;
   text: string;
   textMuted: string;
   border: string;
+  success?: string;
+  successForeground?: string;
+  warning?: string;
+  error?: string;
+  ring?: string;
 }
 
 export interface DashboardTheme {

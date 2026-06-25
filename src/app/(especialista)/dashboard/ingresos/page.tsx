@@ -37,12 +37,12 @@ export default function IngresosPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Ingresos</h1>
-          <p className="text-[var(--color-muted-text)] text-sm">Consulta tus ingresos registrados y el estado de pagos por cita.</p>
+          <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Ingresos</h1>
+          <p className="text-[var(--ds-text-muted)] text-sm">Consulta tus ingresos registrados y el estado de pagos por cita.</p>
         </div>
         <button
           onClick={exportCSV}
-          className="inline-flex items-center gap-2 border border-[var(--color-border)] text-[var(--color-muted-text)] px-4 py-2 rounded-xl text-sm font-medium hover:bg-[var(--color-background)] hover:border-[var(--color-primary)]/20 transition-colors"
+          className="inline-flex items-center gap-2 border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-medium hover:bg-[var(--ds-bg)] hover:border-[var(--color-primary)]/20 transition-colors"
         >
           <Download className="w-4 h-4" />
           Exportar CSV
@@ -65,27 +65,27 @@ export default function IngresosPage() {
       </div>
 
       {/* Insight */}
-      <div className="bg-[var(--color-accent-soft)]/50 border border-[var(--color-accent)]/30 rounded-2xl p-4 mb-6 text-sm text-[var(--color-primary)]">
+      <div className="bg-[var(--ds-surface-muted)]/50 border border-[var(--color-accent)]/30 rounded-2xl p-4 mb-6 text-sm text-[var(--ds-primary)]">
         {monthText}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
         {/* Por servicio */}
-        <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm p-5">
-          <h2 className="font-bold text-[var(--color-text)] mb-4 text-sm uppercase tracking-wide">Ingresos por servicio</h2>
+        <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm p-5">
+          <h2 className="font-bold text-[var(--ds-text)] mb-4 text-sm uppercase tracking-wide">Ingresos por servicio</h2>
           {summary.byService.length === 0 ? (
-            <p className="text-[var(--color-muted-text)] text-sm">Sin datos registrados.</p>
+            <p className="text-[var(--ds-text-muted)] text-sm">Sin datos registrados.</p>
           ) : (
             <div className="space-y-3">
               {summary.byService.map((s) => (
                 <div key={s.name} className="flex items-center justify-between text-sm">
                   <div>
-                    <p className="font-semibold text-[var(--color-text)]">{s.name}</p>
-                    <p className="text-xs text-[var(--color-muted-text)]">
+                    <p className="font-semibold text-[var(--ds-text)]">{s.name}</p>
+                    <p className="text-xs text-[var(--ds-text-muted)]">
                       {s.count} cita{s.count !== 1 ? "s" : ""} pagada{s.count !== 1 ? "s" : ""}
                     </p>
                   </div>
-                  <span className="font-bold text-emerald-700">{formatCurrency(s.total)}</span>
+                  <span className="font-bold text-[var(--ds-success)]">{formatCurrency(s.total)}</span>
                 </div>
               ))}
             </div>
@@ -93,14 +93,14 @@ export default function IngresosPage() {
         </div>
 
         {/* Resumen del mes */}
-        <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm p-5">
-          <h2 className="font-bold text-[var(--color-text)] mb-4 text-sm uppercase tracking-wide">Resumen del mes</h2>
+        <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm p-5">
+          <h2 className="font-bold text-[var(--ds-text)] mb-4 text-sm uppercase tracking-wide">Resumen del mes</h2>
           <div className="space-y-2 text-sm">
             {[
-              { label: "Pagadas",    bg: "bg-emerald-50", text: "text-emerald-700", value: `${summary.paidCount} citas · ${formatCurrency(summary.paid)}` },
-              { label: "Parciales",  bg: "bg-amber-50",   text: "text-amber-700",   value: `${summary.partialCount} citas · ${formatCurrency(summary.partial)}` },
+              { label: "Pagadas",    bg: "bg-[var(--ds-success)]/10", text: "text-[var(--ds-success)]", value: `${summary.paidCount} citas · ${formatCurrency(summary.paid)}` },
+              { label: "Parciales",  bg: "bg-[var(--ds-warning)]/10",   text: "text-[var(--ds-warning)]",   value: `${summary.partialCount} citas · ${formatCurrency(summary.partial)}` },
               { label: "Sin pagar",  bg: "bg-red-50",     text: "text-red-700",     value: `${summary.unpaidCount} citas · ${formatCurrency(summary.unpaid)}` },
-              { label: "Cortesías",  bg: "bg-violet-50",  text: "text-violet-700",  value: `${summary.courtesyCount} citas` },
+              { label: "Cortesías",  bg: "bg-[var(--ds-accent)]/10",  text: "text-[var(--ds-accent)]",  value: `${summary.courtesyCount} citas` },
             ].map((row) => (
               <div key={row.label} className={`flex justify-between items-center p-3 ${row.bg} rounded-xl`}>
                 <span className={`${row.text} font-semibold text-xs`}>{row.label}</span>
@@ -112,14 +112,14 @@ export default function IngresosPage() {
       </div>
 
       {/* Tabla detallada */}
-      <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#F0F4F5]">
-          <h2 className="font-bold text-[var(--color-text)] text-sm uppercase tracking-wide">Detalle de pagos</h2>
+      <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--ds-border)]">
+          <h2 className="font-bold text-[var(--ds-text)] text-sm uppercase tracking-wide">Detalle de pagos</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
-              <tr className="bg-[var(--color-background)] text-xs text-[var(--color-muted-text)] uppercase tracking-wide border-b border-[var(--color-border)]">
+              <tr className="bg-[var(--ds-bg)] text-xs text-[var(--ds-text-muted)] uppercase tracking-wide border-b border-[var(--ds-border)]">
                 <th className="text-left px-5 py-3 font-semibold">Cliente</th>
                 <th className="text-left px-5 py-3 font-semibold">Servicio</th>
                 <th className="text-left px-5 py-3 font-semibold">Fecha</th>
@@ -128,27 +128,27 @@ export default function IngresosPage() {
                 <th className="text-right px-5 py-3 font-semibold">Monto</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F0F4F5]">
+            <tbody className="divide-y divide-[var(--ds-border)]">
               {appointments.map((apt) => (
-                <tr key={apt.id} className="hover:bg-[var(--color-background)] transition-colors">
+                <tr key={apt.id} className="hover:bg-[var(--ds-bg)] transition-colors">
                   <td className="px-5 py-3">
-                    <Link href={`/dashboard/citas/${apt.id}`} className="font-semibold text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors">
+                    <Link href={`/dashboard/citas/${apt.id}`} className="font-semibold text-[var(--ds-text)] hover:text-[var(--ds-primary)] transition-colors">
                       {apt.patientName}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-[var(--color-muted-text)] text-xs">{apt.serviceName}</td>
-                  <td className="px-5 py-3 text-[var(--color-muted-text)] text-xs whitespace-nowrap">
+                  <td className="px-5 py-3 text-[var(--ds-text-muted)] text-xs">{apt.serviceName}</td>
+                  <td className="px-5 py-3 text-[var(--ds-text-muted)] text-xs whitespace-nowrap">
                     {formatShortDate(apt.desiredDate)}
                   </td>
                   <td className="px-5 py-3">
-                    <span className="text-xs text-[var(--color-muted-text)]">{STATUS_LABELS[apt.status]}</span>
+                    <span className="text-xs text-[var(--ds-text-muted)]">{STATUS_LABELS[apt.status]}</span>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${PAYMENT_COLORS[apt.paymentStatus]}`}>
                       {PAYMENT_LABELS[apt.paymentStatus]}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right font-bold text-[var(--color-text)]">
+                  <td className="px-5 py-3 text-right font-bold text-[var(--ds-text)]">
                     {apt.chargedAmount
                       ? formatCurrency(apt.chargedAmount)
                       : apt.estimatedAmount

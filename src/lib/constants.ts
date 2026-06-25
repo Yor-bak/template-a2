@@ -17,13 +17,13 @@ export const STATUS_LABELS: Record<AppointmentStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending:     "bg-amber-50 text-amber-700",
-  confirmed:   "bg-[var(--color-accent-soft)] text-[var(--color-primary)]",
-  rejected:    "bg-red-50 text-red-700",
-  rescheduled: "bg-violet-50 text-violet-700",
-  completed:   "bg-emerald-50 text-emerald-700",
-  cancelled:   "bg-gray-100 text-gray-600",
-  no_show:     "bg-orange-50 text-orange-700",
+  pending:     "bg-[var(--ds-warning)]/12 text-[var(--ds-warning)]",
+  confirmed:   "bg-[var(--ds-accent)]/12 text-[var(--ds-accent)]",
+  rejected:    "bg-[var(--ds-error)]/12 text-[var(--ds-error)]",
+  rescheduled: "bg-[var(--ds-text-muted)]/12 text-[var(--ds-text-muted)]",
+  completed:   "bg-[var(--ds-success)]/12 text-[var(--ds-success)]",
+  cancelled:   "bg-[var(--ds-surface-muted)] text-[var(--ds-text-muted)]",
+  no_show:     "bg-[var(--ds-warning)]/8 text-[var(--ds-warning)]",
 };
 
 export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
@@ -34,10 +34,10 @@ export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
 };
 
 export const PAYMENT_COLORS: Record<PaymentStatus, string> = {
-  unpaid: "bg-red-50 text-red-700",
-  paid: "bg-green-50 text-green-700",
-  partial: "bg-yellow-50 text-yellow-700",
-  courtesy: "bg-purple-50 text-purple-700",
+  unpaid:   "bg-[var(--ds-error)]/12 text-[var(--ds-error)]",
+  paid:     "bg-[var(--ds-success)]/12 text-[var(--ds-success)]",
+  partial:  "bg-[var(--ds-warning)]/12 text-[var(--ds-warning)]",
+  courtesy: "bg-[var(--ds-text-muted)]/12 text-[var(--ds-text-muted)]",
 };
 
 export const DEMO_TODAY = "2025-06-10";

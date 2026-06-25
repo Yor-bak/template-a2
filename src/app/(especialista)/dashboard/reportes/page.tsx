@@ -10,15 +10,15 @@ function MetricCard({ label, value, sub, icon: Icon }: {
   label: string; value: string | number; sub?: string; icon: React.ElementType;
 }) {
   return (
-    <div className="bg-white border border-[var(--color-border)] rounded-2xl p-5 shadow-sm">
+    <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-5 shadow-sm">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-9 h-9 rounded-xl bg-[var(--color-accent-soft)] flex items-center justify-center flex-shrink-0">
-          <Icon className="w-4 h-4 text-[var(--color-primary)]" />
+        <div className="w-9 h-9 rounded-xl bg-[var(--ds-surface-muted)] flex items-center justify-center flex-shrink-0">
+          <Icon className="w-4 h-4 text-[var(--ds-primary)]" />
         </div>
-        <p className="text-xs font-bold text-[var(--color-muted-text)] uppercase tracking-widest">{label}</p>
+        <p className="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-widest">{label}</p>
       </div>
-      <p className="text-2xl font-extrabold text-[var(--color-text)]">{value}</p>
-      {sub && <p className="text-xs text-[var(--color-muted-text)] mt-1">{sub}</p>}
+      <p className="text-2xl font-extrabold text-[var(--ds-text)]">{value}</p>
+      {sub && <p className="text-xs text-[var(--ds-text-muted)] mt-1">{sub}</p>}
     </div>
   );
 }
@@ -47,8 +47,8 @@ export default function ReportesPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Reportes</h1>
-        <p className="text-[var(--color-muted-text)] text-sm">Métricas generales del consultorio.</p>
+        <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Reportes</h1>
+        <p className="text-[var(--ds-text-muted)] text-sm">Métricas generales del consultorio.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -60,20 +60,20 @@ export default function ReportesPage() {
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
         {/* Servicios más solicitados */}
-        <div className="bg-white border border-[var(--color-border)] rounded-2xl p-5 shadow-sm">
+        <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart2 className="w-4 h-4 text-[var(--color-primary)]" />
-            <h2 className="font-bold text-sm text-[var(--color-text)]">Servicios más solicitados</h2>
+            <BarChart2 className="w-4 h-4 text-[var(--ds-primary)]" />
+            <h2 className="font-bold text-sm text-[var(--ds-text)]">Servicios más solicitados</h2>
           </div>
           <div className="space-y-3">
             {topServices.map(([name, data], i) => (
               <div key={name} className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-primary)] text-xs font-bold flex items-center justify-center flex-shrink-0">
+                <span className="w-5 h-5 rounded-full bg-[var(--ds-surface-muted)] text-[var(--ds-primary)] text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-text)] truncate">{name}</p>
-                  <p className="text-xs text-[var(--color-muted-text)]">{data.count} citas · {formatCurrency(data.income)}</p>
+                  <p className="text-sm font-medium text-[var(--ds-text)] truncate">{name}</p>
+                  <p className="text-xs text-[var(--ds-text-muted)]">{data.count} citas · {formatCurrency(data.income)}</p>
                 </div>
               </div>
             ))}
@@ -81,20 +81,20 @@ export default function ReportesPage() {
         </div>
 
         {/* Resumen de asistencia */}
-        <div className="bg-white border border-[var(--color-border)] rounded-2xl p-5 shadow-sm">
+        <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-4 h-4 text-[var(--color-primary)]" />
-            <h2 className="font-bold text-sm text-[var(--color-text)]">Resumen de asistencia</h2>
+            <TrendingUp className="w-4 h-4 text-[var(--ds-primary)]" />
+            <h2 className="font-bold text-sm text-[var(--ds-text)]">Resumen de asistencia</h2>
           </div>
           <div className="space-y-3">
             {[
-              { label: "Finalizadas", value: completedApts, color: "bg-green-100 text-green-700" },
-              { label: "Canceladas", value: cancelledApts, color: "bg-red-100 text-red-700" },
-              { label: "No asistió", value: noShows, color: "bg-amber-100 text-amber-700" },
-              { label: "Total citas", value: appointments.length, color: "bg-[var(--color-accent-soft)] text-[var(--color-primary)]" },
+              { label: "Finalizadas", value: completedApts, color: "bg-[var(--ds-success)]/12 text-[var(--ds-success)]" },
+              { label: "Canceladas", value: cancelledApts, color: "bg-[var(--ds-error)]/12 text-red-700" },
+              { label: "No asistió", value: noShows, color: "bg-[var(--ds-warning)]/12 text-[var(--ds-warning)]" },
+              { label: "Total citas", value: appointments.length, color: "bg-[var(--ds-surface-muted)] text-[var(--ds-primary)]" },
             ].map(({ label, value, color }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-[var(--color-border)] last:border-0">
-                <span className="text-sm text-[var(--color-muted-text)]">{label}</span>
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-[var(--ds-border)] last:border-0">
+                <span className="text-sm text-[var(--ds-text-muted)]">{label}</span>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${color}`}>{value}</span>
               </div>
             ))}
@@ -104,15 +104,15 @@ export default function ReportesPage() {
 
       {/* Gate de plan avanzado */}
       {!hasAdvanced && (
-        <div className="border border-dashed border-[var(--color-border)] rounded-2xl p-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-[var(--color-accent-soft)] flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-5 h-5 text-[var(--color-primary)]" />
+        <div className="border border-dashed border-[var(--ds-border)] rounded-2xl p-8 text-center">
+          <div className="w-12 h-12 rounded-xl bg-[var(--ds-surface-muted)] flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-5 h-5 text-[var(--ds-primary)]" />
           </div>
-          <h3 className="font-bold text-[var(--color-text)] mb-2 flex items-center justify-center gap-2">
+          <h3 className="font-bold text-[var(--ds-text)] mb-2 flex items-center justify-center gap-2">
             <Star className="w-4 h-4 text-amber-400" />
             Reportes avanzados — Plan Premium
           </h3>
-          <p className="text-sm text-[var(--color-muted-text)] max-w-sm mx-auto">
+          <p className="text-sm text-[var(--ds-text-muted)] max-w-sm mx-auto">
             Accede a gráficas por período, exportes avanzados, comparativa de meses, métricas de retención de clientes y más.
           </p>
         </div>

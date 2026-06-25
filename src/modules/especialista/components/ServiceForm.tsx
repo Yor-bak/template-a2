@@ -281,29 +281,29 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Drawer */}
-      <div className="relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-xl h-full bg-[var(--ds-surface-elevated)] shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0 bg-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--ds-border)] flex-shrink-0 bg-[var(--ds-surface-elevated)]">
           <div>
-            <h2 className="font-bold text-gray-900 text-base">
+            <h2 className="font-bold text-[var(--ds-text)] text-base">
               {editingService ? "Editar servicio" : "Agregar servicio"}
             </h2>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--ds-text-muted)]">
               {editingService ? "Modifica los campos y guarda." : "Rellena los campos para crear un nuevo servicio."}
             </p>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-[var(--ds-surface-muted)] transition-colors text-[var(--ds-text-muted)]">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Éxito */}
         {done && (
-          <div className="absolute inset-0 bg-white flex flex-col items-center justify-center gap-3 z-10">
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-green-600" />
+          <div className="absolute inset-0 bg-[var(--ds-surface-elevated)] flex flex-col items-center justify-center gap-3 z-10">
+            <div className="w-14 h-14 rounded-full bg-[var(--ds-success)]/12 flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-[var(--ds-success)]" />
             </div>
-            <p className="font-bold text-gray-800">
+            <p className="font-bold text-[var(--ds-text)]">
               {editingService ? "¡Servicio actualizado!" : "¡Servicio creado!"}
             </p>
           </div>
@@ -381,14 +381,14 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
                     onClick={() => set("priceType", pt)}
                     className={`text-left p-3 rounded-xl border-2 transition-all ${
                       form.priceType === pt
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/40"
-                        : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40 bg-white"
+                        ? "border-[var(--color-accent)] bg-[var(--ds-surface-muted)]/40"
+                        : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40 bg-[var(--ds-surface-elevated)]"
                     }`}
                   >
-                    <p className={`font-semibold text-xs mb-0.5 ${form.priceType === pt ? "text-[var(--color-primary)]" : "text-[var(--color-muted-text)]"}`}>
+                    <p className={`font-semibold text-xs mb-0.5 ${form.priceType === pt ? "text-[var(--ds-primary)]" : "text-[var(--ds-text-muted)]"}`}>
                       {PRICE_TYPE_LABELS[pt]}
                     </p>
-                    <p className="text-[10px] text-gray-400 leading-relaxed">{PRICE_TYPE_HINTS[pt]}</p>
+                    <p className="text-[10px] text-[var(--ds-text-muted)] leading-relaxed">{PRICE_TYPE_HINTS[pt]}</p>
                   </button>
                 ))}
               </div>
@@ -454,7 +454,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
                     type="button"
                     onClick={() => removeListItem("includes", idx)}
                     disabled={form.includes.length === 1}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-30"
+                    className="p-2 text-[var(--ds-text-muted)] hover:text-[var(--ds-error)] transition-colors disabled:opacity-30"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -463,7 +463,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
               <button
                 type="button"
                 onClick={() => addListItem("includes")}
-                className="flex items-center gap-1.5 text-xs text-[var(--color-primary)] hover:text-[var(--color-accent)] font-medium transition-colors"
+                className="flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-accent)] font-medium transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Agregar elemento
@@ -486,7 +486,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
                     type="button"
                     onClick={() => removeListItem("recommendations", idx)}
                     disabled={form.recommendations.length === 1}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-30"
+                    className="p-2 text-[var(--ds-text-muted)] hover:text-[var(--ds-error)] transition-colors disabled:opacity-30"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -495,7 +495,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
               <button
                 type="button"
                 onClick={() => addListItem("recommendations")}
-                className="flex items-center gap-1.5 text-xs text-[var(--color-primary)] hover:text-[var(--color-accent)] font-medium transition-colors"
+                className="flex items-center gap-1.5 text-xs text-[var(--ds-primary)] hover:text-[var(--ds-accent)] font-medium transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Agregar recomendación
@@ -506,7 +506,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
           {/* ── Símbolo del servicio ───────────────────────────── */}
           {iconOptions.length > 0 && (
             <FieldGroup title="Símbolo del servicio">
-              <p className="text-xs text-gray-400 mb-2">Selecciona un ícono representativo para este servicio.</p>
+              <p className="text-xs text-[var(--ds-text-muted)] mb-2">Selecciona un ícono representativo para este servicio.</p>
               <div className="grid grid-cols-6 gap-1.5">
                 {iconOptions.map((opt) => {
                   const IconComp = ICON_COMPONENTS[opt.value];
@@ -520,8 +520,8 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
                       onClick={() => set("icon", selected ? "" : opt.value)}
                       className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${
                         selected
-                          ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/40 text-[var(--color-primary)]"
-                          : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40 text-gray-500"
+                          ? "border-[var(--color-accent)] bg-[var(--ds-surface-muted)]/40 text-[var(--ds-primary)]"
+                          : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40 text-[var(--ds-text-muted)]"
                       }`}
                     >
                       <IconComp className="w-4 h-4" />
@@ -534,7 +534,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
                 <button
                   type="button"
                   onClick={() => set("icon", "")}
-                  className="mt-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  className="mt-1 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-error)] transition-colors"
                 >
                   Quitar símbolo
                 </button>
@@ -545,7 +545,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
           {/* ── Imágenes para el template actual ──────────────── */}
           {svcImageFields.length > 0 && (
             <FieldGroup title={`Imágenes para el template`}>
-              <p className="text-xs text-gray-400 mb-2">
+              <p className="text-xs text-[var(--ds-text-muted)] mb-2">
                 Imágenes específicas del template activo ({activeTemplateId}).
               </p>
               <div className="space-y-3">
@@ -572,20 +572,20 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
 
         {/* Footer fijo */}
         {errors.root && (
-          <div className="px-6 py-2 bg-red-50 border-t border-red-100 text-xs text-red-600">{errors.root}</div>
+          <div className="px-6 py-2 bg-red-50 border-t border-red-100 text-xs text-[var(--ds-error)]">{errors.root}</div>
         )}
-        <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 flex gap-3 bg-white">
+        <div className="flex-shrink-0 px-6 py-4 border-t border-[var(--ds-border)] flex gap-3 bg-[var(--ds-surface-elevated)]">
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+            className="flex-1 border border-[var(--ds-border)] text-[var(--ds-text-muted)] py-2.5 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-60"
+            className="flex-1 bg-[var(--ds-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors disabled:opacity-60"
           >
             {submitting ? "Guardando..." : editingService ? "Guardar cambios" : "Crear servicio"}
           </button>
@@ -600,7 +600,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{title}</p>
+      <p className="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-widest mb-3">{title}</p>
       <div className="space-y-3">{children}</div>
     </div>
   );
@@ -613,12 +613,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-[var(--ds-text-muted)] mb-1">
         {label}{required && <span className="text-sky-500 ml-0.5">*</span>}
       </label>
-      {hint && <p className="text-[11px] text-gray-400 mb-1">{hint}</p>}
+      {hint && <p className="text-[11px] text-[var(--ds-text-muted)] mb-1">{hint}</p>}
       {children}
-      {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-[11px] text-[var(--ds-error)] mt-1">{error}</p>}
     </div>
   );
 }
@@ -631,23 +631,23 @@ function Toggle({
 }) {
   const active = color === "sky" ? "bg-sky-500" : "bg-red-500";
   return (
-    <div className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${checked ? "border-gray-200 bg-gray-50" : "border-gray-100"}`}>
+    <div className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${checked ? "border-[var(--ds-border)] bg-[var(--ds-bg)]" : "border-[var(--ds-border)]"}`}>
       <button
         type="button"
         onClick={() => onChange(!checked)}
         className={`relative w-10 h-5 rounded-full flex-shrink-0 mt-0.5 transition-colors ${checked ? active : "bg-gray-300"}`}
       >
-        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-5" : ""}`} />
+        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--ds-surface-elevated)] shadow-sm transition-transform ${checked ? "translate-x-5" : ""}`} />
       </button>
       <div>
-        <p className="text-xs font-semibold text-gray-700">{label}</p>
-        <p className="text-[11px] text-gray-400">{description}</p>
+        <p className="text-xs font-semibold text-[var(--ds-text)]">{label}</p>
+        <p className="text-[11px] text-[var(--ds-text-muted)]">{description}</p>
       </div>
     </div>
   );
 }
 
 function inp(hasError: boolean) {
-  return `w-full border ${hasError ? "border-red-300 bg-red-50" : "border-[var(--color-border)]"} rounded-xl px-3 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] transition-colors bg-white`;
+  return `w-full border ${hasError ? "border-red-300 bg-red-50" : "border-[var(--ds-border)]"} rounded-xl px-3 py-2.5 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-ring)]/40 focus:border-[var(--ds-ring)] transition-colors bg-white`;
 }
 

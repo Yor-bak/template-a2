@@ -7,8 +7,10 @@ import {
   ExternalLink, Save, Wifi, WifiOff, Info,
   Image, Search, MessageSquare, Globe, EyeOff,
   GraduationCap, Star, HelpCircle, Eye, Trash2, Plus,
-  Sun, Moon, Monitor,
+  Sun, Moon, Monitor, Database, Download,
 } from "lucide-react";
+import { useClientData } from "@/contexts/ClientDataContext";
+import { exportToCSV } from "@/lib/exportUtils";
 import type { MessageTemplates } from "@/types/clinic";
 import { DEFAULT_MESSAGE_TEMPLATES, MESSAGE_TEMPLATE_LABELS } from "@/lib/messageUtils";
 import { useClinicConfig } from "@/contexts/ClinicConfigContext";
@@ -27,7 +29,7 @@ import {
   validateClinicConfig,
 } from "@/lib/clinicUtils";
 
-type Tab = "general" | "especialista" | "contacto" | "redes" | "horarios" | "pagos" | "apariencia" | "pagina" | "testimonios" | "preguntas" | "automatizacion" | "imagenes" | "seo" | "mensajes";
+type Tab = "general" | "especialista" | "contacto" | "redes" | "horarios" | "pagos" | "apariencia" | "pagina" | "testimonios" | "preguntas" | "automatizacion" | "imagenes" | "seo" | "mensajes" | "datos";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "general",        label: "General",            icon: User          },
@@ -44,6 +46,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "seo",            label: "SEO Local",          icon: Search        },
   { id: "mensajes",       label: "Mensajes",           icon: MessageSquare },
   { id: "automatizacion", label: "Automatización",     icon: Bot           },
+  { id: "datos",          label: "Datos y respaldo",   icon: Database      },
 ];
 
 // ── Shared UI ──────────────────────────────────────────────────────────────────
@@ -51,9 +54,9 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 const inputCls = (err?: string) =>
   `w-full border ${
     err
-      ? "border-red-300 bg-red-50 focus:ring-red-200"
-      : "border-[var(--color-border)] bg-white focus:ring-[var(--color-accent-soft)]"
-  } rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/50 focus:outline-none focus:ring-2 focus:border-[var(--color-accent)] transition-colors`;
+      ? "border-red-300 bg-[var(--ds-error)]/10 focus:ring-red-200"
+      : "border-[var(--ds-border)] bg-[var(--ds-surface)] focus:ring-[var(--color-accent-soft)]"
+  } rounded-xl px-4 py-2.5 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)]/50 focus:outline-none focus:ring-2 focus:border-[var(--ds-ring)] transition-colors`;
 
 function Field({
   label, required, error, hint, children,
@@ -62,20 +65,20 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-[var(--color-muted-text)] mb-1.5">
-        {label}{required && <span className="text-[var(--color-accent)] ml-0.5">*</span>}
+      <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1.5">
+        {label}{required && <span className="text-[var(--ds-accent)] ml-0.5">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="text-xs text-[var(--color-muted-text)]/60 mt-1">{hint}</p>}
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {hint && !error && <p className="text-xs text-[var(--ds-text-muted)]/60 mt-1">{hint}</p>}
+      {error && <p className="text-xs text-[var(--ds-error)] mt-1">{error}</p>}
     </div>
   );
 }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-[var(--color-border)] rounded-2xl p-6 shadow-sm">
-      <h3 className="font-bold text-[var(--color-text)] text-sm uppercase tracking-wide mb-5">{title}</h3>
+    <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-6 shadow-sm">
+      <h3 className="font-bold text-[var(--ds-text)] text-sm uppercase tracking-wide mb-5">{title}</h3>
       {children}
     </div>
   );
@@ -89,13 +92,13 @@ function SaveRow({
   return (
     <div className="flex items-center justify-between flex-wrap gap-3 pt-4">
       {saved && (
-        <span className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
+        <span className="flex items-center gap-1.5 text-[var(--ds-success)] text-sm font-medium">
           <CheckCircle2 className="w-4 h-4" />
           Cambios guardados.
         </span>
       )}
       {errors.length > 0 && (
-        <ul className="text-red-600 text-xs space-y-0.5">
+        <ul className="text-[var(--ds-error)] text-xs space-y-0.5">
           {errors.map((e) => <li key={e} className="flex items-center gap-1"><AlertCircle className="w-3 h-3 flex-shrink-0" />{e}</li>)}
         </ul>
       )}
@@ -107,7 +110,7 @@ function SaveRow({
       <button
         onClick={onSave}
         disabled={saving || !dirty}
-        className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 bg-[var(--ds-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Save className="w-4 h-4" />
         {saving ? "Guardando…" : "Guardar cambios"}
@@ -161,8 +164,8 @@ function GeneralTab() {
             <textarea rows={2} value={form.welcomeMessage} onChange={(e) => set("welcomeMessage", e.target.value)} className={inputCls()} placeholder="Tu sonrisa es nuestra prioridad…" />
           </Field>
           <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" checked={form.showPrices} onChange={(e) => set("showPrices", e.target.checked)} className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]" />
-            <span className="text-sm text-[var(--color-muted-text)] font-medium">Mostrar precios estimados en la página pública</span>
+            <input type="checkbox" checked={form.showPrices} onChange={(e) => set("showPrices", e.target.checked)} className="w-4 h-4 rounded border-[var(--ds-border)] accent-[var(--color-primary)]" />
+            <span className="text-sm text-[var(--ds-text-muted)] font-medium">Mostrar precios estimados en la página pública</span>
           </label>
         </div>
       </SectionCard>
@@ -278,8 +281,8 @@ function ContactTab() {
       <SectionCard title="Estacionamiento">
         <div className="space-y-3">
           <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" checked={form.parkingAvailable} onChange={(e) => set("parkingAvailable", e.target.checked)} className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]" />
-            <span className="text-sm text-[var(--color-muted-text)] font-medium flex items-center gap-2">
+            <input type="checkbox" checked={form.parkingAvailable} onChange={(e) => set("parkingAvailable", e.target.checked)} className="w-4 h-4 rounded border-[var(--ds-border)] accent-[var(--color-primary)]" />
+            <span className="text-sm text-[var(--ds-text-muted)] font-medium flex items-center gap-2">
               <Car className="w-4 h-4" />
               Estacionamiento disponible para pacientes
             </span>
@@ -305,7 +308,7 @@ function TimeInput({ value, onChange }: { value: string; onChange: (v: string) =
       type="time"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="border border-[var(--color-border)] bg-white rounded-lg px-2.5 py-1.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)] focus:border-[var(--color-accent)] transition-colors"
+      className="border border-[var(--ds-border)] bg-[var(--ds-surface)] rounded-lg px-2.5 py-1.5 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)] focus:border-[var(--ds-ring)] transition-colors"
     />
   );
 }
@@ -330,31 +333,31 @@ function DayRow({ hour, onChange }: { hour: OpeningHour; onChange: (h: OpeningHo
     onChange({ ...hour, blocks: hour.blocks.filter((_, i) => i !== idx) });
 
   return (
-    <div className="border border-[var(--color-border)] rounded-xl p-4">
+    <div className="border border-[var(--ds-border)] rounded-xl p-4">
       <div className="flex items-center gap-3 mb-3">
         <button
           type="button"
           onClick={toggle}
-          className={`w-10 h-5 rounded-full transition-colors flex-shrink-0 ${hour.isOpen ? "bg-[var(--color-accent)]" : "bg-gray-200"}`}
+          className={`w-10 h-5 rounded-full transition-colors flex-shrink-0 ${hour.isOpen ? "bg-[var(--ds-accent)]" : "bg-gray-200"}`}
         >
-          <span className={`block w-4 h-4 bg-white rounded-full shadow transition-transform mx-0.5 ${hour.isOpen ? "translate-x-5" : "translate-x-0"}`} />
+          <span className={`block w-4 h-4 bg-[var(--ds-surface)] rounded-full shadow transition-transform mx-0.5 ${hour.isOpen ? "translate-x-5" : "translate-x-0"}`} />
         </button>
-        <span className="text-sm font-semibold text-[var(--color-text)] w-24">{hour.dayLabel}</span>
-        {!hour.isOpen && <span className="text-xs text-[var(--color-muted-text)]">Cerrado</span>}
+        <span className="text-sm font-semibold text-[var(--ds-text)] w-24">{hour.dayLabel}</span>
+        {!hour.isOpen && <span className="text-xs text-[var(--ds-text-muted)]">Cerrado</span>}
       </div>
 
       {hour.isOpen && (
         <div className="ml-14 space-y-2">
           {hour.blocks.map((block, i) => (
             <div key={i} className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-[var(--color-muted-text)] w-14">Turno {i + 1}</span>
+              <span className="text-xs text-[var(--ds-text-muted)] w-14">Turno {i + 1}</span>
               <TimeInput value={block.startTime} onChange={(v) => updateBlock(i, "startTime", v)} />
-              <span className="text-xs text-[var(--color-muted-text)]">–</span>
+              <span className="text-xs text-[var(--ds-text-muted)]">–</span>
               <TimeInput value={block.endTime} onChange={(v) => updateBlock(i, "endTime", v)} />
               {i > 0 && (
                 <button
                   onClick={() => removeBlock(i)}
-                  className="text-xs text-red-400 hover:text-red-600 transition-colors ml-1"
+                  className="text-xs text-red-400 hover:text-[var(--ds-error)] transition-colors ml-1"
                 >
                   Quitar
                 </button>
@@ -364,7 +367,7 @@ function DayRow({ hour, onChange }: { hour: OpeningHour; onChange: (h: OpeningHo
           {hour.blocks.length < 2 && (
             <button
               onClick={addBlock}
-              className="text-xs text-[var(--color-primary)] hover:text-[var(--color-accent)] font-semibold transition-colors"
+              className="text-xs text-[var(--ds-primary)] hover:text-[var(--ds-accent)] font-semibold transition-colors"
             >
               + Agregar turno tarde
             </button>
@@ -406,7 +409,7 @@ function HoursTab() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[var(--color-accent-soft)]/40 border border-[var(--color-accent)]/20 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-[var(--color-primary)]">
+      <div className="bg-[var(--ds-surface-muted)]/40 border border-[var(--color-accent)]/20 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-[var(--ds-primary)]">
         <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
         Los horarios que configures aquí se mostrarán en la página pública (footer, ubicación y landing).
       </div>
@@ -478,8 +481,8 @@ function PaymentsTab() {
                 key={m}
                 className={`flex items-center gap-2.5 rounded-xl border p-3 cursor-pointer transition-all ${
                   active
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/30"
-                    : "border-[var(--color-border)] bg-white hover:border-[var(--color-accent)]/40"
+                    ? "border-[var(--color-accent)] bg-[var(--ds-surface-muted)]/30"
+                    : "border-[var(--ds-border)] bg-[var(--ds-surface)] hover:border-[var(--color-accent)]/40"
                 }`}
               >
                 <input
@@ -488,7 +491,7 @@ function PaymentsTab() {
                   onChange={() => togglePayment(m)}
                   className="w-4 h-4 rounded accent-[var(--color-primary)] flex-shrink-0"
                 />
-                <span className="text-sm text-[var(--color-text)] font-medium leading-tight">
+                <span className="text-sm text-[var(--ds-text)] font-medium leading-tight">
                   {PAYMENT_METHOD_LABELS[m]}
                 </span>
               </label>
@@ -504,9 +507,9 @@ function PaymentsTab() {
               type="checkbox"
               checked={pi.showTransferDetails}
               onChange={(e) => setPiField("showTransferDetails", e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+              className="w-4 h-4 rounded border-[var(--ds-border)] accent-[var(--color-primary)]"
             />
-            <span className="text-sm text-[var(--color-muted-text)] font-medium">
+            <span className="text-sm text-[var(--ds-text-muted)] font-medium">
               Mostrar datos de transferencia en la página pública
             </span>
           </label>
@@ -531,7 +534,7 @@ function PaymentsTab() {
                     className={inputCls(clabeError)}
                     placeholder="000000000000000000"
                   />
-                  {pi.clabe && <p className="text-xs text-[var(--color-muted-text)]/60 mt-1">{pi.clabe.length}/18 dígitos</p>}
+                  {pi.clabe && <p className="text-xs text-[var(--ds-text-muted)]/60 mt-1">{pi.clabe.length}/18 dígitos</p>}
                 </Field>
                 <Field label="Número de cuenta (opcional)">
                   <input value={pi.accountNumber ?? ""} onChange={(e) => setPiField("accountNumber", e.target.value || undefined)} className={inputCls()} placeholder="1234567890" />
@@ -568,10 +571,10 @@ function PaymentsTab() {
               type="checkbox"
               checked={acceptsEmergencies}
               onChange={(e) => setAcceptsEmergencies(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+              className="w-4 h-4 rounded border-[var(--ds-border)] accent-[var(--color-primary)]"
             />
-            <span className="text-sm text-[var(--color-muted-text)] font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
+            <span className="text-sm text-[var(--ds-text-muted)] font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-[var(--ds-error)]" />
               Atender urgencias dentales
             </span>
           </label>
@@ -590,13 +593,13 @@ function PaymentsTab() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Teléfono de urgencias" hint="Opcional — usa el teléfono general si está vacío.">
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-text)]" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--ds-text-muted)]" />
                     <input value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className={`${inputCls()} pl-9`} placeholder="55 1234 5678" />
                   </div>
                 </Field>
                 <Field label="WhatsApp de urgencias" hint="Opcional — usa el WhatsApp general si está vacío.">
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-text)]" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--ds-text-muted)]" />
                     <input value={emergencyWhatsapp} onChange={(e) => setEmergencyWhatsapp(e.target.value)} className={`${inputCls()} pl-9`} placeholder="5512345678" />
                   </div>
                 </Field>
@@ -605,7 +608,7 @@ function PaymentsTab() {
           )}
 
           {!acceptsEmergencies && (
-            <div className="pl-7 ml-2 text-sm text-[var(--color-muted-text)]/70">
+            <div className="pl-7 ml-2 text-sm text-[var(--ds-text-muted)]/70">
               La sección de urgencias no se mostrará de forma destacada en la página pública.
             </div>
           )}
@@ -637,10 +640,10 @@ function TemplatePickerModal({
   const templates = Object.values(TEMPLATE_REGISTRY);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <h2 className="font-bold text-[var(--color-text)]">Seleccionar plantilla</h2>
-          <button onClick={onClose} className="text-[var(--color-muted-text)] hover:text-[var(--color-text)] text-xl leading-none">✕</button>
+      <div className="bg-[var(--ds-surface)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--ds-border)]">
+          <h2 className="font-bold text-[var(--ds-text)]">Seleccionar plantilla</h2>
+          <button onClick={onClose} className="text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] text-xl leading-none">✕</button>
         </div>
         <div className="overflow-y-auto p-6 space-y-6">
           {TEMPLATE_CATEGORIES.map(cat => {
@@ -648,7 +651,7 @@ function TemplatePickerModal({
             if (!cats.length) return null;
             return (
               <div key={cat.key}>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-text)] mb-2">{cat.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ds-text-muted)] mb-2">{cat.label}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {cats.map(t => {
                     const active = currentId === t.id;
@@ -658,8 +661,8 @@ function TemplatePickerModal({
                         onClick={() => onSelect(t.id)}
                         className={`rounded-xl border p-3 text-left transition ${
                           active
-                            ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                            : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40"
+                            ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/10"
+                            : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40"
                         }`}
                       >
                         <div className="flex gap-1 mb-2">
@@ -667,10 +670,10 @@ function TemplatePickerModal({
                             <span key={p.id} className="w-3 h-3 rounded-full" style={{ background: p.swatch }} />
                           ))}
                         </div>
-                        <p className="text-xs font-medium text-[var(--color-text)] leading-tight">{t.name}</p>
+                        <p className="text-xs font-medium text-[var(--ds-text)] leading-tight">{t.name}</p>
                         <div className="flex items-center justify-between mt-1">
-                          <p className="text-xs text-[var(--color-muted-text)] truncate">{t.description?.split("·")[0]}</p>
-                          {active && <CheckCircle2 className="w-3 h-3 text-[var(--color-accent)] flex-shrink-0" />}
+                          <p className="text-xs text-[var(--ds-text-muted)] truncate">{t.description?.split("·")[0]}</p>
+                          {active && <CheckCircle2 className="w-3 h-3 text-[var(--ds-accent)] flex-shrink-0" />}
                         </div>
                       </button>
                     );
@@ -690,11 +693,11 @@ function MobilePreviewModal({
 }: { PreviewComponent: React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined; profile: unknown; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-card)] border-b border-[var(--color-border)]">
-        <span className="text-sm font-medium text-[var(--color-text)]">Vista previa</span>
-        <button onClick={onClose} className="text-[var(--color-muted-text)] font-bold text-lg leading-none">✕</button>
+      <div className="flex items-center justify-between px-4 py-3 bg-[var(--ds-surface)] border-b border-[var(--ds-border)]">
+        <span className="text-sm font-medium text-[var(--ds-text)]">Vista previa</span>
+        <button onClick={onClose} className="text-[var(--ds-text-muted)] font-bold text-lg leading-none">✕</button>
       </div>
-      <div className="flex-1 overflow-hidden relative bg-white">
+      <div className="flex-1 overflow-hidden relative bg-[var(--ds-surface)]">
         {PreviewComponent && (
           <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: `${100 / 0.42}%`, pointerEvents: "none", userSelect: "none" }}>
             <PreviewComponent profile={profile} isPreview={true} />
@@ -711,17 +714,17 @@ function LivePreviewPanel({ PreviewComponent, profile }: {
 }) {
   if (!PreviewComponent) {
     return (
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] flex items-center justify-center" style={{ height: "70vh" }}>
-        <p className="text-sm text-[var(--color-muted-text)]">Selecciona una plantilla</p>
+      <div className="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-bg)] flex items-center justify-center" style={{ height: "70vh" }}>
+        <p className="text-sm text-[var(--ds-text-muted)]">Selecciona una plantilla</p>
       </div>
     );
   }
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-text)] mb-2">Vista previa</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ds-text-muted)] mb-2">Vista previa</p>
       {/* Isolation wrapper: reset CSS vars so dashboard theme doesn't bleed into preview */}
       <div
-        className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] shadow-lg bg-white"
+        className="relative overflow-hidden rounded-2xl border border-[var(--ds-border)] shadow-lg bg-[var(--ds-surface)]"
         style={{ height: "70vh" }}
       >
         <div
@@ -744,7 +747,7 @@ function LivePreviewPanel({ PreviewComponent, profile }: {
           <PreviewComponent profile={profile} isPreview={true} />
         </div>
       </div>
-      <p className="mt-2 text-xs text-[var(--color-muted-text)]/60 text-center">
+      <p className="mt-2 text-xs text-[var(--ds-text-muted)]/60 text-center">
         Vista previa aproximada · los datos reales se ven al publicar
       </p>
     </div>
@@ -774,12 +777,12 @@ function TemplateImagesSection({
             const arr = (Array.isArray(value) ? value : []) as string[];
             return (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-[var(--color-muted-text)] mb-1">
-                  {field.label}{field.required && <span className="text-[var(--color-accent)] ml-0.5">*</span>}
+                <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
+                  {field.label}{field.required && <span className="text-[var(--ds-accent)] ml-0.5">*</span>}
                 </label>
-                {field.description && <p className="text-xs text-[var(--color-muted-text)]/60 mb-1">{field.description}</p>}
+                {field.description && <p className="text-xs text-[var(--ds-text-muted)]/60 mb-1">{field.description}</p>}
                 {field.recommendedAspectRatio && (
-                  <p className="text-xs text-[var(--color-muted-text)]/50 mb-2">Proporción: {field.recommendedAspectRatio}</p>
+                  <p className="text-xs text-[var(--ds-text-muted)]/50 mb-2">Proporción: {field.recommendedAspectRatio}</p>
                 )}
                 <div className="space-y-2">
                   {arr.map((url, i) => (
@@ -799,7 +802,7 @@ function TemplateImagesSection({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       )}
-                      <button onClick={() => updateField(field.key, arr.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                      <button onClick={() => updateField(field.key, arr.filter((_, j) => j !== i))} className="text-red-400 hover:text-[var(--ds-error)] flex-shrink-0">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -807,7 +810,7 @@ function TemplateImagesSection({
                   {(!field.maxItems || arr.length < field.maxItems) && (
                     <button
                       onClick={() => updateField(field.key, [...arr, ""])}
-                      className="flex items-center gap-1 text-xs text-[var(--color-muted-text)] hover:text-[var(--color-primary)]"
+                      className="flex items-center gap-1 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-primary)]"
                     >
                       <Plus className="w-3 h-3" /> Agregar imagen
                     </button>
@@ -820,12 +823,12 @@ function TemplateImagesSection({
           const strVal = typeof value === "string" ? value : "";
           return (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-[var(--color-muted-text)] mb-1">
-                {field.label}{field.required && <span className="text-[var(--color-accent)] ml-0.5">*</span>}
+              <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
+                {field.label}{field.required && <span className="text-[var(--ds-accent)] ml-0.5">*</span>}
               </label>
-              {field.description && <p className="text-xs text-[var(--color-muted-text)]/60 mb-1">{field.description}</p>}
+              {field.description && <p className="text-xs text-[var(--ds-text-muted)]/60 mb-1">{field.description}</p>}
               {field.recommendedAspectRatio && (
-                <p className="text-xs text-[var(--color-muted-text)]/50 mb-2">Proporción recomendada: {field.recommendedAspectRatio}</p>
+                <p className="text-xs text-[var(--ds-text-muted)]/50 mb-2">Proporción recomendada: {field.recommendedAspectRatio}</p>
               )}
               <div className="flex gap-2 items-center">
                 <input
@@ -839,7 +842,7 @@ function TemplateImagesSection({
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={strVal} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                    <button onClick={() => updateField(field.key, "")} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                    <button onClick={() => updateField(field.key, "")} className="text-red-400 hover:text-[var(--ds-error)] flex-shrink-0">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </>
@@ -872,7 +875,7 @@ function DashboardThemeSection({ theme, onChange }: {
 
   return (
     <SectionCard title="Tema del panel">
-      <p className="text-xs text-[var(--color-muted-text)]/70 mb-4">
+      <p className="text-xs text-[var(--ds-text-muted)]/70 mb-4">
         Apariencia exclusiva de tu panel privado — no afecta la página pública ni las paletas de los templates.
       </p>
 
@@ -886,8 +889,8 @@ function DashboardThemeSection({ theme, onChange }: {
               onClick={() => selectTheme(preset.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
                 active
-                  ? "border-[var(--color-accent)] bg-[var(--color-accent)]/8"
-                  : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40"
+                  ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/8"
+                  : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40"
               }`}
             >
               <div className="flex gap-1 flex-shrink-0">
@@ -895,8 +898,8 @@ function DashboardThemeSection({ theme, onChange }: {
                   <span key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10" style={{ background: c }} />
                 ))}
               </div>
-              <span className="text-sm font-medium text-[var(--color-text)]">{preset.name}</span>
-              {active && <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)] ml-auto" />}
+              <span className="text-sm font-medium text-[var(--ds-text)]">{preset.name}</span>
+              {active && <CheckCircle2 className="w-4 h-4 text-[var(--ds-accent)] ml-auto" />}
             </button>
           );
         })}
@@ -904,7 +907,7 @@ function DashboardThemeSection({ theme, onChange }: {
 
       {/* Mode selector */}
       <div>
-        <p className="text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide mb-2">Modo</p>
+        <p className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">Modo</p>
         <div className="flex gap-2">
           {MODE_OPTIONS.map(({ value, label, Icon }) => (
             <button
@@ -912,8 +915,8 @@ function DashboardThemeSection({ theme, onChange }: {
               onClick={() => onChange({ mode: value })}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition ${
                 mode === value
-                  ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-muted-text)] hover:border-[var(--color-accent)]/40"
+                  ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/10 text-[var(--ds-primary)]"
+                  : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:border-[var(--color-accent)]/40"
               }`}
             >
               <Icon className="w-3.5 h-3.5" /> {label}
@@ -967,22 +970,22 @@ function AppearanceTab() {
                 }
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[var(--color-text)] truncate">{templateDef?.name ?? templateId}</p>
-                <p className="text-xs text-[var(--color-muted-text)] truncate">{templateDef?.description}</p>
+                <p className="text-sm font-semibold text-[var(--ds-text)] truncate">{templateDef?.name ?? templateId}</p>
+                <p className="text-xs text-[var(--ds-text-muted)] truncate">{templateDef?.description}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {templateDef?.publicPath && (
                   <Link
                     href={templateDef.publicPath}
                     target="_blank"
-                    className="text-xs text-[var(--color-muted-text)] hover:text-[var(--color-primary)] flex items-center gap-1"
+                    className="text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-primary)] flex items-center gap-1"
                   >
                     Ver <ExternalLink className="w-3 h-3" />
                   </Link>
                 )}
                 <button
                   onClick={() => setShowTemplatePicker(true)}
-                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-background)] transition"
+                  className="rounded-lg border border-[var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[var(--ds-text)] hover:bg-[var(--ds-bg)] transition"
                 >
                   Cambiar
                 </button>
@@ -1002,8 +1005,8 @@ function AppearanceTab() {
                       onClick={() => updateAppearance({ selectedPaletteId: p.id })}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl border transition ${
                         isActive
-                          ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5"
-                          : "border-[var(--color-border)] hover:border-[var(--color-accent)]/40"
+                          ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/5"
+                          : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40"
                       }`}
                     >
                       <div className="flex gap-1">
@@ -1011,8 +1014,8 @@ function AppearanceTab() {
                         <span className="w-4 h-4 rounded-full ring-1 ring-black/10" style={{ background: p.surface }} />
                         <span className="w-4 h-4 rounded-full ring-1 ring-black/10" style={{ background: p.ink }} />
                       </div>
-                      <span className="text-sm text-[var(--color-text)]">{p.name}</span>
-                      {isActive && <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)] ml-auto" />}
+                      <span className="text-sm text-[var(--ds-text)]">{p.name}</span>
+                      {isActive && <CheckCircle2 className="w-4 h-4 text-[var(--ds-accent)] ml-auto" />}
                     </button>
                   );
                 })}
@@ -1033,7 +1036,7 @@ function AppearanceTab() {
           <div className="lg:hidden">
             <button
               onClick={() => setShowMobilePreview(true)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-background)] transition"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--ds-border)] px-4 py-3 text-sm font-medium text-[var(--ds-text)] hover:bg-[var(--ds-bg)] transition"
             >
               <Eye className="w-4 h-4" /> Ver vista previa
             </button>
@@ -1048,7 +1051,7 @@ function AppearanceTab() {
               onClick={() => {
                 updateAppearance({ selectedTemplateId: "dentista-01", selectedPaletteId: "azul-clinico" });
               }}
-              className="text-xs text-[var(--color-muted-text)] hover:text-[var(--color-text)] underline"
+              className="text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] underline"
             >
               Restablecer apariencia pública
             </button>
@@ -1090,7 +1093,7 @@ function AutomationTab() {
     <div className="space-y-5">
       <div
         className={`rounded-2xl border p-6 ${
-          isActive ? "bg-violet-50 border-violet-200" : "bg-gray-50 border-gray-200"
+          isActive ? "bg-violet-50 border-violet-200" : "bg-[var(--ds-bg)] border-[var(--ds-border)]"
         }`}
       >
         <div className="flex items-start gap-4">
@@ -1102,17 +1105,17 @@ function AutomationTab() {
             {isActive ? (
               <Wifi className="w-4 h-4 text-violet-600" />
             ) : (
-              <WifiOff className="w-4 h-4 text-gray-400" />
+              <WifiOff className="w-4 h-4 text-[var(--ds-text-muted)]" />
             )}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className={`font-bold text-sm ${isActive ? "text-violet-900" : "text-gray-700"}`}>
+              <span className={`font-bold text-sm ${isActive ? "text-violet-900" : "text-[var(--ds-text)]"}`}>
                 {isActive ? "Automatización activa" : "Automatización no activa"}
               </span>
               <span
                 className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                  isActive ? "bg-violet-200 text-violet-800" : "bg-gray-200 text-gray-500"
+                  isActive ? "bg-violet-200 text-violet-800" : "bg-gray-200 text-[var(--ds-text-muted)]"
                 }`}
               >
                 {isActive
@@ -1122,7 +1125,7 @@ function AutomationTab() {
                   : "Manual"}
               </span>
             </div>
-            <p className={`text-sm ${isActive ? "text-violet-700" : "text-gray-500"}`}>
+            <p className={`text-sm ${isActive ? "text-violet-700" : "text-[var(--ds-text-muted)]"}`}>
               {isActive
                 ? `Tu consultorio tiene confirmaciones y recordatorios automáticos activos vía ${
                     legacyClinic.automationMode === "n8n" ? "n8n" : "IA WhatsApp"
@@ -1132,8 +1135,8 @@ function AutomationTab() {
           </div>
         </div>
       </div>
-      <div className="bg-white border border-[var(--color-border)] rounded-2xl p-5 shadow-sm">
-        <p className="text-sm text-[var(--color-muted-text)] leading-relaxed">
+      <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-5 shadow-sm">
+        <p className="text-sm text-[var(--ds-text-muted)] leading-relaxed">
           La configuración de automatización es administrada por el equipo técnico. Si deseas activar confirmaciones automáticas por WhatsApp, integración con n8n o agenda con IA, contacta a soporte.
         </p>
       </div>
@@ -1172,7 +1175,7 @@ function ImagesTab() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[var(--color-accent-soft)]/40 border border-[var(--color-accent)]/20 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-[var(--color-primary)]">
+      <div className="bg-[var(--ds-surface-muted)]/40 border border-[var(--color-accent)]/20 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-[var(--ds-primary)]">
         <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
         Agrega las URLs de tus imágenes (Cloudinary, Imgur, Google Drive con acceso público, etc.).
       </div>
@@ -1195,7 +1198,7 @@ function ImagesTab() {
         </Field>
       </SectionCard>
       <SectionCard title="Galería antes y después">
-        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800">
+        <div className="flex items-start gap-2 bg-[var(--ds-warning)]/10 border border-[var(--ds-warning)]/30 rounded-xl p-3 mb-4 text-xs text-amber-800">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           Asegúrate de contar con el consentimiento explícito del paciente antes de publicar imágenes clínicas.
         </div>
@@ -1249,11 +1252,11 @@ function SeoTab() {
         <div className="space-y-4">
           <Field label="Título SEO" hint="Aparece en el título de la pestaña del navegador y en Google. Máx. 60 caracteres recomendado.">
             <input value={form.seoTitle} onChange={(e) => set("seoTitle", e.target.value)} className={inputCls()} placeholder="Dentista en Del Valle | Clínica Dental Sonrisa" />
-            <p className="text-xs text-right text-[var(--color-muted-text)]/60 mt-0.5">{form.seoTitle.length}/60</p>
+            <p className="text-xs text-right text-[var(--ds-text-muted)]/60 mt-0.5">{form.seoTitle.length}/60</p>
           </Field>
           <Field label="Descripción SEO" hint="Descripción que aparece en Google. Máx. 160 caracteres recomendado.">
             <textarea rows={3} value={form.seoDescription} onChange={(e) => set("seoDescription", e.target.value)} className={inputCls()} placeholder="Atención dental profesional en Del Valle, CDMX. Limpieza, blanqueamiento, ortodoncia…" />
-            <p className="text-xs text-right text-[var(--color-muted-text)]/60 mt-0.5">{form.seoDescription.length}/160</p>
+            <p className="text-xs text-right text-[var(--ds-text-muted)]/60 mt-0.5">{form.seoDescription.length}/160</p>
           </Field>
           <Field label="Palabras clave" hint="Separadas por coma. Ej: dentista del valle, clínica dental cdmx">
             <input value={form.seoKeywords} onChange={(e) => set("seoKeywords", e.target.value)} className={inputCls()} placeholder="dentista del valle, limpieza dental cdmx" />
@@ -1318,7 +1321,7 @@ function MessagesTab() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-[var(--color-accent-soft)]/40 border border-[var(--color-accent)]/20 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-[var(--color-primary)]">
+      <div className="bg-[var(--ds-surface-muted)]/40 border border-[var(--color-accent)]/20 rounded-xl px-4 py-3 flex items-start gap-2 text-sm text-[var(--ds-primary)]">
         <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
         Usa <strong>[nombre]</strong>, <strong>[servicio]</strong>, <strong>[fecha]</strong>, <strong>[hora]</strong>, <strong>[clinica]</strong>, <strong>[direccion]</strong> como variables dinámicas.
       </div>
@@ -1332,11 +1335,11 @@ function MessagesTab() {
             return (
               <div key={key}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-semibold text-[var(--color-muted-text)] uppercase tracking-wide">
+                  <label className="text-sm font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide">
                     {MESSAGE_TEMPLATE_LABELS[key]}
                   </label>
                   {isCustom && (
-                    <button onClick={() => resetTemplate(key)} className="text-xs text-[var(--color-muted-text)] hover:text-red-500 transition-colors">
+                    <button onClick={() => resetTemplate(key)} className="text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-error)] transition-colors">
                       Restaurar predeterminado
                     </button>
                   )}
@@ -1549,22 +1552,22 @@ function TestimoniosTab() {
     <div className="space-y-5">
       <SectionCard title="Testimonios publicados">
         {testimonials.length === 0 && (
-          <p className="text-sm text-[var(--color-muted-text)]/70">Aún no hay testimonios.</p>
+          <p className="text-sm text-[var(--ds-text-muted)]/70">Aún no hay testimonios.</p>
         )}
         <div className="space-y-3">
           {testimonials.map((t) => (
-            <div key={t.id} className="flex items-start gap-3 border border-[var(--color-border)] rounded-xl p-3">
-              <div className="w-9 h-9 shrink-0 rounded-full bg-[var(--color-primary)]/10 grid place-items-center text-xs font-bold text-[var(--color-primary)]">
+            <div key={t.id} className="flex items-start gap-3 border border-[var(--ds-border)] rounded-xl p-3">
+              <div className="w-9 h-9 shrink-0 rounded-full bg-[var(--ds-primary)]/10 grid place-items-center text-xs font-bold text-[var(--ds-primary)]">
                 {getInitials(t.name || "—")}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[var(--color-text)]">{t.name}</span>
+                  <span className="text-sm font-semibold text-[var(--ds-text)]">{t.name}</span>
                   <span className="text-xs text-amber-500">{"★".repeat(t.rating ?? 5)}</span>
                 </div>
-                <p className="text-xs text-[var(--color-muted-text)] mt-0.5 line-clamp-2">{t.comment}</p>
+                <p className="text-xs text-[var(--ds-text-muted)] mt-0.5 line-clamp-2">{t.comment}</p>
               </div>
-              <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-text)] cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs text-[var(--ds-text-muted)] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={t.isPublished}
@@ -1573,7 +1576,7 @@ function TestimoniosTab() {
                 />
                 Visible
               </label>
-              <button onClick={() => deleteTestimonial(t.id)} className="text-red-400 hover:text-red-600 p-1" aria-label="Eliminar">
+              <button onClick={() => deleteTestimonial(t.id)} className="text-red-400 hover:text-[var(--ds-error)] p-1" aria-label="Eliminar">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -1601,7 +1604,7 @@ function TestimoniosTab() {
         </div>
         <button
           onClick={handleAdd}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--ds-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
         >
           <Plus className="w-4 h-4" /> Agregar testimonio
         </button>
@@ -1637,17 +1640,17 @@ function PreguntasTab() {
     <div className="space-y-5">
       <SectionCard title="Preguntas frecuentes">
         {faqs.length === 0 && (
-          <p className="text-sm text-[var(--color-muted-text)]/70">Aún no hay preguntas.</p>
+          <p className="text-sm text-[var(--ds-text-muted)]/70">Aún no hay preguntas.</p>
         )}
         <div className="space-y-3">
           {faqs.map((f) => (
-            <div key={f.id} className="border border-[var(--color-border)] rounded-xl p-3">
+            <div key={f.id} className="border border-[var(--ds-border)] rounded-xl p-3">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--color-text)]">{f.question}</p>
-                  <p className="text-xs text-[var(--color-muted-text)] mt-0.5">{f.answer}</p>
+                  <p className="text-sm font-semibold text-[var(--ds-text)]">{f.question}</p>
+                  <p className="text-xs text-[var(--ds-text-muted)] mt-0.5">{f.answer}</p>
                 </div>
-                <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-text)] cursor-pointer">
+                <label className="flex items-center gap-1.5 text-xs text-[var(--ds-text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={f.isPublished}
@@ -1656,7 +1659,7 @@ function PreguntasTab() {
                   />
                   Visible
                 </label>
-                <button onClick={() => deleteFAQ(f.id)} className="text-red-400 hover:text-red-600 p-1" aria-label="Eliminar">
+                <button onClick={() => deleteFAQ(f.id)} className="text-red-400 hover:text-[var(--ds-error)] p-1" aria-label="Eliminar">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -1676,7 +1679,7 @@ function PreguntasTab() {
         </div>
         <button
           onClick={handleAdd}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--ds-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
         >
           <Plus className="w-4 h-4" /> Agregar pregunta
         </button>
@@ -1750,12 +1753,91 @@ function PaginaTab() {
                 type="checkbox"
                 checked={sections[key]}
                 onChange={(e) => updatePublicPage({ sectionVisibility: { ...sections, [key]: e.target.checked } })}
-                className="w-4 h-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+                className="w-4 h-4 rounded border-[var(--ds-border)] accent-[var(--color-primary)]"
               />
-              <span className="text-sm text-[var(--color-muted-text)] font-medium">{label}</span>
+              <span className="text-sm text-[var(--ds-text-muted)] font-medium">{label}</span>
             </label>
           ))}
         </div>
+      </SectionCard>
+    </div>
+  );
+}
+
+// ── Datos y respaldo ───────────────────────────────────────────────────────────
+
+function DatosTab() {
+  const { clients, carePlans, payments, followUps, exportBackup } = useClientData();
+
+  function exportClientesCSV() {
+    exportToCSV("clientes", [
+      ["ID", "Nombre", "Teléfono", "Fecha nacimiento", "Alta", "Etiquetas", "Notas"],
+      ...clients.map((c) => [c.id, c.name, c.phone, c.dateOfBirth ?? "", c.firstVisitAt, c.tags.join(", "), c.notes ?? ""]),
+    ]);
+  }
+
+  function exportPagosCSV() {
+    exportToCSV("pagos", [
+      ["ID", "Cliente ID", "Plan ID", "Concepto", "Monto", "Fecha", "Método", "Estado", "Referencia"],
+      ...payments.map((p) => [p.id, p.clientId, p.carePlanId ?? "", p.concept, p.amount, p.paymentDate, p.paymentMethod, p.status, p.reference ?? ""]),
+    ]);
+  }
+
+  function exportSeguimientosCSV() {
+    exportToCSV("seguimientos", [
+      ["ID", "Cliente ID", "Título", "Fecha", "Prioridad", "Estado", "Descripción"],
+      ...followUps.map((f) => [f.id, f.clientId, f.title, f.dueDate, f.priority, f.status, f.description ?? ""]),
+    ]);
+  }
+
+  const btnCls = "flex items-center gap-3 w-full border border-[var(--ds-border)] text-[var(--ds-text)] px-4 py-3 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)] hover:border-[var(--ds-primary)]/30 transition-colors text-left";
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-[var(--ds-success)]/8 border border-[var(--ds-success)]/20 rounded-2xl p-4 text-sm text-[var(--ds-success)]">
+        <p className="font-bold mb-1">Tu información sigue siendo tuya.</p>
+        <p className="text-xs text-[var(--ds-success)]/80">Puedes descargar una copia cuando lo necesites.</p>
+      </div>
+
+      <SectionCard title="Exportar listados (CSV)">
+        <div className="space-y-2">
+          <button onClick={exportClientesCSV} className={btnCls}>
+            <Download className="w-4 h-4 text-[var(--ds-primary)] flex-shrink-0" />
+            <div>
+              <p>Exportar clientes en CSV</p>
+              <p className="text-xs text-[var(--ds-text-muted)] font-normal">{clients.length} clientes registrados</p>
+            </div>
+          </button>
+          <button onClick={exportPagosCSV} className={btnCls}>
+            <Download className="w-4 h-4 text-[var(--ds-primary)] flex-shrink-0" />
+            <div>
+              <p>Exportar pagos en CSV</p>
+              <p className="text-xs text-[var(--ds-text-muted)] font-normal">{payments.length} registros</p>
+            </div>
+          </button>
+          <button onClick={exportSeguimientosCSV} className={btnCls}>
+            <Download className="w-4 h-4 text-[var(--ds-primary)] flex-shrink-0" />
+            <div>
+              <p>Exportar seguimientos en CSV</p>
+              <p className="text-xs text-[var(--ds-text-muted)] font-normal">{followUps.length} seguimientos</p>
+            </div>
+          </button>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Respaldo completo (JSON)">
+        <p className="text-sm text-[var(--ds-text-muted)] mb-4">Descarga todos los datos del consultorio en un solo archivo JSON estructurado y versionado.</p>
+        <div className="bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-xl p-3 mb-4 text-xs text-[var(--ds-text-muted)] font-mono space-y-1">
+          <p>{"{"}</p>
+          <p className="pl-4">"version": "1.0.0",</p>
+          <p className="pl-4">"data": {"{"}  clients, carePlans, payments, followUps, appointments, services  {"}"}</p>
+          <p>{"}"}</p>
+        </div>
+        <button onClick={exportBackup} className="flex items-center gap-2 bg-[var(--ds-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors">
+          <Download className="w-4 h-4" />
+          Exportar respaldo completo en JSON
+        </button>
+        <p className="text-xs text-[var(--ds-text-muted)] mt-3">El archivo incluye: {clients.length} clientes · {carePlans.length} planes · {payments.length} pagos · {followUps.length} seguimientos</p>
       </SectionCard>
     </div>
   );
@@ -1777,8 +1859,8 @@ export default function ConfiguracionPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Configuración del consultorio</h1>
-          <p className="text-[var(--color-muted-text)] text-sm mt-1">
+          <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Configuración del consultorio</h1>
+          <p className="text-[var(--ds-text-muted)] text-sm mt-1">
             Los cambios se reflejan automáticamente en tu página pública.
           </p>
         </div>
@@ -1787,8 +1869,8 @@ export default function ConfiguracionPage() {
             onClick={togglePublish}
             className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors ${
               isPublished
-                ? "bg-green-50 border-green-200 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-                : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-green-50 hover:border-green-200 hover:text-green-700"
+                ? "bg-[var(--ds-success)]/10 border-[var(--ds-success)]/30 text-[var(--ds-success)] hover:bg-[var(--ds-error)]/10 hover:border-[var(--ds-error)]/30 hover:text-[var(--ds-error)]"
+                : "bg-[var(--ds-warning)]/10 border-[var(--ds-warning)]/30 text-[var(--ds-warning)] hover:bg-[var(--ds-success)]/10 hover:border-[var(--ds-success)]/30 hover:text-[var(--ds-success)]"
             }`}
           >
             {isPublished ? <Globe className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -1797,7 +1879,7 @@ export default function ConfiguracionPage() {
           <Link
             href="/"
             target="_blank"
-            className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-accent)] transition-colors border border-[var(--color-border)] px-4 py-2 rounded-xl bg-white hover:border-[var(--color-accent)]/50"
+            className="flex items-center gap-1.5 text-sm font-semibold text-[var(--ds-primary)] hover:text-[var(--ds-accent)] transition-colors border border-[var(--ds-border)] px-4 py-2 rounded-xl bg-[var(--ds-surface)] hover:border-[var(--color-accent)]/50"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Ver página pública
@@ -1806,7 +1888,7 @@ export default function ConfiguracionPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--color-background)] border border-[var(--color-border)] rounded-2xl p-1 mb-6 overflow-x-auto">
+      <div className="flex gap-1 bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-2xl p-1 mb-6 overflow-x-auto">
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -1816,8 +1898,8 @@ export default function ConfiguracionPage() {
               className={[
                 "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0",
                 active
-                  ? "bg-white shadow-sm text-[var(--color-primary)] border border-[var(--color-border)]"
-                  : "text-[var(--color-muted-text)] hover:text-[var(--color-text)] hover:bg-white/60",
+                  ? "bg-[var(--ds-surface)] shadow-sm text-[var(--ds-primary)] border border-[var(--ds-border)]"
+                  : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] hover:bg-white/60",
               ].join(" ")}
             >
               <tab.icon className="w-3.5 h-3.5" />
@@ -1842,6 +1924,7 @@ export default function ConfiguracionPage() {
       {activeTab === "seo"            && <SeoTab />}
       {activeTab === "mensajes"       && <MessagesTab />}
       {activeTab === "automatizacion" && <AutomationTab />}
+      {activeTab === "datos"          && <DatosTab />}
     </div>
   );
 }

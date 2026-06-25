@@ -126,8 +126,8 @@ export default function CitasPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Citas</h1>
-          <p className="text-[var(--color-muted-text)] text-sm">Organiza tu agenda diaria y da seguimiento a cada cliente.</p>
+          <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Citas</h1>
+          <p className="text-[var(--ds-text-muted)] text-sm">Organiza tu agenda diaria y da seguimiento a cada cliente.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -135,14 +135,14 @@ export default function CitasPage() {
               ["Cliente", "Servicio", "Fecha", "Hora", "Estado", "Pago", "Monto"],
               ...apts.map((a) => [a.patientName, a.serviceName, a.desiredDate, a.desiredTime, STATUS_LABELS[a.status], PAYMENT_LABELS[a.paymentStatus], a.chargedAmount ?? a.estimatedAmount ?? 0]),
             ])}
-            className="inline-flex items-center gap-2 border border-[var(--color-border)] text-[var(--color-muted-text)] px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-[var(--color-background)] transition-colors"
+            className="inline-flex items-center gap-2 border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-[var(--ds-bg)] transition-colors"
           >
             <Download className="w-4 h-4" />
             CSV
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Agregar cita
@@ -151,19 +151,19 @@ export default function CitasPage() {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-4 mb-5">
+      <div className="bg-[var(--ds-surface)] rounded-2xl border border-[var(--ds-border)] shadow-sm p-4 mb-5">
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted-text)]/50" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ds-text-muted)]/50" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por cliente, servicio o teléfono..."
-              className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted-text)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] bg-[var(--color-background)] transition-colors"
+              className="w-full pl-9 pr-4 py-2.5 border border-[var(--ds-border)] rounded-xl text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--ds-ring)]/40 focus:border-[var(--ds-ring)] bg-[var(--ds-bg)] transition-colors"
             />
           </div>
-          <div className="flex items-center gap-1 text-sm text-[var(--color-muted-text)] flex-shrink-0">
+          <div className="flex items-center gap-1 text-sm text-[var(--ds-text-muted)] flex-shrink-0">
             <Filter className="w-4 h-4" />
             <span>{list.length} resultado{list.length !== 1 ? "s" : ""}</span>
           </div>
@@ -177,8 +177,8 @@ export default function CitasPage() {
               onClick={() => setFilter(t.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 filter === t.value
-                  ? "bg-[var(--color-primary)] text-white"
-                  : "bg-[#F0F4F5] text-[var(--color-muted-text)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
+                  ? "bg-[var(--ds-primary)] text-white"
+                  : "bg-[#F0F4F5] text-[var(--ds-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--ds-text)]"
               }`}
             >
               {t.label}
@@ -187,16 +187,16 @@ export default function CitasPage() {
         </div>
 
         {/* Filtros de origen */}
-        <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-[#F0F4F5]">
-          <span className="text-[11px] text-[var(--color-muted-text)]/60 font-medium self-center mr-1">Por origen:</span>
+        <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-[var(--ds-border)]">
+          <span className="text-[11px] text-[var(--ds-text-muted)]/60 font-medium self-center mr-1">Por origen:</span>
           {sourceTabs.map((t) => (
             <button
               key={t.value}
               onClick={() => setFilter(filter === t.value ? "all" : t.value)}
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
                 filter === t.value
-                  ? "bg-[var(--color-primary)] text-white"
-                  : "bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-muted-text)] hover:bg-[#F0F4F5]"
+                  ? "bg-[var(--ds-primary)] text-white"
+                  : "bg-[var(--ds-bg)] border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[#F0F4F5]"
               }`}
             >
               <t.icon className="w-3 h-3" />
@@ -217,7 +217,7 @@ export default function CitasPage() {
           {list.map((apt) => (
             <div
               key={apt.id}
-              className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm p-5 hover:shadow-md hover:border-[var(--color-accent)]/30 transition-all"
+              className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm p-5 hover:shadow-md hover:border-[var(--color-accent)]/30 transition-all"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -298,7 +298,7 @@ export default function CitasPage() {
       {/* Modal advertencia tiempo */}
       {confirmModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+          <div className="bg-[var(--ds-surface)] rounded-2xl shadow-xl p-6 max-w-sm w-full">
             <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-6 h-6 text-amber-600" />
             </div>

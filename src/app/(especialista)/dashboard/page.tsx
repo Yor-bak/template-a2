@@ -59,11 +59,11 @@ export default function DashboardPage() {
     <div className="p-6 max-w-7xl mx-auto">
 
       {/* ── Saludo hero ──────────────────────────────────────────── */}
-      <div className="bg-[var(--color-primary)] rounded-2xl p-6 mb-7 relative overflow-hidden">
+      <div className="bg-[var(--ds-primary)] rounded-2xl p-6 mb-7 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={GRID_PATTERN} />
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-[var(--color-accent)] text-xs font-bold uppercase tracking-widest mb-1.5">Panel de gestión</p>
+            <p className="text-[var(--ds-accent)] text-xs font-bold uppercase tracking-widest mb-1.5">Panel de gestión</p>
             <h1 className="text-2xl font-extrabold text-white mb-1">
               Buenos días, {config.dentistName}
             </h1>
@@ -77,14 +77,14 @@ export default function DashboardPage() {
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
               isManualPlan
                 ? "bg-white/10 text-white/70 border-white/15"
-                : "bg-[var(--color-accent)]/20 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+                : "bg-[var(--ds-accent)]/20 text-[var(--ds-accent)] border-[var(--color-accent)]/30"
             }`}>
               {isManualPlan ? <PenLine className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
               {isManualPlan ? "Agenda Manual" : "Agenda Inteligente"}
             </div>
             <Link
               href="/dashboard/citas"
-              className="inline-flex items-center gap-2 bg-[var(--color-accent)] text-[var(--color-primary-dark)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--color-accent-soft)] transition-colors"
+              className="inline-flex items-center gap-2 bg-[var(--ds-accent)] text-[var(--color-primary-dark)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--ds-surface-muted)] transition-colors"
             >
               <Plus className="w-4 h-4" />
               Nueva cita
@@ -124,25 +124,25 @@ export default function DashboardPage() {
           <StatCard label="Clientes" value={patients.length} icon={Users} color="purple" />
 
           {/* Origen de citas */}
-          <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-5">
-            <p className="text-xs text-[var(--color-muted-text)] font-bold uppercase tracking-widest mb-3">Por origen</p>
+          <div className="bg-[var(--ds-surface)] rounded-2xl border border-[var(--ds-border)] shadow-sm p-5">
+            <p className="text-xs text-[var(--ds-text-muted)] font-bold uppercase tracking-widest mb-3">Por origen</p>
             <div className="space-y-2.5">
-              <OriginRow icon={Globe} label="Web" value={byWeb} color="text-[var(--color-primary)]" bg="bg-[var(--color-accent-soft)]" />
-              <OriginRow icon={PenLine} label="Manual" value={byManual} color="text-gray-700" bg="bg-gray-100" />
-              <OriginRow icon={Bot} label="IA WhatsApp" value={byAI} color="text-violet-700" bg="bg-violet-50" />
+              <OriginRow icon={Globe} label="Web" value={byWeb} color="text-[var(--ds-primary)]" bg="bg-[var(--ds-surface-muted)]" />
+              <OriginRow icon={PenLine} label="Manual" value={byManual} color="text-[var(--ds-text)]" bg="bg-[var(--ds-surface-muted)]" />
+              <OriginRow icon={Bot} label="IA WhatsApp" value={byAI} color="text-[var(--ds-accent)]" bg="bg-[var(--ds-accent)]/10" />
             </div>
           </div>
 
           {/* Servicios top */}
-          <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-5">
-            <p className="text-xs text-[var(--color-muted-text)] font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <div className="bg-[var(--ds-surface)] rounded-2xl border border-[var(--ds-border)] shadow-sm p-5">
+            <p className="text-xs text-[var(--ds-text-muted)] font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <BarChart3 className="w-3.5 h-3.5" /> Servicios top
             </p>
             <div className="space-y-2.5">
               {topServices.map(([name, count]) => (
                 <div key={name} className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--color-muted-text)] truncate">{name}</span>
-                  <span className="font-bold text-[var(--color-primary)] ml-2 flex-shrink-0">{count}</span>
+                  <span className="text-[var(--ds-text-muted)] truncate">{name}</span>
+                  <span className="font-bold text-[var(--ds-primary)] ml-2 flex-shrink-0">{count}</span>
                 </div>
               ))}
             </div>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Insight mensual ───────────────────────────────────────── */}
-      <div className="bg-[var(--color-accent-soft)]/50 border border-[var(--color-accent)]/30 rounded-2xl p-5 mb-6 text-sm text-[var(--color-primary)]">
+      <div className="bg-[var(--ds-surface-muted)]/50 border border-[var(--color-accent)]/30 rounded-2xl p-5 mb-6 text-sm text-[var(--ds-primary)]">
         Este mes tuviste <strong>{monthCompleted.length} citas finalizadas</strong>,{" "}
         {monthCancelled.length} canceladas y{" "}
         <strong>{formatCurrency(monthIncome)}</strong> registrados en ingresos.
@@ -174,7 +174,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/dashboard/configuracion"
-            className="flex-shrink-0 bg-white text-violet-700 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-violet-50 transition-colors whitespace-nowrap"
+            className="flex-shrink-0 bg-[var(--ds-surface)] text-[var(--ds-accent)] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-accent)]/10 transition-colors whitespace-nowrap"
           >
             Conocer plan Pro
           </Link>
@@ -185,15 +185,15 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <SectionLabel>Citas recientes</SectionLabel>
-          <Link href="/dashboard/citas" className="text-xs text-[var(--color-primary)] hover:text-[var(--color-accent)] font-semibold transition-colors">
+          <Link href="/dashboard/citas" className="text-xs text-[var(--ds-primary)] hover:text-[var(--ds-accent)] font-semibold transition-colors">
             Ver todas →
           </Link>
         </div>
-        <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden">
+        <div className="bg-[var(--ds-surface)] rounded-2xl border border-[var(--ds-border)] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <thead>
-                <tr className="bg-[var(--color-background)] border-b border-[var(--color-border)] text-xs text-[var(--color-muted-text)] uppercase tracking-wide">
+                <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)] text-xs text-[var(--ds-text-muted)] uppercase tracking-wide">
                   <th className="text-left px-5 py-3 font-semibold">Cliente</th>
                   <th className="text-left px-5 py-3 font-semibold">Servicio</th>
                   <th className="text-left px-5 py-3 font-semibold">Fecha</th>
@@ -201,17 +201,17 @@ export default function DashboardPage() {
                   <th className="text-left px-5 py-3 font-semibold">Pago</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F0F4F5]">
+              <tbody className="divide-y divide-[var(--ds-border)]">
                 {recentApts.map((apt) => (
-                  <tr key={apt.id} className="hover:bg-[var(--color-background)] transition-colors">
+                  <tr key={apt.id} className="hover:bg-[var(--ds-bg)] transition-colors">
                     <td className="px-5 py-3">
-                      <Link href={`/dashboard/citas/${apt.id}`} className="font-semibold text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors">
+                      <Link href={`/dashboard/citas/${apt.id}`} className="font-semibold text-[var(--ds-text)] hover:text-[var(--ds-primary)] transition-colors">
                         {apt.patientName}
                       </Link>
-                      <p className="text-xs text-[var(--color-muted-text)]/70">{apt.patientPhone}</p>
+                      <p className="text-xs text-[var(--ds-text-muted)]/70">{apt.patientPhone}</p>
                     </td>
-                    <td className="px-5 py-3 text-[var(--color-muted-text)] text-xs">{apt.serviceName}</td>
-                    <td className="px-5 py-3 text-[var(--color-muted-text)] text-xs whitespace-nowrap">
+                    <td className="px-5 py-3 text-[var(--ds-text-muted)] text-xs">{apt.serviceName}</td>
+                    <td className="px-5 py-3 text-[var(--ds-text-muted)] text-xs whitespace-nowrap">
                       {formatShortDate(apt.desiredDate)} · {formatTime(apt.desiredTime)}
                     </td>
                     <td className="px-5 py-3">
@@ -237,7 +237,7 @@ export default function DashboardPage() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-bold text-[var(--color-muted-text)] uppercase tracking-widest mb-3">{children}</p>
+    <p className="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-widest mb-3">{children}</p>
   );
 }
 
@@ -252,7 +252,7 @@ function OriginRow({ icon: Icon, label, value, color, bg }: {
         </span>
         {label}
       </span>
-      <span className="font-bold text-[var(--color-text)]">{value}</span>
+      <span className="font-bold text-[var(--ds-text)]">{value}</span>
     </div>
   );
 }

@@ -1,17 +1,17 @@
 "use client";
 import { useState } from "react";
 import { X, CheckCircle2, User } from "lucide-react";
-import { patients } from "@/data/patients";
-import type { Patient } from "@/types";
+import { useClientData } from "@/contexts/ClientDataContext";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-const inp = "w-full border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50 focus:border-[var(--color-accent)] bg-white transition-colors placeholder:text-[var(--color-muted-text)]/40";
+const inp = "w-full border border-[var(--ds-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-ring)]/40 focus:border-[var(--ds-ring)] bg-[var(--ds-bg)] transition-colors placeholder:text-[var(--ds-text-muted)]/40";
 
 export function NewClientModal({ open, onClose }: Props) {
+  const { addClient } = useClientData();
   const [form, setForm] = useState({ name: "", phone: "", dateOfBirth: "", notes: "" });
   const [errors, setErrors] = useState<Partial<Record<"name" | "phone", string>>>({});
   const [done, setDone] = useState(false);
@@ -31,18 +31,13 @@ export function NewClientModal({ open, onClose }: Props) {
 
   function handleSubmit() {
     if (!validate()) return;
-    const newPatient: Patient = {
-      id: `p${Date.now()}`,
+    addClient({
       name: form.name.trim(),
       phone: form.phone.trim(),
       dateOfBirth: form.dateOfBirth || undefined,
       firstVisitAt: new Date().toISOString().slice(0, 10),
       notes: form.notes.trim() || undefined,
-      totalAppointments: 0,
-      totalSpent: 0,
-    };
-    // Add to in-memory list (page reload resets — no backend yet)
-    patients.push(newPatient);
+    });
     setDone(true);
     setTimeout(() => {
       setDone(false);
@@ -64,37 +59,37 @@ export function NewClientModal({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md bg-[var(--ds-surface-elevated)] rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--ds-border)]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-soft)] flex items-center justify-center">
-              <User className="w-4 h-4 text-[var(--color-primary)]" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--ds-surface-muted)] flex items-center justify-center">
+              <User className="w-4 h-4 text-[var(--ds-primary)]" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 text-sm">Nuevo cliente</h2>
-              <p className="text-xs text-gray-400">Completa el formulario para registrarlo</p>
+              <h2 className="font-bold text-[var(--ds-text)] text-sm">Nuevo cliente</h2>
+              <p className="text-xs text-[var(--ds-text-muted)]">Completa el formulario para registrarlo</p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400">
+          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-[var(--ds-surface-muted)] transition-colors text-[var(--ds-text-muted)]">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Éxito */}
         {done && (
-          <div className="absolute inset-0 bg-white flex flex-col items-center justify-center gap-3 z-10">
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-green-600" />
+          <div className="absolute inset-0 bg-[var(--ds-surface-elevated)] flex flex-col items-center justify-center gap-3 z-10">
+            <div className="w-14 h-14 rounded-full bg-[var(--ds-success)]/12 flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-[var(--ds-success)]" />
             </div>
-            <p className="font-bold text-gray-800">¡Cliente registrado!</p>
+            <p className="font-bold text-[var(--ds-text)]">¡Cliente registrado!</p>
           </div>
         )}
 
         {/* Formulario */}
         <div className="px-6 py-5 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide block mb-1.5">
               Nombre completo <span className="text-red-400">*</span>
             </label>
             <input
@@ -107,7 +102,7 @@ export function NewClientModal({ open, onClose }: Props) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide block mb-1.5">
               Teléfono <span className="text-red-400">*</span>
             </label>
             <input
@@ -121,7 +116,7 @@ export function NewClientModal({ open, onClose }: Props) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide block mb-1.5">
               Fecha de nacimiento
             </label>
             <input
@@ -133,7 +128,7 @@ export function NewClientModal({ open, onClose }: Props) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide block mb-1.5">
               Notas internas
             </label>
             <textarea
@@ -147,18 +142,18 @@ export function NewClientModal({ open, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+        <div className="px-6 py-4 border-t border-[var(--ds-border)] flex gap-3">
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+            className="flex-1 border border-[var(--ds-border)] text-[var(--ds-text-muted)] py-2.5 rounded-xl text-sm font-semibold hover:bg-[var(--ds-surface-muted)] transition-colors"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors"
+            className="flex-1 bg-[var(--ds-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors"
           >
             Guardar cliente
           </button>

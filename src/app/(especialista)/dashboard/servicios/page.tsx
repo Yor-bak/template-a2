@@ -13,12 +13,12 @@ import type { Service } from "@/types";
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return isActive ? (
-    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--ds-success)]/12 text-[var(--ds-success)]">
       <CheckCircle2 className="w-3 h-3" />
       Activo
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--ds-surface-muted)] text-[var(--ds-text-muted)]">
       <XCircle className="w-3 h-3" />
       Inactivo
     </span>
@@ -29,8 +29,8 @@ function PriceBadge({ priceType }: { priceType: Service["priceType"] }) {
   const colors: Record<Service["priceType"], string> = {
     from: "bg-sky-50 text-sky-700",
     fixed: "bg-teal-50 text-teal-700",
-    assessment_required: "bg-amber-50 text-amber-700",
-    hidden: "bg-gray-100 text-gray-500",
+    assessment_required: "bg-[var(--ds-warning)]/10 text-[var(--ds-warning)]",
+    hidden: "bg-[var(--ds-surface-muted)] text-[var(--ds-text-muted)]",
   };
   return (
     <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${colors[priceType]}`}>
@@ -51,37 +51,37 @@ interface ConfirmDeleteModalProps {
 function ConfirmDeleteModal({ service, hasAppointments, onConfirm, onCancel }: ConfirmDeleteModalProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${hasAppointments ? "bg-amber-100" : "bg-red-100"}`}>
+      <div className="bg-[var(--ds-surface)] rounded-2xl shadow-xl p-6 max-w-sm w-full">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${hasAppointments ? "bg-[var(--ds-warning)]/12" : "bg-[var(--ds-error)]/12"}`}>
           {hasAppointments ? (
             <AlertTriangle className="w-6 h-6 text-amber-600" />
           ) : (
             <Trash2 className="w-6 h-6 text-red-600" />
           )}
         </div>
-        <h2 className="text-base font-bold text-gray-900 text-center mb-2">
+        <h2 className="text-base font-bold text-[var(--ds-text)] text-center mb-2">
           {hasAppointments ? "¿Desactivar servicio?" : "¿Eliminar servicio?"}
         </h2>
         {hasAppointments ? (
-          <p className="text-sm text-gray-600 text-center mb-6">
+          <p className="text-sm text-[var(--ds-text-muted)] text-center mb-6">
             El servicio <strong>{service.name}</strong> tiene citas asociadas. Para conservar el historial,
             se <strong>desactivará</strong> en lugar de eliminarse. Seguirá visible en el panel pero no en la página pública.
           </p>
         ) : (
-          <p className="text-sm text-gray-600 text-center mb-6">
+          <p className="text-sm text-[var(--ds-text-muted)] text-center mb-6">
             ¿Seguro que deseas eliminar <strong>{service.name}</strong>? Esta acción no se puede deshacer.
           </p>
         )}
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+            className="flex-1 border border-[var(--ds-border)] text-[var(--ds-text-muted)] py-2.5 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors ${hasAppointments ? "bg-amber-500 hover:bg-amber-600" : "bg-red-600 hover:bg-red-700"}`}
+            className={`flex-1 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors ${hasAppointments ? "bg-[var(--ds-warning)]/100 hover:opacity-90" : "bg-red-600 hover:bg-red-700"}`}
           >
             {hasAppointments ? "Desactivar" : "Eliminar"}
           </button>
@@ -150,14 +150,14 @@ export default function DashboardServiciosPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Servicios del consultorio</h1>
-          <p className="text-[var(--color-muted-text)] text-sm">Administra los tratamientos que tus clientes pueden consultar y agendar. ·
+          <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Servicios del consultorio</h1>
+          <p className="text-[var(--ds-text-muted)] text-sm">Administra los tratamientos que tus clientes pueden consultar y agendar. ·
             {services.length} servicios · {active} activos · {inactive} inactivos
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Agregar servicio
@@ -180,25 +180,25 @@ export default function DashboardServiciosPage() {
 
       {/* Toast de acción */}
       {lastAction && (
-        <div className="mb-4 flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-sm font-medium px-4 py-3 rounded-xl">
-          <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+        <div className="mb-4 flex items-center gap-2 bg-[var(--ds-success)]/10 border border-[var(--ds-success)]/30 text-[var(--ds-success)] text-sm font-medium px-4 py-3 rounded-xl">
+          <CheckCircle2 className="w-4 h-4 text-[var(--ds-success)] flex-shrink-0" />
           {lastAction}
         </div>
       )}
 
       {/* Estado vacío */}
       {services.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 bg-white border border-[var(--color-border)] rounded-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--color-accent-soft)] flex items-center justify-center mb-5">
-            <Stethoscope className="w-8 h-8 text-[var(--color-primary)]" strokeWidth={1.5} />
+        <div className="flex flex-col items-center justify-center py-24 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--ds-surface-muted)] flex items-center justify-center mb-5">
+            <Stethoscope className="w-8 h-8 text-[var(--ds-primary)]" strokeWidth={1.5} />
           </div>
-          <p className="font-bold text-[var(--color-text)] mb-2">Sin servicios configurados</p>
-          <p className="text-sm text-[var(--color-muted-text)] text-center max-w-xs mb-6">
+          <p className="font-bold text-[var(--ds-text)] mb-2">Sin servicios configurados</p>
+          <p className="text-sm text-[var(--ds-text-muted)] text-center max-w-xs mb-6">
             Agrega tu primer servicio para que los clientes puedan verlo y solicitar una cita.
           </p>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Agregar primer servicio
@@ -208,41 +208,41 @@ export default function DashboardServiciosPage() {
 
       {/* Tabla de servicios */}
       {services.length > 0 && (
-        <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px]">
               <thead>
-                <tr className="border-b border-[var(--color-border)] bg-[var(--color-background)]">
-                  <th className="text-left text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide px-5 py-3">Servicio</th>
-                  <th className="text-left text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide px-4 py-3">Duración</th>
-                  <th className="text-left text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide px-4 py-3">Precio</th>
-                  <th className="text-left text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide px-4 py-3">Estado</th>
-                  <th className="text-right text-xs font-semibold text-[var(--color-muted-text)] uppercase tracking-wide px-5 py-3">Acciones</th>
+                <tr className="border-b border-[var(--ds-border)] bg-[var(--ds-bg)]">
+                  <th className="text-left text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide px-5 py-3">Servicio</th>
+                  <th className="text-left text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide px-4 py-3">Duración</th>
+                  <th className="text-left text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide px-4 py-3">Precio</th>
+                  <th className="text-left text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide px-4 py-3">Estado</th>
+                  <th className="text-right text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide px-5 py-3">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]/60">
                 {services.map((svc) => (
-                  <tr key={svc.id} className={`hover:bg-[var(--color-background)] transition-colors ${!svc.isActive ? "opacity-55" : ""}`}>
+                  <tr key={svc.id} className={`hover:bg-[var(--ds-bg)] transition-colors ${!svc.isActive ? "opacity-55" : ""}`}>
                     {/* Servicio */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${svc.isEmergency ? "bg-red-100" : "bg-[var(--color-accent-soft)]"}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${svc.isEmergency ? "bg-[var(--ds-error)]/12" : "bg-[var(--ds-surface-muted)]"}`}>
                           {svc.isEmergency
                             ? <AlertCircle className="w-4 h-4 text-red-500" />
-                            : <Stethoscope className="w-4 h-4 text-[var(--color-primary)]" />
+                            : <Stethoscope className="w-4 h-4 text-[var(--ds-primary)]" />
                           }
                         </div>
                         <div>
-                          <p className="font-semibold text-[var(--color-text)] text-sm">{svc.name}</p>
-                          <p className="text-xs text-[var(--color-muted-text)] truncate max-w-[240px]">{svc.shortDescription}</p>
+                          <p className="font-semibold text-[var(--ds-text)] text-sm">{svc.name}</p>
+                          <p className="text-xs text-[var(--ds-text-muted)] truncate max-w-[240px]">{svc.shortDescription}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* Duración */}
                     <td className="px-4 py-4">
-                      <span className="flex items-center gap-1.5 text-sm text-[var(--color-muted-text)]">
-                        <Clock className="w-3.5 h-3.5 text-[var(--color-muted-text)]/50" />
+                      <span className="flex items-center gap-1.5 text-sm text-[var(--ds-text-muted)]">
+                        <Clock className="w-3.5 h-3.5 text-[var(--ds-text-muted)]/50" />
                         {svc.durationMinutes} min
                       </span>
                     </td>
@@ -251,7 +251,7 @@ export default function DashboardServiciosPage() {
                     <td className="px-4 py-4">
                       <div className="flex flex-col gap-1">
                         <PriceBadge priceType={svc.priceType} />
-                        <span className="text-xs font-semibold text-[var(--color-text)]">
+                        <span className="text-xs font-semibold text-[var(--ds-text)]">
                           {priceLabel(svc.priceType, svc.estimatedPrice)}
                         </span>
                       </div>
@@ -273,7 +273,7 @@ export default function DashboardServiciosPage() {
                         <button
                           onClick={() => openEdit(svc)}
                           title="Editar servicio"
-                          className="p-2 rounded-lg text-[var(--color-muted-text)] hover:bg-[var(--color-background)] hover:text-[var(--color-text)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)] hover:text-[var(--ds-text)] transition-colors"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -282,8 +282,8 @@ export default function DashboardServiciosPage() {
                           title={svc.isActive ? "Desactivar" : "Activar"}
                           className={`p-2 rounded-lg transition-colors ${
                             svc.isActive
-                              ? "text-green-500 hover:bg-green-50 hover:text-green-700"
-                              : "text-[var(--color-muted-text)] hover:bg-[var(--color-background)] hover:text-[var(--color-text)]"
+                              ? "text-[var(--ds-success)] hover:bg-[var(--ds-success)]/10 hover:text-[var(--ds-success)]"
+                              : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)] hover:text-[var(--ds-text)]"
                           }`}
                         >
                           {svc.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -291,7 +291,7 @@ export default function DashboardServiciosPage() {
                         <button
                           onClick={() => handleDeleteRequest(svc)}
                           title="Eliminar servicio"
-                          className="p-2 rounded-lg text-[var(--color-muted-text)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="p-2 rounded-lg text-[var(--ds-text-muted)] hover:bg-[var(--ds-error)]/10 hover:text-[var(--ds-error)] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -304,7 +304,7 @@ export default function DashboardServiciosPage() {
           </div>
 
           {/* Footer resumen */}
-          <div className="border-t border-[var(--color-border)] px-5 py-3 flex items-center gap-4 text-xs text-[var(--color-muted-text)]">
+          <div className="border-t border-[var(--ds-border)] px-5 py-3 flex items-center gap-4 text-xs text-[var(--ds-text-muted)]">
             <span>{active} activos</span>
             <span className="opacity-30">·</span>
             <span>{inactive} inactivos</span>

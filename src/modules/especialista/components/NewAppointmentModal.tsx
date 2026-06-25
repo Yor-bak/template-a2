@@ -173,31 +173,31 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Drawer / panel */}
-      <div className="relative w-full max-w-lg h-full bg-white shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-lg h-full bg-[var(--ds-surface-elevated)] shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--ds-border)] flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center">
               <PenLine className="w-3.5 h-3.5 text-sky-600" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 text-sm">Agregar cita manual</h2>
-              <p className="text-xs text-gray-400">Registrada por el dentista</p>
+              <h2 className="font-bold text-[var(--ds-text)] text-sm">Agregar cita manual</h2>
+              <p className="text-xs text-[var(--ds-text-muted)]">Registrada por el dentista</p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-[var(--ds-surface-muted)] transition-colors text-[var(--ds-text-muted)]">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Éxito */}
         {done && (
-          <div className="absolute inset-0 bg-white flex flex-col items-center justify-center gap-3 z-10">
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-green-600" />
+          <div className="absolute inset-0 bg-[var(--ds-surface-elevated)] flex flex-col items-center justify-center gap-3 z-10">
+            <div className="w-14 h-14 rounded-full bg-[var(--ds-success)]/12 flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-[var(--ds-success)]" />
             </div>
-            <p className="font-bold text-gray-800">¡Cita registrada!</p>
-            <p className="text-sm text-gray-500">Cerrando formulario...</p>
+            <p className="font-bold text-[var(--ds-text)]">¡Cita registrada!</p>
+            <p className="text-sm text-[var(--ds-text-muted)]">Cerrando formulario...</p>
           </div>
         )}
 
@@ -225,7 +225,7 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
                 </select>
               </Field>
               <div className="flex flex-col justify-end gap-2">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--ds-text)]">
                   <input type="checkbox" checked={form.isFirstVisit} onChange={(e) => set("isFirstVisit", e.target.checked)} className="w-4 h-4 accent-sky-500" />
                   Primera visita
                 </label>
@@ -244,7 +244,7 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
               </select>
             </Field>
             {selectedService && (
-              <p className="text-xs text-gray-400 -mt-2">
+              <p className="text-xs text-[var(--ds-text-muted)] -mt-2">
                 Duración estimada: {selectedService.durationMinutes} min — {selectedService.isEmergency ? "🚨 Urgencia" : "Rutina"}
               </p>
             )}
@@ -276,9 +276,9 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
                 </select>
               </Field>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--ds-text)]">
               <input type="checkbox" checked={form.isEmergency} onChange={(e) => set("isEmergency", e.target.checked)} className="w-4 h-4 accent-red-500" />
-              <span className="text-red-600 font-medium">¿Es urgencia?</span>
+              <span className="text-[var(--ds-error)] font-medium">¿Es urgencia?</span>
             </label>
           </FormSection>
 
@@ -291,11 +291,11 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
         </form>
 
         {/* Footer fijo */}
-        <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 flex gap-3 bg-white">
-          <button type="button" onClick={handleClose} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+        <div className="flex-shrink-0 px-6 py-4 border-t border-[var(--ds-border)] flex gap-3 bg-[var(--ds-surface-elevated)]">
+          <button type="button" onClick={handleClose} className="flex-1 border border-[var(--ds-border)] text-[var(--ds-text-muted)] py-2.5 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)] transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSubmit} className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors">
+          <button onClick={handleSubmit} className="flex-1 bg-[var(--ds-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors">
             Registrar cita
           </button>
         </div>
@@ -307,7 +307,7 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{title}</p>
+      <p className="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-widest mb-3">{title}</p>
       <div className="space-y-3">{children}</div>
     </div>
   );
@@ -316,15 +316,15 @@ function FormSection({ title, children }: { title: string; children: React.React
 function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-[var(--ds-text-muted)] mb-1">
         {label}{required && <span className="text-sky-500 ml-0.5">*</span>}
       </label>
       {children}
-      {error && <p className="text-[11px] text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-[11px] text-[var(--ds-error)] mt-0.5">{error}</p>}
     </div>
   );
 }
 
 function inp(hasError: boolean) {
-  return `w-full border ${hasError ? "border-red-300 bg-red-50" : "border-gray-200"} rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 transition-colors bg-white`;
+  return `w-full border ${hasError ? "border-red-300 bg-red-50" : "border-[var(--ds-border)]"} rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 transition-colors bg-white`;
 }

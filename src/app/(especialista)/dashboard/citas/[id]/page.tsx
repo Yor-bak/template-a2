@@ -119,7 +119,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
         {/* Columna principal */}
         <div className="md:col-span-2 space-y-5">
           {/* Datos del cliente */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-[var(--ds-surface)] border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Datos del cliente</h2>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <Info label="Nombre" value={apt.patientName} />
@@ -131,7 +131,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Detalles de la cita */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-[var(--ds-surface)] border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Detalles de la cita</h2>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <Info label="Servicio" value={apt.serviceName} />
@@ -172,7 +172,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
           )}
 
           {/* Notas internas */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-[var(--ds-surface)] border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Notas internas</h2>
             <textarea
               value={notes}
@@ -199,7 +199,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* Historial de estados */}
           {apt.statusHistory.length > 0 && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <div className="bg-[var(--ds-surface)] border border-gray-100 rounded-2xl p-5 shadow-sm">
               <h2 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Historial de estados</h2>
               <div className="space-y-3">
                 {apt.statusHistory.map((entry) => (
@@ -224,7 +224,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
         {/* Sidebar acciones */}
         <div className="space-y-4">
           {/* Cambiar estado */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-[var(--ds-surface)] border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-3 text-sm">Cambiar estado</h2>
             <div className="space-y-2">
               {apt.status === "pending" && (
@@ -249,7 +249,7 @@ export default function CitaDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Pago */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-[var(--ds-surface)] border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-3 text-sm">Pago</h2>
             <div className="space-y-3 text-sm">
               <Info label="Monto estimado" value={apt.estimatedAmount ? formatCurrency(apt.estimatedAmount) : "—"} />

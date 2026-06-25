@@ -32,6 +32,25 @@
   --color-medico-urgent: #c23a32;
 }
 
+/* ── Dashboard semantic tokens — fallbacks (overridden by layout.tsx JS) ──── */
+:root {
+  --ds-bg:               #f7f6f1;
+  --ds-surface:          #fdfcf9;
+  --ds-surface-muted:    #efeee9;
+  --ds-surface-elevated: #ffffff;
+  --ds-primary:          #173B45;
+  --ds-primary-fg:       #ffffff;
+  --ds-accent:           #3fb8a8;
+  --ds-text:             #102A33;
+  --ds-text-muted:       #5a6e76;
+  --ds-border:           #dddbd4;
+  --ds-success:          #2e6e48;
+  --ds-success-fg:       #d6f0e2;
+  --ds-warning:          #8a5e14;
+  --ds-error:            #a83030;
+  --ds-ring:             #3fb8a8;
+}
+
 /* ── Admin panel design tokens — Midnight Ink ────────────────────────────── */
 :root {
   --bg-base:     #0f0e17;

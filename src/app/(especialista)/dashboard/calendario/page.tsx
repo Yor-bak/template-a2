@@ -77,8 +77,8 @@ export default function CalendarioPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-[var(--color-text)]">Calendario</h1>
-        <p className="text-[var(--color-muted-text)] text-sm">
+        <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Calendario</h1>
+        <p className="text-[var(--ds-text-muted)] text-sm">
           Gestiona tus horarios de atención, bloqueos y días no laborables.
         </p>
       </div>
@@ -87,20 +87,20 @@ export default function CalendarioPage() {
         {/* ── PANEL IZQUIERDO ───────────────────────────────────── */}
         <div className="space-y-4">
           {/* Mini calendario */}
-          <div className="bg-white border border-[var(--color-border)] rounded-2xl p-4 shadow-sm">
+          <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={prevMonth}
-                className="p-1.5 rounded-lg hover:bg-[var(--color-accent-soft)]/50 text-[var(--color-muted-text)] transition-colors"
+                className="p-1.5 rounded-lg hover:bg-[var(--ds-surface-muted)]/50 text-[var(--ds-text-muted)] transition-colors"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs font-bold text-[var(--color-text)]">
+              <span className="text-xs font-bold text-[var(--ds-text)]">
                 {MONTH_NAMES[calMonth]} {calYear}
               </span>
               <button
                 onClick={nextMonth}
-                className="p-1.5 rounded-lg hover:bg-[var(--color-accent-soft)]/50 text-[var(--color-muted-text)] transition-colors"
+                className="p-1.5 rounded-lg hover:bg-[var(--ds-surface-muted)]/50 text-[var(--ds-text-muted)] transition-colors"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -111,7 +111,7 @@ export default function CalendarioPage() {
               {DAY_LABELS.map((l) => (
                 <div
                   key={l}
-                  className="text-center text-[9px] font-bold text-[var(--color-muted-text)]/50 py-0.5"
+                  className="text-center text-[9px] font-bold text-[var(--ds-text-muted)]/50 py-0.5"
                 >
                   {l[0]}
                 </div>
@@ -132,21 +132,21 @@ export default function CalendarioPage() {
                     onClick={() => setSelectedDate(cell.date)}
                     className={[
                       "aspect-square flex items-center justify-center rounded-lg text-[11px] transition-all relative",
-                      !cell.isCurrentMonth ? "opacity-20 text-[var(--color-muted-text)]" : "",
+                      !cell.isCurrentMonth ? "opacity-20 text-[var(--ds-text-muted)]" : "",
                       isSelected
-                        ? "bg-[var(--color-primary)] text-white font-bold"
+                        ? "bg-[var(--ds-primary)] text-white font-bold"
                         : isToday
-                        ? "ring-1 ring-[var(--color-accent)] text-[var(--color-text)] font-semibold hover:bg-[var(--color-accent-soft)]/40"
+                        ? "ring-1 ring-[var(--color-accent)] text-[var(--ds-text)] font-semibold hover:bg-[var(--ds-surface-muted)]/40"
                         : isClosed && cell.isCurrentMonth
-                        ? "text-red-400 hover:bg-red-50/50 line-through"
+                        ? "text-red-400 hover:bg-[var(--ds-error)]/10/50 line-through"
                         : cell.isCurrentMonth
-                        ? "text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]/40"
+                        ? "text-[var(--ds-text)] hover:bg-[var(--ds-surface-muted)]/40"
                         : "",
                     ].join(" ")}
                   >
                     {cell.dayNumber}
                     {hasApts && !isSelected && cell.isCurrentMonth && (
-                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--color-accent)]" />
+                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--ds-accent)]" />
                     )}
                   </button>
                 );
@@ -158,14 +158,14 @@ export default function CalendarioPage() {
           <div className="space-y-2">
             <button
               onClick={() => setShowBlockModal(true)}
-              className="w-full flex items-center gap-2.5 bg-white border border-[var(--color-border)] text-[var(--color-text)] px-4 py-3 rounded-xl text-sm font-semibold hover:bg-amber-50 hover:border-amber-200 transition-all shadow-sm"
+              className="w-full flex items-center gap-2.5 bg-[var(--ds-surface)] border border-[var(--ds-border)] text-[var(--ds-text)] px-4 py-3 rounded-xl text-sm font-semibold hover:bg-[var(--ds-warning)]/10 hover:border-[var(--ds-warning)]/30 transition-all shadow-sm"
             >
               <BanIcon className="w-4 h-4 text-amber-500 flex-shrink-0" />
               Bloquear horario
             </button>
             <button
               onClick={() => setShowCloseModal(true)}
-              className="w-full flex items-center gap-2.5 bg-white border border-[var(--color-border)] text-[var(--color-text)] px-4 py-3 rounded-xl text-sm font-semibold hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
+              className="w-full flex items-center gap-2.5 bg-[var(--ds-surface)] border border-[var(--ds-border)] text-[var(--ds-text)] px-4 py-3 rounded-xl text-sm font-semibold hover:bg-[var(--ds-error)]/10 hover:border-[var(--ds-error)]/30 transition-all shadow-sm"
             >
               <CalendarX className="w-4 h-4 text-red-500 flex-shrink-0" />
               Cerrar día completo
@@ -173,13 +173,13 @@ export default function CalendarioPage() {
           </div>
 
           {/* Leyenda */}
-          <div className="bg-white border border-[var(--color-border)] rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] font-bold text-[var(--color-muted-text)] uppercase tracking-wider mb-2.5">
+          <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-4 shadow-sm">
+            <p className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2.5">
               Leyenda
             </p>
-            <div className="space-y-1.5 text-xs text-[var(--color-muted-text)]">
+            <div className="space-y-1.5 text-xs text-[var(--ds-text-muted)]">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] flex-shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[var(--ds-accent)] flex-shrink-0" />
                 Día con citas
               </div>
               <div className="flex items-center gap-2">
@@ -201,26 +201,26 @@ export default function CalendarioPage() {
           {tab === "agenda" && (
             <div className="space-y-4">
               {/* Cabecera del día */}
-              <div className="bg-white border border-[var(--color-border)] rounded-2xl p-5 shadow-sm">
+              <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-5 shadow-sm">
                 <div className="flex items-start justify-between flex-wrap gap-3">
                   <div>
-                    <h2 className="text-base font-extrabold text-[var(--color-text)] capitalize">
+                    <h2 className="text-base font-extrabold text-[var(--ds-text)] capitalize">
                       {dateLabel}
                     </h2>
-                    <p className="text-xs text-[var(--color-muted-text)] mt-0.5">
+                    <p className="text-xs text-[var(--ds-text-muted)] mt-0.5">
                       {dayApts.length} cita{dayApts.length !== 1 ? "s" : ""} · {dayBlocks.length} bloqueo{dayBlocks.length !== 1 ? "s" : ""}
                     </p>
                   </div>
 
                   {closedDay ? (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="flex items-center gap-1.5 bg-red-100 text-red-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                      <span className="flex items-center gap-1.5 bg-[var(--ds-error)]/12 text-red-700 text-xs font-bold px-3 py-1.5 rounded-full">
                         <CalendarX className="w-3.5 h-3.5" />
                         Cerrado{closedDay.reason ? ` — ${closedDay.reason}` : ""}
                       </span>
                       <button
                         onClick={() => reopenDay(selectedDate)}
-                        className="flex items-center gap-1 text-xs text-[var(--color-muted-text)] hover:text-[var(--color-primary)] font-semibold transition-colors"
+                        className="flex items-center gap-1 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-primary)] font-semibold transition-colors"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                         Reabrir
@@ -231,7 +231,7 @@ export default function CalendarioPage() {
                       {workingRules.map((r) => (
                         <span
                           key={r.id}
-                          className="flex items-center gap-1 bg-[var(--color-accent-soft)] text-[var(--color-primary)] text-xs font-semibold px-2.5 py-1 rounded-full"
+                          className="flex items-center gap-1 bg-[var(--ds-surface-muted)] text-[var(--ds-primary)] text-xs font-semibold px-2.5 py-1 rounded-full"
                         >
                           <Clock className="w-3 h-3" />
                           {r.startTime} – {r.endTime}
@@ -240,7 +240,7 @@ export default function CalendarioPage() {
                       ))}
                     </div>
                   ) : (
-                    <span className="text-xs text-[var(--color-muted-text)] bg-gray-100 px-3 py-1.5 rounded-full font-medium">
+                    <span className="text-xs text-[var(--ds-text-muted)] bg-[var(--ds-surface-muted)] px-3 py-1.5 rounded-full font-medium">
                       Sin horario configurado
                     </span>
                   )}
@@ -249,36 +249,36 @@ export default function CalendarioPage() {
 
               {/* Citas */}
               {dayApts.length > 0 && (
-                <div className="bg-white border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-3 border-b border-[#F0F4F5] flex items-center gap-2">
-                    <CalendarDays className="w-4 h-4 text-[var(--color-primary)]" />
-                    <h3 className="text-sm font-bold text-[var(--color-text)]">Citas del día</h3>
-                    <span className="ml-auto text-xs text-[var(--color-muted-text)]">{dayApts.length}</span>
+                <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl overflow-hidden shadow-sm">
+                  <div className="px-5 py-3 border-b border-[var(--ds-border)] flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-[var(--ds-primary)]" />
+                    <h3 className="text-sm font-bold text-[var(--ds-text)]">Citas del día</h3>
+                    <span className="ml-auto text-xs text-[var(--ds-text-muted)]">{dayApts.length}</span>
                   </div>
-                  <div className="divide-y divide-[#F0F4F5]">
+                  <div className="divide-y divide-[var(--ds-border)]">
                     {dayApts
                       .slice()
                       .sort((a, b) => a.desiredTime.localeCompare(b.desiredTime))
                       .map((apt) => (
                         <div key={apt.id} className="px-5 py-3.5 flex items-center gap-4">
                           <div className="text-center flex-shrink-0 w-12">
-                            <p className="text-sm font-bold text-[var(--color-primary)]">
+                            <p className="text-sm font-bold text-[var(--ds-primary)]">
                               {formatTime(apt.desiredTime)}
                             </p>
-                            <p className="text-[10px] text-[var(--color-muted-text)]">
+                            <p className="text-[10px] text-[var(--ds-text-muted)]">
                               {apt.durationMinutes ?? 30}min
                             </p>
                           </div>
                           <div className="w-px h-8 bg-[var(--color-border)] flex-shrink-0" />
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div className="w-7 h-7 rounded-full bg-[var(--color-accent-soft)] flex items-center justify-center flex-shrink-0">
-                              <User className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+                            <div className="w-7 h-7 rounded-full bg-[var(--ds-surface-muted)] flex items-center justify-center flex-shrink-0">
+                              <User className="w-3.5 h-3.5 text-[var(--ds-primary)]" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-[var(--color-text)] truncate">
+                              <p className="text-sm font-semibold text-[var(--ds-text)] truncate">
                                 {apt.patientName}
                               </p>
-                              <p className="text-xs text-[var(--color-muted-text)] truncate">{apt.serviceName}</p>
+                              <p className="text-xs text-[var(--ds-text-muted)] truncate">{apt.serviceName}</p>
                             </div>
                           </div>
                           {apt.isEmergency && (
@@ -297,13 +297,13 @@ export default function CalendarioPage() {
 
               {/* Bloqueos manuales */}
               {dayBlocks.length > 0 && (
-                <div className="bg-white border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-3 border-b border-[#F0F4F5] flex items-center gap-2">
+                <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl overflow-hidden shadow-sm">
+                  <div className="px-5 py-3 border-b border-[var(--ds-border)] flex items-center gap-2">
                     <BanIcon className="w-4 h-4 text-amber-500" />
-                    <h3 className="text-sm font-bold text-[var(--color-text)]">Horarios bloqueados</h3>
-                    <span className="ml-auto text-xs text-[var(--color-muted-text)]">{dayBlocks.length}</span>
+                    <h3 className="text-sm font-bold text-[var(--ds-text)]">Horarios bloqueados</h3>
+                    <span className="ml-auto text-xs text-[var(--ds-text-muted)]">{dayBlocks.length}</span>
                   </div>
-                  <div className="divide-y divide-[#F0F4F5]">
+                  <div className="divide-y divide-[var(--ds-border)]">
                     {dayBlocks.map((block) => (
                       <div key={block.id} className="px-5 py-3.5 flex items-center gap-4">
                         <div className="w-28 flex-shrink-0">
@@ -311,13 +311,13 @@ export default function CalendarioPage() {
                             {block.startTime} – {block.endTime}
                           </p>
                         </div>
-                        <p className="flex-1 text-sm text-[var(--color-muted-text)]">
+                        <p className="flex-1 text-sm text-[var(--ds-text-muted)]">
                           {block.reason ?? "Sin motivo"}
                         </p>
                         <button
                           onClick={() => removeManualBlock(block.id)}
                           title="Eliminar bloqueo"
-                          className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--ds-text-muted)] hover:bg-[var(--ds-error)]/10 hover:text-[var(--ds-error)] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -330,14 +330,14 @@ export default function CalendarioPage() {
               {/* Estado vacío */}
               {dayApts.length === 0 && dayBlocks.length === 0 && !closedDay && (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="w-14 h-14 rounded-full bg-[var(--color-accent-soft)]/50 flex items-center justify-center mb-4">
+                  <div className="w-14 h-14 rounded-full bg-[var(--ds-surface-muted)]/50 flex items-center justify-center mb-4">
                     <Calendar
-                      className="w-7 h-7 text-[var(--color-primary)]/30"
+                      className="w-7 h-7 text-[var(--ds-primary)]/30"
                       strokeWidth={1.5}
                     />
                   </div>
-                  <p className="font-bold text-[var(--color-muted-text)] mb-1">Sin eventos para este día</p>
-                  <p className="text-sm text-[var(--color-muted-text)]/60">
+                  <p className="font-bold text-[var(--ds-text-muted)] mb-1">Sin eventos para este día</p>
+                  <p className="text-sm text-[var(--ds-text-muted)]/60">
                     No hay citas, bloqueos ni restricciones configuradas.
                   </p>
                 </div>
