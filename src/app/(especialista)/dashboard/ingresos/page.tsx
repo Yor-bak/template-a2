@@ -99,7 +99,7 @@ export default function IngresosPage() {
             {[
               { label: "Pagadas",    bg: "bg-[var(--ds-success)]/10", text: "text-[var(--ds-success)]", value: `${summary.paidCount} citas · ${formatCurrency(summary.paid)}` },
               { label: "Parciales",  bg: "bg-[var(--ds-warning)]/10",   text: "text-[var(--ds-warning)]",   value: `${summary.partialCount} citas · ${formatCurrency(summary.partial)}` },
-              { label: "Sin pagar",  bg: "bg-red-50",     text: "text-red-700",     value: `${summary.unpaidCount} citas · ${formatCurrency(summary.unpaid)}` },
+              { label: "Sin pagar",  bg: "bg-[var(--ds-error)]/11",  text: "text-[var(--ds-error)]",  value: `${summary.unpaidCount} citas · ${formatCurrency(summary.unpaid)}` },
               { label: "Cortesías",  bg: "bg-[var(--ds-accent)]/10",  text: "text-[var(--ds-accent)]",  value: `${summary.courtesyCount} citas` },
             ].map((row) => (
               <div key={row.label} className={`flex justify-between items-center p-3 ${row.bg} rounded-xl`}>

@@ -689,17 +689,47 @@ function TemplatePickerModal({
 }
 
 function MobilePreviewModal({
-  PreviewComponent, profile, onClose,
-}: { PreviewComponent: React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined; profile: unknown; onClose: () => void }) {
+  PreviewComponent, profile, onClose, paletteVars, paletteBg,
+}: {
+  PreviewComponent: React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined;
+  profile: unknown;
+  onClose: () => void;
+  paletteVars?: React.CSSProperties;
+  paletteBg?: string;
+}) {
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 bg-[var(--ds-surface)] border-b border-[var(--ds-border)]">
         <span className="text-sm font-medium text-[var(--ds-text)]">Vista previa</span>
         <button onClick={onClose} className="text-[var(--ds-text-muted)] font-bold text-lg leading-none">✕</button>
       </div>
-      <div className="flex-1 overflow-hidden relative bg-[var(--ds-surface)]">
+      <div className="flex-1 overflow-hidden relative" style={{ background: paletteBg ?? "white" }}>
         {PreviewComponent && (
-          <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: `${100 / 0.42}%`, pointerEvents: "none", userSelect: "none" }}>
+          <div
+            style={{
+              ...(paletteVars ?? {}),
+              "--color-background": "initial",
+              "--color-primary": "initial",
+              "--color-accent": "initial",
+              "--color-text": "initial",
+              "--color-muted-text": "initial",
+              "--color-border": "initial",
+              "--color-card": "initial",
+              "--ds-bg": "initial",
+              "--ds-surface": "initial",
+              "--ds-primary": "initial",
+              "--ds-accent": "initial",
+              "--ds-text": "initial",
+              "--ds-text-muted": "initial",
+              "--ds-border": "initial",
+              background: paletteBg ?? "white",
+              transform: "scale(0.42)",
+              transformOrigin: "top left",
+              width: `${100 / 0.42}%`,
+              pointerEvents: "none",
+              userSelect: "none",
+            } as React.CSSProperties}
+          >
             <PreviewComponent profile={profile} isPreview={true} />
           </div>
         )}
@@ -708,9 +738,11 @@ function MobilePreviewModal({
   );
 }
 
-function LivePreviewPanel({ PreviewComponent, profile }: {
+function LivePreviewPanel({ PreviewComponent, profile, paletteVars, paletteBg }: {
   PreviewComponent: React.ComponentType<{ profile: unknown; isPreview: boolean }> | undefined;
   profile: unknown;
+  paletteVars?: React.CSSProperties;
+  paletteBg?: string;
 }) {
   if (!PreviewComponent) {
     return (
@@ -722,14 +754,16 @@ function LivePreviewPanel({ PreviewComponent, profile }: {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ds-text-muted)] mb-2">Vista previa</p>
-      {/* Isolation wrapper: reset CSS vars so dashboard theme doesn't bleed into preview */}
+      {/* Isolation wrapper: palette background prevents dashboard theme bleeding through transparent template areas */}
       <div
-        className="relative overflow-hidden rounded-2xl border border-[var(--ds-border)] shadow-lg bg-[var(--ds-surface)]"
-        style={{ height: "70vh" }}
+        className="relative overflow-hidden rounded-2xl border border-[var(--ds-border)] shadow-lg"
+        style={{ height: "70vh", background: paletteBg ?? "white" }}
       >
         <div
           style={{
-            // Reset dashboard vars inside the preview so templates only see their own palette
+            // Apply public palette vars so template receives its own tokens, not dashboard aliases
+            ...(paletteVars ?? {}),
+            // Reset dashboard aliases so they don't override the template's own values
             "--color-background": "initial",
             "--color-primary": "initial",
             "--color-accent": "initial",
@@ -737,6 +771,15 @@ function LivePreviewPanel({ PreviewComponent, profile }: {
             "--color-muted-text": "initial",
             "--color-border": "initial",
             "--color-card": "initial",
+            // Reset ds-* vars to prevent dashboard theme from leaking into public template
+            "--ds-bg": "initial",
+            "--ds-surface": "initial",
+            "--ds-primary": "initial",
+            "--ds-accent": "initial",
+            "--ds-text": "initial",
+            "--ds-text-muted": "initial",
+            "--ds-border": "initial",
+            background: paletteBg ?? "white",
             transform: "scale(0.42)",
             transformOrigin: "top left",
             width: `${100 / 0.42}%`,
@@ -943,6 +986,9 @@ function AppearanceTab() {
   const currentImages = templateImages[templateId] ?? {};
 
   const activePaletteId = appearance.selectedPaletteId;
+  const activePalette = templateDef?.palettes.find(p => p.id === activePaletteId) ?? templateDef?.palettes[0];
+  const paletteVars = activePalette?.vars as React.CSSProperties | undefined;
+  const paletteBg = activePalette?.surface;
 
   function handleTemplateSelect(id: string) {
     const def = getTemplate(id);
@@ -1061,7 +1107,7 @@ function AppearanceTab() {
         {/* RIGHT: sticky live preview (desktop only) */}
         <div className="hidden lg:block">
           <div className="sticky top-4" style={{ maxHeight: "calc(100vh - 2rem)", overflowY: "auto" }}>
-            <LivePreviewPanel PreviewComponent={PreviewComponent} profile={profile} />
+            <LivePreviewPanel PreviewComponent={PreviewComponent} profile={profile} paletteVars={paletteVars} paletteBg={paletteBg} />
           </div>
         </div>
       </div>
@@ -1079,6 +1125,8 @@ function AppearanceTab() {
           PreviewComponent={PreviewComponent}
           profile={profile}
           onClose={() => setShowMobilePreview(false)}
+          paletteVars={paletteVars}
+          paletteBg={paletteBg}
         />
       )}
     </div>

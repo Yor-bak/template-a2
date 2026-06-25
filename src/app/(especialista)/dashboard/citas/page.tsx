@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { appointments as seed } from "@/data/appointments";
 import type { Appointment, AppointmentStatus, PaymentStatus } from "@/types";
@@ -175,10 +175,10 @@ export default function CitasPage() {
             <button
               key={t.value}
               onClick={() => setFilter(t.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 filter === t.value
-                  ? "bg-[var(--ds-primary)] text-white"
-                  : "bg-[#F0F4F5] text-[var(--ds-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--ds-text)]"
+                  ? "bg-[var(--ds-accent)]/12 text-[var(--ds-accent)] border-[var(--ds-accent)]/30"
+                  : "bg-[var(--ds-surface)] text-[var(--ds-text-muted)] border-[var(--ds-border)] hover:bg-[var(--ds-surface-muted)] hover:text-[var(--ds-text)]"
               }`}
             >
               {t.label}
@@ -193,10 +193,10 @@ export default function CitasPage() {
             <button
               key={t.value}
               onClick={() => setFilter(filter === t.value ? "all" : t.value)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
                 filter === t.value
-                  ? "bg-[var(--ds-primary)] text-white"
-                  : "bg-[var(--ds-bg)] border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[#F0F4F5]"
+                  ? "bg-[var(--ds-accent)]/12 text-[var(--ds-accent)] border-[var(--ds-accent)]/30"
+                  : "bg-[var(--ds-surface)] border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-muted)] hover:text-[var(--ds-text)]"
               }`}
             >
               <t.icon className="w-3 h-3" />
@@ -208,7 +208,7 @@ export default function CitasPage() {
 
       {/* Lista */}
       {list.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 text-[var(--ds-text-muted)]">
           <CalendarDays className="w-10 h-10 mb-3 opacity-30" strokeWidth={1.5} />
           <p className="font-medium text-sm">Sin citas para este filtro</p>
         </div>
@@ -224,25 +224,25 @@ export default function CitasPage() {
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <Link
                       href={`/dashboard/citas/${apt.id}`}
-                      className="font-bold text-gray-900 hover:text-sky-600 transition-colors"
+                      className="font-bold text-[var(--ds-text)] hover:text-[var(--ds-accent)] transition-colors"
                     >
                       {apt.patientName}
                     </Link>
                     {apt.isEmergency && (
-                      <span className="flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+                      <span className="flex items-center gap-1 text-xs bg-[var(--ds-error)]/12 text-[var(--ds-error)] px-2 py-0.5 rounded-full font-medium border border-[var(--ds-error)]/20">
                         <AlertCircle className="w-3 h-3" />
                         Urgencia
                       </span>
                     )}
                     {apt.isFirstVisit && (
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-xs bg-[var(--ds-surface-muted)] text-[var(--ds-text-muted)] px-2 py-0.5 rounded-full font-medium border border-[var(--ds-border)]">
                         Primera vez
                       </span>
                     )}
                     <SourceBadge source={apt.source} />
                   </div>
-                  <p className="text-sm text-gray-500 mb-1">{apt.serviceName}</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-gray-400">
+                  <p className="text-sm text-[var(--ds-text-muted)] mb-1">{apt.serviceName}</p>
+                  <div className="flex flex-wrap gap-3 text-xs text-[var(--ds-text-muted)]">
                     <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{formatShortDate(apt.desiredDate)} · {formatTime(apt.desiredTime)}</span>
                     <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{apt.patientPhone}</span>
                     {apt.estimatedAmount && (
@@ -262,7 +262,7 @@ export default function CitasPage() {
               </div>
 
               {/* Acciones rápidas */}
-              <div className="mt-4 pt-3 border-t border-gray-50 flex flex-wrap gap-2">
+              <div className="mt-4 pt-3 border-t border-[var(--ds-border)] flex flex-wrap gap-2">
                 {apt.status === "pending" && (
                   <>
                     <Btn color="green" onClick={() => applyStatus(apt.id, "confirmed")}>Confirmar</Btn>
@@ -285,7 +285,7 @@ export default function CitasPage() {
                 )}
                 <Link
                   href={`/dashboard/citas/${apt.id}`}
-                  className="text-xs border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="text-xs border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-3 py-1.5 rounded-lg hover:bg-[var(--ds-surface-muted)] hover:text-[var(--ds-text)] transition-colors font-medium"
                 >
                   Ver detalle
                 </Link>
@@ -299,15 +299,15 @@ export default function CitasPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
           <div className="bg-[var(--ds-surface)] rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-6 h-6 text-amber-600" />
+            <div className="w-12 h-12 rounded-full bg-[var(--ds-warning)]/12 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6 text-[var(--ds-warning)]" />
             </div>
-            <h2 className="text-base font-bold text-gray-900 text-center mb-2">¿Confirmar acción?</h2>
-            <p className="text-sm text-gray-600 text-center mb-6">{confirmModal.message}</p>
+            <h2 className="text-base font-bold text-[var(--ds-text)] text-center mb-2">¿Confirmar acción?</h2>
+            <p className="text-sm text-[var(--ds-text-muted)] text-center mb-6">{confirmModal.message}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmModal(null)}
-                className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+                className="flex-1 border border-[var(--ds-border)] text-[var(--ds-text-muted)] py-2.5 rounded-xl text-sm font-semibold hover:bg-[var(--ds-surface-muted)] transition-colors"
               >
                 Cancelar
               </button>
@@ -316,7 +316,7 @@ export default function CitasPage() {
                   applyStatus(confirmModal.id, confirmModal.status);
                   setConfirmModal(null);
                 }}
-                className="flex-1 bg-amber-500 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-amber-600 transition-colors"
+                className="flex-1 bg-[var(--ds-warning)] text-white py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
               >
                 Sí, finalizar
               </button>
@@ -335,25 +335,26 @@ export default function CitasPage() {
   );
 }
 
-function Btn({
-  children, onClick, color,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  color: "green" | "red" | "teal" | "orange" | "gray" | "blue" | "purple" | "yellow";
-}) {
-  const colors = {
-    green: "bg-green-100 text-green-700 hover:bg-green-200",
-    red: "bg-red-100 text-red-700 hover:bg-red-200",
-    teal: "bg-teal-100 text-teal-700 hover:bg-teal-200",
-    orange: "bg-orange-100 text-orange-700 hover:bg-orange-200",
-    gray: "bg-gray-100 text-gray-700 hover:bg-gray-200",
-    blue: "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    purple: "bg-purple-100 text-purple-700 hover:bg-purple-200",
-    yellow: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
-  };
+type BtnColor = "green" | "red" | "teal" | "orange" | "gray" | "blue" | "purple" | "yellow";
+
+const BTN_STYLES: Record<BtnColor, CSSProperties> = {
+  green:  { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)",   borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+  teal:   { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)",   borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+  blue:   { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)",   borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+  red:    { background: "color-mix(in srgb, var(--ds-error) 10%, transparent)",   color: "var(--ds-error)",     borderColor: "color-mix(in srgb, var(--ds-error) 24%, transparent)" },
+  orange: { background: "color-mix(in srgb, var(--ds-warning) 12%, transparent)", color: "var(--ds-warning)",   borderColor: "color-mix(in srgb, var(--ds-warning) 25%, transparent)" },
+  yellow: { background: "color-mix(in srgb, var(--ds-warning) 12%, transparent)", color: "var(--ds-warning)",   borderColor: "color-mix(in srgb, var(--ds-warning) 25%, transparent)" },
+  gray:   { background: "var(--ds-surface-muted)",                                color: "var(--ds-text-muted)", borderColor: "var(--ds-border)" },
+  purple: { background: "var(--ds-surface-muted)",                                color: "var(--ds-text-muted)", borderColor: "var(--ds-border)" },
+};
+
+function Btn({ children, onClick, color }: { children: React.ReactNode; onClick: () => void; color: BtnColor }) {
   return (
-    <button onClick={onClick} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${colors[color]}`}>
+    <button
+      onClick={onClick}
+      style={BTN_STYLES[color]}
+      className="text-xs px-3 py-1.5 rounded-lg font-medium border transition-opacity hover:opacity-80 active:opacity-70"
+    >
       {children}
     </button>
   );

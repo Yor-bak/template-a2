@@ -1,16 +1,17 @@
 "use client";
+import type { CSSProperties } from "react";
 
 type Color = "green" | "red" | "teal" | "orange" | "gray" | "blue" | "purple" | "yellow";
 
-const colorMap: Record<Color, string> = {
-  green: "bg-green-100 text-green-700 hover:bg-green-200",
-  red: "bg-red-100 text-red-700 hover:bg-red-200",
-  teal: "bg-teal-100 text-teal-700 hover:bg-teal-200",
-  orange: "bg-orange-100 text-orange-700 hover:bg-orange-200",
-  gray: "bg-gray-100 text-gray-700 hover:bg-gray-200",
-  blue: "bg-blue-100 text-blue-700 hover:bg-blue-200",
-  purple: "bg-purple-100 text-purple-700 hover:bg-purple-200",
-  yellow: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
+const colorStyles: Record<Color, CSSProperties> = {
+  green:  { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)",     borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+  teal:   { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)",     borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+  blue:   { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)",     borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+  red:    { background: "color-mix(in srgb, var(--ds-error) 10%, transparent)",   color: "var(--ds-error)",       borderColor: "color-mix(in srgb, var(--ds-error) 24%, transparent)" },
+  orange: { background: "color-mix(in srgb, var(--ds-warning) 12%, transparent)", color: "var(--ds-warning)",     borderColor: "color-mix(in srgb, var(--ds-warning) 25%, transparent)" },
+  yellow: { background: "color-mix(in srgb, var(--ds-warning) 12%, transparent)", color: "var(--ds-warning)",     borderColor: "color-mix(in srgb, var(--ds-warning) 25%, transparent)" },
+  gray:   { background: "var(--ds-surface-muted)",                                color: "var(--ds-text-muted)",   borderColor: "var(--ds-border)" },
+  purple: { background: "var(--ds-surface-muted)",                                color: "var(--ds-text-muted)",   borderColor: "var(--ds-border)" },
 };
 
 interface Props {
@@ -24,7 +25,8 @@ export function ActionButton({ children, onClick, color = "gray", fullWidth = fa
   return (
     <button
       onClick={onClick}
-      className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${colorMap[color]} ${fullWidth ? "w-full text-left" : ""}`}
+      style={colorStyles[color]}
+      className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-opacity hover:opacity-80 active:opacity-70 ${fullWidth ? "w-full text-left" : ""}`}
     >
       {children}
     </button>

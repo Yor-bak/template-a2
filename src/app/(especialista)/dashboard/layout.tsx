@@ -8,6 +8,26 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Menu } from "lucide-react";
 import type { DashboardColorSet } from "@/types/profile";
 
+function applySidebarTokens(el: HTMLElement, colors: DashboardColorSet, isDark: boolean) {
+  if (isDark) {
+    el.style.setProperty("--ds-sidebar-bg",        colors.background);
+    el.style.setProperty("--ds-sidebar-fg",        colors.text);
+    el.style.setProperty("--ds-sidebar-muted",     colors.textMuted);
+    el.style.setProperty("--ds-sidebar-accent",    colors.accent);
+    el.style.setProperty("--ds-sidebar-active-bg", colors.surface);
+    el.style.setProperty("--ds-sidebar-hover-bg",  colors.surfaceMuted);
+    el.style.setProperty("--ds-sidebar-border",    colors.border);
+  } else {
+    el.style.setProperty("--ds-sidebar-bg",        colors.primary);
+    el.style.setProperty("--ds-sidebar-fg",        colors.primaryForeground);
+    el.style.setProperty("--ds-sidebar-muted",     colors.primaryForeground);
+    el.style.setProperty("--ds-sidebar-accent",    colors.accent);
+    el.style.setProperty("--ds-sidebar-active-bg", "rgba(255,255,255,0.10)");
+    el.style.setProperty("--ds-sidebar-hover-bg",  "rgba(255,255,255,0.06)");
+    el.style.setProperty("--ds-sidebar-border",    "rgba(255,255,255,0.08)");
+  }
+}
+
 function applyDashboardColors(el: HTMLElement, colors: DashboardColorSet) {
   // Core ds-* tokens
   el.style.setProperty("--ds-bg",             colors.background);
@@ -56,20 +76,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const { mode, lightColors, darkColors } = dashboardTheme;
 
-    function apply(colors: DashboardColorSet) {
+    function apply(colors: DashboardColorSet, isDark: boolean) {
       applyDashboardColors(el!, colors);
+      applySidebarTokens(el!, colors, isDark);
     }
 
     if (mode === "dark") {
-      apply(darkColors);
+      apply(darkColors, true);
     } else if (mode === "system") {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      apply(mq.matches ? darkColors : lightColors);
-      const handler = (e: MediaQueryListEvent) => apply(e.matches ? darkColors : lightColors);
+      apply(mq.matches ? darkColors : lightColors, mq.matches);
+      const handler = (e: MediaQueryListEvent) => apply(e.matches ? darkColors : lightColors, e.matches);
       mq.addEventListener("change", handler);
       return () => mq.removeEventListener("change", handler);
     } else {
-      apply(lightColors);
+      apply(lightColors, false);
     }
   }, [dashboardTheme]);
 

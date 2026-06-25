@@ -26,14 +26,14 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 }
 
 function PriceBadge({ priceType }: { priceType: Service["priceType"] }) {
-  const colors: Record<Service["priceType"], string> = {
-    from: "bg-sky-50 text-sky-700",
-    fixed: "bg-teal-50 text-teal-700",
-    assessment_required: "bg-[var(--ds-warning)]/10 text-[var(--ds-warning)]",
-    hidden: "bg-[var(--ds-surface-muted)] text-[var(--ds-text-muted)]",
+  const styles: Record<Service["priceType"], React.CSSProperties> = {
+    from:                { background: "color-mix(in srgb, var(--ds-accent) 12%, transparent)", color: "var(--ds-accent)", borderColor: "color-mix(in srgb, var(--ds-accent) 25%, transparent)" },
+    fixed:               { background: "color-mix(in srgb, var(--ds-success) 12%, transparent)", color: "var(--ds-success)", borderColor: "color-mix(in srgb, var(--ds-success) 25%, transparent)" },
+    assessment_required: { background: "color-mix(in srgb, var(--ds-warning) 10%, transparent)", color: "var(--ds-warning)", borderColor: "color-mix(in srgb, var(--ds-warning) 24%, transparent)" },
+    hidden:              { background: "var(--ds-surface-muted)", color: "var(--ds-text-muted)", borderColor: "var(--ds-border)" },
   };
   return (
-    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${colors[priceType]}`}>
+    <span style={styles[priceType]} className="text-[11px] font-medium px-2 py-0.5 rounded-full border">
       {PRICE_TYPE_LABELS[priceType]}
     </span>
   );
