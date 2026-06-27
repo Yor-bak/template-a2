@@ -18,6 +18,7 @@ import {
   ClipboardList,
   CreditCard,
   Bell,
+  UsersRound,
 } from "lucide-react";
 
 const nav = [
@@ -28,12 +29,16 @@ const nav = [
   { href: "/dashboard/planes", label: "Planes de atención", icon: ClipboardList },
   { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard },
   { href: "/dashboard/seguimientos", label: "Seguimientos", icon: Bell },
+  { href: "/dashboard/equipo", label: "Equipo", icon: UsersRound, premium: true },
   { href: "/dashboard/ingresos", label: "Ingresos", icon: DollarSign },
   { href: "/dashboard/reportes", label: "Reportes", icon: BarChart2 },
   { href: "/dashboard/servicios", label: "Servicios", icon: Stethoscope },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
   { href: "/dashboard/atencion", label: "Atención a cliente", icon: HeadsetIcon },
 ];
+
+// nav items may carry an optional premium flag
+type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; exact?: boolean; premium?: boolean };
 
 interface SidebarProps {
   open: boolean;
@@ -100,7 +105,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Navegación */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {nav.map((item) => {
+          {(nav as NavItem[]).map((item) => {
             const active = isActive(item.href, item.exact);
             return (
               <Link
@@ -124,7 +129,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                     active ? "text-[var(--ds-sidebar-accent)]" : "text-[var(--ds-sidebar-muted)]/35"
                   )}
                 />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate flex-1">{item.label}</span>
+                {item.premium && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: "rgba(234,179,8,0.18)", color: "#ca8a04" }}>PRO</span>
+                )}
               </Link>
             );
           })}

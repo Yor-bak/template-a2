@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useExtraProfile } from "@/contexts/ExtraProfileContext";
 import { ClientDataProvider } from "@/contexts/ClientDataContext";
+import { EquipoProvider } from "@/contexts/EquipoContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Menu } from "lucide-react";
 import type { DashboardColorSet } from "@/types/profile";
@@ -128,7 +129,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <ClientDataProvider>{children}</ClientDataProvider>
+          <ClientDataProvider><EquipoProvider>{children}</EquipoProvider></ClientDataProvider>
         </main>
       </div>
     </div>
