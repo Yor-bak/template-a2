@@ -169,7 +169,12 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
             </div>
             <div className="rounded-2xl bg-white/15 p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-cta)]">Después</p>
-              <div className="mt-3 aspect-[3/4] rounded-xl bg-white/25" aria-hidden />
+              {appearance.heroImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={appearance.heroImageUrl} alt={business.name} className="mt-3 aspect-[3/4] w-full rounded-xl object-cover" />
+              ) : (
+                <div className="mt-3 aspect-[3/4] rounded-xl bg-white/25" aria-hidden />
+              )}
             </div>
           </div>
         </div>
@@ -191,7 +196,12 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
       <main className="mx-auto max-w-6xl px-6 py-16 md:px-16">
         {/* Especialista */}
         <section id="especialista" className="grid gap-10 border-b border-[var(--c-ink)]/10 pb-16 md:grid-cols-[1fr_1.4fr]">
-          <div className="aspect-square rounded-3xl bg-gradient-to-br from-[var(--c-g2)]/15 to-[var(--c-accent)]/15" aria-hidden />
+          {appearance.specialistPhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={appearance.specialistPhotoUrl} alt={specialist.displayName} className="aspect-square w-full rounded-3xl object-cover" />
+          ) : (
+            <div className="aspect-square rounded-3xl bg-gradient-to-br from-[var(--c-g2)]/15 to-[var(--c-accent)]/15" aria-hidden />
+          )}
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--c-accent)]">La especialista</p>
             <h2 className="mt-3 text-3xl" style={{ fontFamily: "var(--f-outfit)" }}>{specialist.displayName}</h2>

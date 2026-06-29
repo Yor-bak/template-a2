@@ -50,6 +50,29 @@ export function usePublicProfile(): PublicBusinessProfile & {
   const profile = useMemo((): PublicBusinessProfile => {
     const DEF = DEFAULT_PUBLIC_PROFILE;
 
+    // Per-template images (set in Configuración → Apariencia → "Imágenes de esta plantilla")
+    // take precedence over the global appearance/clinic images so what the user configures
+    // for the active template actually reaches it.
+    const selectedTemplateId = extra.appearance.selectedTemplateId ?? "dentista-01";
+    const tplImg = extra.templateImages[selectedTemplateId] ?? {};
+    const imgStr = (v: unknown): string | undefined =>
+      typeof v === "string" && v.trim() ? v.trim() : undefined;
+    const imgArr = (v: unknown): string[] =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0) : [];
+
+    const logoUrl = imgStr(tplImg.logo) ?? extra.appearance.logoUrl ?? config.logoUrl;
+    const specialistPhotoUrl = imgStr(tplImg.specialistPhoto) ?? extra.appearance.specialistPhotoUrl ?? config.dentistPhotoUrl;
+    const heroImageUrl = imgStr(tplImg.heroImage) ?? extra.appearance.heroImageUrl ?? config.heroImageUrl;
+    const backgroundImageUrl = imgStr(tplImg.backgroundImage) ?? extra.appearance.backgroundImageUrl;
+    const apprGallery = extra.appearance.galleryUrls ?? [];
+    const apprBeforeAfter = extra.appearance.beforeAfterGalleryUrls ?? [];
+    const galleryUrls = imgArr(tplImg.gallery).length
+      ? imgArr(tplImg.gallery)
+      : (apprGallery.length ? apprGallery : (config.clinicGalleryUrls ?? []));
+    const beforeAfterGalleryUrls = imgArr(tplImg.beforeAfter).length
+      ? imgArr(tplImg.beforeAfter)
+      : (apprBeforeAfter.length ? apprBeforeAfter : (config.beforeAfterGalleryUrls ?? []));
+
     const address: Address = {
       street: extra.businessExtra.address.street ?? DEF.business.address.street,
       exteriorNumber: extra.businessExtra.address.exteriorNumber ?? DEF.business.address.exteriorNumber,
@@ -79,12 +102,12 @@ export function usePublicProfile(): PublicBusinessProfile & {
         patientsServed: config.patientsServed ?? DEF.specialist.patientsServed,
         shortDescription: config.shortDescription ?? DEF.specialist.shortDescription,
         biography: extra.specialistExtra.biography ?? config.welcomeMessage ?? DEF.specialist.biography,
-        photoUrl: extra.appearance.specialistPhotoUrl ?? config.dentistPhotoUrl,
+        photoUrl: specialistPhotoUrl,
       },
       business: {
         name: config.clinicName ?? DEF.business.name,
         description: extra.businessExtra.description ?? DEF.business.description,
-        logoUrl: extra.appearance.logoUrl ?? config.logoUrl,
+        logoUrl,
         phone: config.phone ?? DEF.business.phone,
         whatsapp: config.whatsapp ?? DEF.business.whatsapp,
         email: config.email ?? DEF.business.email,
@@ -118,13 +141,14 @@ export function usePublicProfile(): PublicBusinessProfile & {
       openingHours: config.openingHours ?? DEF.openingHours,
       appearance: {
         ...extra.appearance,
-        selectedTemplateId: extra.appearance.selectedTemplateId ?? "dentista-01",
+        selectedTemplateId,
         selectedPaletteId: extra.appearance.selectedPaletteId ?? "",
-        logoUrl: extra.appearance.logoUrl ?? config.logoUrl,
-        specialistPhotoUrl: extra.appearance.specialistPhotoUrl ?? config.dentistPhotoUrl,
-        heroImageUrl: extra.appearance.heroImageUrl ?? config.heroImageUrl,
-        galleryUrls: extra.appearance.galleryUrls.length ? extra.appearance.galleryUrls : (config.clinicGalleryUrls ?? []),
-        beforeAfterGalleryUrls: extra.appearance.beforeAfterGalleryUrls.length ? extra.appearance.beforeAfterGalleryUrls : (config.beforeAfterGalleryUrls ?? []),
+        logoUrl,
+        specialistPhotoUrl,
+        heroImageUrl,
+        backgroundImageUrl,
+        galleryUrls,
+        beforeAfterGalleryUrls,
       },
       publicPage: {
         ...extra.publicPage,

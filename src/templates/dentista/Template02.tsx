@@ -115,12 +115,17 @@ export function DentistaTemplate02({ profile, onPaletteChange, isPreview = false
         <aside className="sticky top-0 hidden h-screen w-72 flex-col justify-between border-r border-[var(--c-ink)]/10 bg-[var(--c-ink)] px-8 py-10 text-[var(--c-bg)] lg:flex">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--c-accent-soft)]">Expediente clínico</p>
-            <h1
-              className="mt-3 text-2xl leading-tight"
-              style={{ fontFamily: "var(--f-source-serif)" }}
-            >
-              {business.name}
-            </h1>
+            {appearance.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={appearance.logoUrl} alt={business.name} className="mt-3 h-10 w-auto object-contain" />
+            ) : (
+              <h1
+                className="mt-3 text-2xl leading-tight"
+                style={{ fontFamily: "var(--f-source-serif)" }}
+              >
+                {business.name}
+              </h1>
+            )}
             <p className="mt-2 text-sm text-[var(--c-bg)]/70">{specialist.displayName}</p>
 
             {/* Sidebar as a row of record tabs, numbered because this is the real order of a first visit */}
@@ -190,7 +195,12 @@ export function DentistaTemplate02({ profile, onPaletteChange, isPreview = false
 
           {/* Especialista */}
           <section id="especialista" className="grid gap-10 py-14 md:grid-cols-[1fr_1.4fr]">
-            <div className="aspect-square rounded-lg bg-[var(--c-accent-soft)]/40" aria-hidden />
+            {appearance.specialistPhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={appearance.specialistPhotoUrl} alt={specialist.displayName} className="aspect-square w-full rounded-lg object-cover" />
+            ) : (
+              <div className="aspect-square rounded-lg bg-[var(--c-accent-soft)]/40" aria-hidden />
+            )}
             <div>
               <h3 className="text-2xl" style={{ fontFamily: "var(--f-source-serif)" }}>
                 {specialist.displayName}

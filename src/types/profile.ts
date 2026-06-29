@@ -156,6 +156,7 @@ export interface AppearanceConfig {
   logoUrl?: string;
   specialistPhotoUrl?: string;
   heroImageUrl?: string;
+  backgroundImageUrl?: string;
   galleryUrls: string[];
   beforeAfterGalleryUrls: string[];
 }

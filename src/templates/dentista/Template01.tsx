@@ -157,8 +157,13 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
       )}
       <header className="sticky top-0 z-30 border-b border-steel/60 bg-ivory/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="#top" className="font-display text-lg font-bold tracking-tight">
-            {business.name}
+          <a href="#top" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
+            {appearance.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={appearance.logoUrl} alt={business.name} className="h-9 w-auto object-contain" />
+            ) : (
+              business.name
+            )}
           </a>
           <nav className="hidden gap-8 text-sm md:flex">
             {navLinks.map((link) => (
@@ -215,6 +220,15 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
                 ))}
               </div>
             </div>
+
+            {appearance.heroImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={appearance.heroImageUrl}
+                alt={business.name}
+                className="reveal mt-12 aspect-[16/9] w-full rounded-3xl object-cover"
+              />
+            )}
           </div>
         </section>
 
@@ -236,7 +250,16 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
         {/* ESPECIALISTA */}
         <section id="especialista" className="border-t border-steel/60 bg-ivory px-6 py-20">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-[1fr_1.4fr]">
-            <div className="aspect-[4/5] w-full rounded-2xl bg-steel-soft" aria-hidden />
+            {appearance.specialistPhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={appearance.specialistPhotoUrl}
+                alt={specialist.displayName}
+                className="aspect-[4/5] w-full rounded-2xl object-cover"
+              />
+            ) : (
+              <div className="aspect-[4/5] w-full rounded-2xl bg-steel-soft" aria-hidden />
+            )}
             <div>
               <p className="tick-label text-meridian">La especialista</p>
               <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">{specialist.displayName}</h2>
