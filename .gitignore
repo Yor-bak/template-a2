@@ -43,3 +43,11 @@ next-env.d.ts
 .claude/worktrees/
 .env
 .env.local
+
+# Mock backend de desarrollo (FastAPI stub, no versionar)
+/mock-backend/
+
+# Carpetas/archivos sueltos fuera del proyecto (rompían `git add -A`)
+/J2EC-Dentist/
+/J2ECtemplatea2/
+/J2ECDentist.zip
