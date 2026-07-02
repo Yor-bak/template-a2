@@ -443,6 +443,27 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
           </div>
         </section>
 
+        {/* GALERÍA — solo se muestra si hay imágenes configuradas */}
+        {appearance.galleryUrls.length > 0 && (
+          <section id="galeria" className="border-t border-steel/60 bg-ivory px-6 py-20">
+            <div className="mx-auto max-w-6xl">
+              <p className="tick-label text-meridian">Galería</p>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Nuestro consultorio</h2>
+              <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {appearance.galleryUrls.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`${business.name} — foto ${i + 1}`}
+                    className="aspect-square w-full rounded-2xl object-cover"
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* TESTIMONIOS */}
         <section id="testimonios" className="border-t border-steel/60 px-6 py-20">
           <div className="mx-auto max-w-6xl">

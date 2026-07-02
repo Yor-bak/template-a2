@@ -48,6 +48,10 @@ next-env.d.ts
 .claude/launch.json
 .claude/settings.local.json
 
-# Claude local configuration
-.claude/launch.json
-.claude/settings.local.json
+# Mock backend de desarrollo (FastAPI stub, no versionar)
+/mock-backend/
+
+# Carpetas/archivos sueltos fuera del proyecto (rompían `git add -A`)
+/J2EC-Dentist/
+/J2ECtemplatea2/
+/J2ECDentist.zip
