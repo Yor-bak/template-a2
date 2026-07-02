@@ -100,6 +100,11 @@ export interface ClinicConfig {
 
   themePalette: ThemePaletteKey;
 
+  // Feature flags — per-business module toggles
+  features?: {
+    clinicalHistory?: boolean; // default true for existing clinics
+  };
+
   automationEnabled: boolean;
   automationMode: AutomationMode;
   n8nWebhookUrl?: string | null;

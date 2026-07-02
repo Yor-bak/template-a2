@@ -9,7 +9,7 @@ import {
   getVisibleFortnights,
   getHistoricalFortnights,
 } from "@/store/adminStore";
-import { S, fmtDate, fmtDateTime } from "./adminUi";
+import { S, fmtDate, fmtDateTime, TabBar, TabButton, StatGrid, StatCell } from "./adminUi";
 
 type ViewMode = "main" | "history";
 
@@ -126,7 +126,7 @@ export function FortnightView() {
 
     return (
       <div key={f.id}
-        className={`rounded-xl border-[0.5px] overflow-hidden ${
+        className={`rounded-[var(--radius-surface)] border-[0.5px] overflow-hidden ${
           isCurrent
             ? "border-[var(--accent)] bg-[var(--bg-elevated)]"
             : f.closed
@@ -138,19 +138,15 @@ export function FortnightView() {
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
               {isCurrent && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded border-[0.5px] bg-[var(--accent-muted)] text-[var(--accent)] border-[var(--accent)]">
+                <span className="text-[10px] font-semibold text-[var(--accent)]">
                   Actual
                 </span>
               )}
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border-[0.5px] ${
-                f.closed
-                  ? "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)]"
-                  : "bg-[var(--accent-muted)] text-[var(--accent)] border-[var(--accent)]"
-              }`}>
+              <span className={`text-[10px] font-semibold ${f.closed ? "text-[var(--text-muted)]" : "text-[var(--accent)]"}`}>
                 {f.closed ? "Cerrada" : "Abierta"}
               </span>
               {stats.debt > 0 && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded border-[0.5px] bg-[var(--bg-elevated)] text-[var(--danger)] border-[var(--danger)]">
+                <span className="text-[10px] font-semibold text-[var(--danger)]">
                   Deuda ${stats.debt.toLocaleString("es-MX")}
                 </span>
               )}
@@ -182,7 +178,7 @@ export function FortnightView() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 md:grid-cols-7 divide-x-[0.5px] divide-[var(--border)]">
+        <StatGrid cols={7}>
           {[
             { label: "Aperturas",      value: stats.openings.length },
             { label: "Mensualidades",  value: stats.monthlyTrs.length },
@@ -192,12 +188,9 @@ export function FortnightView() {
             { label: "Com. autorizada", value: stats.authorizedComm > 0 ? `$${stats.authorizedComm.toLocaleString("es-MX")}` : "—" },
             { label: "Com. pagada",    value: stats.paidComm > 0 ? `$${stats.paidComm.toLocaleString("es-MX")}` : "—" },
           ].map((s) => (
-            <div key={s.label} className="px-4 py-3">
-              <p className="text-[10px] text-[var(--text-muted)]">{s.label}</p>
-              <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{s.value}</p>
-            </div>
+            <StatCell key={s.label} label={s.label} value={s.value} />
           ))}
-        </div>
+        </StatGrid>
 
         {/* Debt by vendor */}
         {debtByRep.length > 0 && (
@@ -225,7 +218,7 @@ export function FortnightView() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-7">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-[var(--text-primary)] font-semibold text-base">Quincenas</h2>
@@ -236,20 +229,13 @@ export function FortnightView() {
       </div>
 
       {/* Tab selector */}
-      <div className="flex gap-1 mb-6 bg-[var(--bg-elevated)] rounded-lg p-1 w-fit border-[0.5px] border-[var(--border)]">
+      <TabBar className="mb-6">
         {(["main", "history"] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => setViewMode(mode)}
-            className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${
-              viewMode === mode
-                ? "bg-[var(--bg-surface)] text-[var(--text-primary)] border-[0.5px] border-[var(--border)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-            }`}>
+          <TabButton key={mode} active={viewMode === mode} onClick={() => setViewMode(mode)} className="px-4 py-2.5 mr-4">
             {mode === "main" ? "Vista principal" : "Historial"}
-          </button>
+          </TabButton>
         ))}
-      </div>
+      </TabBar>
 
       {/* History filters */}
       {viewMode === "history" && (
@@ -290,7 +276,7 @@ export function FortnightView() {
 
       {confirmClose && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-sm bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-2xl p-6 space-y-4">
+          <div className="w-full max-w-sm bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] p-6 space-y-4">
             <h3 className="text-[var(--text-primary)] font-semibold text-sm">Cerrar quincena</h3>
             <p className="text-[var(--text-muted)] text-xs">
               Al cerrar esta quincena no podrá modificarse accidentalmente. Solo el admin puede reabrirla.

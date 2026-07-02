@@ -79,7 +79,7 @@ export default function PlanesPage() {
         </div>
         <div className="flex items-center gap-2">
           {saved && <span className="flex items-center gap-1 text-[var(--ds-success)] text-sm font-semibold"><CheckCircle2 className="w-4 h-4" />Guardado</span>}
-          <button onClick={() => setShowForm((v) => !v)} className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl text-sm font-bold">
+          <button onClick={() => setShowForm((v) => !v)} className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl text-sm font-bold">
             <Plus className="w-4 h-4" />Nuevo plan
           </button>
         </div>
@@ -139,7 +139,7 @@ export default function PlanesPage() {
 
           <div className="flex gap-3">
             <button onClick={() => setShowForm(false)} className="border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)]">Cancelar</button>
-            <button onClick={save} disabled={!form.clientId || !form.name.trim() || form.items.length === 0} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar plan</button>
+            <button onClick={save} disabled={!form.clientId || !form.name.trim() || form.items.length === 0} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar plan</button>
           </div>
         </div>
       )}
@@ -152,7 +152,7 @@ export default function PlanesPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {(["all", ...Object.keys(CARE_PLAN_STATUS_LABELS)] as Array<"all" | CarePlanStatus>).map((s) => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${statusFilter === s ? "bg-[var(--ds-primary)] text-white border-[var(--ds-primary)]" : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)]"}`}>
+            <button key={s} onClick={() => setStatusFilter(s)} className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${statusFilter === s ? "bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] border-[var(--ds-primary)]" : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)]"}`}>
               {s === "all" ? "Todos" : CARE_PLAN_STATUS_LABELS[s as CarePlanStatus]}
             </button>
           ))}

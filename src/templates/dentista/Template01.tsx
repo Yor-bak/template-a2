@@ -152,7 +152,7 @@ export function DentistaTemplate01({ profile, onPaletteChange, isPreview = false
 
   return (
     <div className="flex flex-col" style={PALETTES[active].vars as React.CSSProperties}>
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
       <header className="sticky top-0 z-30 border-b border-steel/60 bg-ivory/90 backdrop-blur">

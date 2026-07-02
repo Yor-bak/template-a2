@@ -77,6 +77,10 @@ export const DEFAULT_CLINIC_CONFIG: ClinicConfig = {
   subdomain: "clinicasonrisa",
   customDomain: "",
 
+  features: {
+    clinicalHistory: true,
+  },
+
   themePalette: "dental_premium",
   automationEnabled: false,
   automationMode: "none",

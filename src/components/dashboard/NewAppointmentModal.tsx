@@ -295,7 +295,7 @@ export function NewAppointmentModal({ open, onClose, onAdd }: Props) {
           <button type="button" onClick={handleClose} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSubmit} className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors">
+          <button onClick={handleSubmit} className="flex-1 bg-[var(--color-primary)] text-[var(--ds-primary-fg)] py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors">
             Registrar cita
           </button>
         </div>

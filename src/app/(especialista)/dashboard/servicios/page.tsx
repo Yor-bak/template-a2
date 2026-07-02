@@ -157,7 +157,7 @@ export default function DashboardServiciosPage() {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Agregar servicio
@@ -198,7 +198,7 @@ export default function DashboardServiciosPage() {
           </p>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-3 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Agregar primer servicio

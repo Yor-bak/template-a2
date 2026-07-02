@@ -1,7 +1,7 @@
 export type UserRole = "admin" | "specialist";
 
 /** All plans are paid. "standard" = base, "pro" = premium. */
-export type UserPlan = "standard" | "pro";
+export type UserPlan = "standard" | "cowork" | "intelligence";
 
 export type PaymentStatus =
   | "paid"
@@ -21,13 +21,19 @@ export type PublicPageStatus = "published" | "hidden";
 
 export type OnboardingStatus = "not_started" | "in_progress" | "ready";
 
-export type CommissionStatus = "pending" | "authorized" | "paid" | "cancelled";
+export type CommissionStatus = "waiting_first_monthly_payment" | "pending" | "authorized" | "paid" | "cancelled";
 
 export type ContractDocStatus = "pending_signature" | "signed" | "expired" | "cancelled";
 
-export type TransferType = "opening" | "monthly";
+export type TransferType = "opening" | "monthly" | "unidentified";
 
-export type TransferStatus = "pending" | "verified" | "rejected" | "refunded";
+export type TransferStatus =
+  | "pending"
+  | "pending_activation"
+  | "activation_error"
+  | "verified"
+  | "rejected"
+  | "refunded";
 
 /** Kept for future use; not exposed in admin forms yet. */
 export type ClientType =
@@ -45,13 +51,10 @@ export type BusinessType =
   | "nutritionist"
   | "psychologist"
   | "veterinarian"
+  | "gym"
   | "other";
 
 export type PreClientStatus =
-  | "new"
-  | "contacted"
-  | "interested"
-  | "negotiating"
   | "awaiting_payment"
   | "converted"
   | "discarded";
@@ -85,6 +88,7 @@ export interface PreClient {
   createdAt: string;
   updatedAt?: string;
   convertedClientId?: string;
+  convertedAt?: string;
 }
 
 export interface BusinessInfo {
@@ -112,7 +116,8 @@ export interface SalesRep {
   sellerNumber: string;          // VEN-0001, VEN-0002, …
   name: string;
   phone?: string;
-  accountNumber?: string;        // bank account for commission payments
+  bankName?: string;             // bank name for commission payments
+  accountNumber?: string;        // account number for commission payments
   active: boolean;
   fixedCommissionAmount: number; // fixed amount per verified opening (not percentage)
   createdAt: string;
@@ -144,7 +149,7 @@ export interface CommissionRecord {
   clientId: string;
   clientNumber: string;
   businessName: string;     // denormalized for display
-  amount: number;           // fixed amount from SalesRep.fixedCommissionAmount
+  amount: number;
   status: CommissionStatus;
   generatedAt: string;
   authorizedAt?: string;
@@ -152,6 +157,9 @@ export interface CommissionRecord {
   paidTransferRef?: string;
   paidTransferDate?: string;
   fortnightId: string;
+  commissionType?: string;       // "opening" | "first_monthly_payment" | ...
+  description?: string;          // human-readable concept
+  monthlyPeriodId?: string;      // links to MonthlyPaymentPeriod.id
 }
 
 export interface TransferRecord {
@@ -188,6 +196,26 @@ export interface TransferRecord {
   rejectedAt?: string;
 }
 
+export interface ActivationInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  businessName: string;
+  businessType: BusinessType;
+  plan: UserPlan;
+  monthlyAmount: number;
+  contractType: ContractType;
+  activationDate: string;
+  slug: string;
+  ownerEmail?: string;
+  firstMonthlyPaymentGeneratesCommission?: boolean;
+  // Access credentials
+  accessPhone?: string;          // if different from business phone
+  initialPassword?: string;      // set during activation
+  mustChangePassword?: boolean;  // default true
+}
+
 export interface Fortnight {
   id: string;             // "YYYY-MM-H" e.g. "2026-06-1"
   year: number;
@@ -197,6 +225,26 @@ export interface Fortnight {
   closed: boolean;
   closedAt?: string;
   closedBy?: string;
+}
+
+export interface PaymentInstallment {
+  id: string;
+  amount: number;
+  date: string;
+  method?: string;
+  reference?: string;
+  transferId?: string;
+}
+
+export interface MonthlyPaymentPeriod {
+  id: string;
+  clientId: string;
+  period: string;            // "2026-06"
+  expectedAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: "pending" | "partial" | "paid" | "overdue";
+  installments: PaymentInstallment[];
 }
 
 export interface MonthlyPayment {
@@ -254,6 +302,9 @@ export interface ClientContractDocument {
   endDate: string;
   version: number;
   uploadedAt: string;
+  fileSize?: number;      // bytes
+  storageKey?: string;    // key in contractFileStorage (IndexedDB)
+  uploadedBy?: string;
 }
 
 // ── Main entity ───────────────────────────────────────────────────────────────
@@ -271,7 +322,6 @@ export interface AdminClient {
   subdomain: string;
 
   plan: UserPlan;
-  isPro: boolean;
   paymentStatus: PaymentStatus;
   clientStatus: ClientStatus;
   accessActive: boolean;
@@ -286,6 +336,13 @@ export interface AdminClient {
   /** Internal support/account owner (free text) */
   assignedTo?: string;
 
+  /** Normalized phone used for panel login (digits only) */
+  accessPhone?: string;
+  /** Client must change password on next login */
+  mustChangePassword?: boolean;
+  /** ISO timestamp of last successful login */
+  lastAccessAt?: string;
+
   contractType: ContractType;
   activationDate: string;
   contractEndDate: string;
@@ -299,6 +356,10 @@ export interface AdminClient {
   activityLog: ActivityLogItem[];
   documents: ClientDocument[];
   contracts: ClientContractDocument[];
+
+  firstMonthlyPaymentGeneratesCommission?: boolean;
+  firstMonthlyCommissionGenerated?: boolean;
+  firstMonthlyCommissionId?: string;
 
   createdAt: string;
   updatedAt?: string;
@@ -315,7 +376,6 @@ export interface User {
   role: UserRole;
   plan: UserPlan;
   isActive: boolean;
-  isPro: boolean;
   paymentStatus: "paid" | "pending" | "overdue" | "free";
   createdAt: string;
   updatedAt: string;
@@ -323,14 +383,34 @@ export interface User {
 
 // ── Finance module types ───────────────────────────────────────────────────────
 
+export type FixedExpenseFrequency = "monthly" | "bimonthly" | "quarterly" | "annual";
+export type FixedExpenseStatus = "pending" | "paid" | "overdue";
+export type OtherIncomeCategory = "customization" | "installation" | "training" | "extraordinary" | "other";
+export type OtherExpenseCategory = "equipment" | "advertising" | "repair" | "refund" | "extraordinary" | "other";
+export type PaymentMethod = "transfer" | "cash" | "card" | "check" | "other";
+
+export interface FixedExpensePayment {
+  id: string;
+  paidAt: string;
+  amount: number;
+  method?: PaymentMethod;
+  reference?: string;
+  note?: string;
+}
+
 export interface MonthlyFixedExpense {
   id: string;
   name: string;
+  category?: string;
   description?: string;
   amount: number;
+  frequency: FixedExpenseFrequency;
+  nextDueDate?: string;
+  status: FixedExpenseStatus;
   active: boolean;
   startDate: string;
   endDate?: string;
+  paymentHistory: FixedExpensePayment[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -341,11 +421,27 @@ export interface OtherFinancialMovement {
   id: string;
   type: FinancialMovementType;
   name: string;
+  category?: string;
   description?: string;
   amount: number;
   movementDate: string;
+  method?: PaymentMethod;
   reference?: string;
   createdAt: string;
+}
+
+export interface BankAccountConfig {
+  id: string;
+  bank: string;
+  accountHolder: string;
+  accountNumber: string;
+  clabe: string;
+  cardNumber?: string;
+  requiredConcept?: string;
+  paymentInstructions?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface MonthlyTaxRecord {

@@ -124,7 +124,7 @@ export function PsicologoTemplate01({ profile, onPaletteChange, isPreview = fals
       className={`${lora.variable} ${manrope.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-manrope)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} align="right" />
       )}
       {/* Conventional header */}

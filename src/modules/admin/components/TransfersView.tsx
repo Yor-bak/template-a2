@@ -1,13 +1,16 @@
 "use client";
 import { useState, useMemo, useRef, useEffect } from "react";
-import type { TransferType, TransferStatus } from "@/types/user";
+import type { TransferType, TransferStatus, TransferRecord } from "@/types/user";
 import {
   useAdminStore,
   TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, BUSINESS_TYPE_LABELS,
 } from "@/store/adminStore";
 import {
   S, Th, BadgeEl, TRANSFER_STATUS_META, TRANSFER_TYPE_META, fmtDate, fmtDateTime,
+  TabBar, TabButton, StatGrid, StatCell,
 } from "./adminUi";
+import { ActivationWizard } from "./ActivationWizard";
+import { TRANSFER_REFERENCE_RULES } from "@/lib/transferRules";
 
 // ── Add Transfer Modal ────────────────────────────────────────────────────────
 
@@ -56,7 +59,7 @@ function PreClientSearcher({
 
   if (selected) {
     return (
-      <div className="flex items-start justify-between gap-3 rounded-lg border-[0.5px] border-[var(--accent)] bg-[var(--accent-muted)] px-3 py-2.5">
+      <div className="flex items-start justify-between gap-3 rounded-[var(--radius-control)] border-[0.5px] border-[var(--accent)] bg-[var(--accent-muted)] px-3 py-2.5">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] text-[var(--accent)]">{selected.preClientNumber}</span>
@@ -100,7 +103,7 @@ function PreClientSearcher({
       />
       {open && (
         <div
-          className="absolute top-full left-0 right-0 mt-1 z-40 rounded-lg border-[0.5px] border-[var(--border)] shadow-xl overflow-hidden max-h-56 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-1 z-40 rounded-[var(--radius-surface)] border-[0.5px] border-[var(--border)] shadow-[0_1px_3px_rgba(0,0,0,.35)] overflow-hidden max-h-56 overflow-y-auto"
           style={{ background: "var(--bg-elevated)" }}
         >
           {eligible.length === 0 && (
@@ -253,7 +256,7 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
               {(["opening", "monthly"] as TransferType[]).map((t) => (
                 <button key={t} type="button"
                   onClick={() => setType(t)}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-medium border-[0.5px] transition-colors ${
+                  className={`flex-1 py-2.5 rounded-[var(--radius-control)] text-sm font-medium border-[0.5px] transition-colors ${
                     type === t
                       ? "bg-[var(--accent)] text-[var(--bg-base)] border-[var(--accent)]"
                       : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)]"
@@ -378,7 +381,7 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
           </div>
 
           {error && (
-            <p className="text-[var(--danger)] text-xs bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-lg px-3 py-2">
+            <p className="text-[var(--danger)] text-xs">
               {error}
             </p>
           )}
@@ -398,7 +401,7 @@ function AddTransferModal({ onClose }: { onClose: () => void }) {
 
 // ── Transfer detail drawer ────────────────────────────────────────────────────
 
-function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onClose: () => void }) {
+function TransferDetailDrawer({ transferId, onClose, onRequestMonthlyConfirm }: { transferId: string; onClose: () => void; onRequestMonthlyConfirm?: (t: TransferRecord) => void }) {
   const store = useAdminStore();
   const t = store.transfers.find((x) => x.id === transferId);
   if (!t) return null;
@@ -412,7 +415,7 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[var(--bg-base)] border-l-[0.5px] border-[var(--border)] flex flex-col h-full">
+      <div className="relative w-full max-w-md bg-[var(--bg-surface)] border-l-[0.5px] border-[var(--border)] shadow-[0_1px_3px_rgba(0,0,0,.35)] flex flex-col h-full">
 
         <div className="px-5 pt-5 pb-4 border-b-[0.5px] border-[var(--border)] shrink-0">
           <div className="flex items-start justify-between">
@@ -437,7 +440,7 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
           {t.type === "opening" && (
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Vendedor</p>
-              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1">
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1">
                 <p className="text-xs font-medium text-[var(--text-primary)]">{t.sellerName ?? rep?.name ?? "—"}</p>
                 <p className="font-mono text-[11px] text-[var(--accent)]">{t.sellerNumber}</p>
                 {t.fixedCommissionAmount !== undefined && (
@@ -451,7 +454,7 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
           {t.type === "opening" && !t.clientId && (
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Prospecto</p>
-              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1">
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1">
                 {preClient && (
                   <p className="font-mono text-[11px] text-[var(--accent)] mb-1">{preClient.preClientNumber}</p>
                 )}
@@ -471,7 +474,7 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
           {t.type === "opening" && client && (
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Cliente generado</p>
-              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1">
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1">
                 <p className="text-xs font-medium text-[var(--text-primary)]">{client.business.name}</p>
                 <p className="font-mono text-[11px] text-[var(--accent)]">{client.clientNumber}</p>
                 <p className="text-[11px] text-[var(--text-muted)]">{client.specialist.publicName}</p>
@@ -483,7 +486,7 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
           {t.type === "monthly" && (
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Especialista</p>
-              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1">
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1">
                 <p className="text-xs font-medium text-[var(--text-primary)]">{client?.business.name ?? "—"}</p>
                 <p className="font-mono text-[11px] text-[var(--text-muted)]">{t.clientNumber}</p>
                 {t.paymentMonth && <p className="text-[11px] text-[var(--accent)] capitalize">Mes: {t.paymentMonth}</p>}
@@ -495,7 +498,7 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
           {commission && (
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Comisión generada</p>
-              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1">
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1">
                 <p className="text-lg font-bold text-[var(--accent)]">${commission.amount.toLocaleString("es-MX")}</p>
                 <p className="text-[11px] text-[var(--text-muted)]">{TRANSFER_STATUS_LABELS[t.status]}</p>
                 {commission.paidTransferRef && (
@@ -536,28 +539,38 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
           )}
 
           {/* Actions */}
-          {t.status === "pending" && (
+          {(t.status === "pending" || t.status === "pending_activation") && (
             <section>
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Acciones</p>
               <div className="flex flex-col gap-2">
-                <button
-                  className={S.btnPrimary}
-                  onClick={() => {
-                    if (t.type === "opening") store.verifyOpeningTransfer(t.id);
-                    else store.verifyMonthlyTransfer(t.id);
-                    onClose();
-                  }}>
-                  ✓ Confirmar transferencia
-                </button>
+                {t.type === "opening" && (
+                  <button
+                    className={S.btnPrimary}
+                    onClick={onClose}>
+                    ◎ Ir a activar cliente
+                  </button>
+                )}
+                {t.type === "monthly" && t.status === "pending" && (
+                  <button
+                    className={S.btnPrimary}
+                    onClick={() => { if (onRequestMonthlyConfirm) { onRequestMonthlyConfirm(t); onClose(); } else { store.verifyMonthlyTransfer(t.id); onClose(); } }}>
+                    ✓ Confirmar mensualidad
+                  </button>
+                )}
                 <button
                   className={S.btnDanger}
                   onClick={() => { store.rejectTransfer(t.id); onClose(); }}>
                   ✕ Rechazar transferencia
                 </button>
               </div>
-              {t.type === "opening" && !t.clientId && (
+              {t.type === "opening" && t.status === "pending" && (
                 <p className="text-[10px] text-[var(--text-muted)] mt-2">
-                  Al confirmar: se creará el cliente, el negocio y la comisión fija del vendedor.
+                  El asistente de activación solicitará los datos mínimos del cliente.
+                </p>
+              )}
+              {t.status === "pending_activation" && (
+                <p className="text-[10px] text-[var(--text-muted)] mt-2">
+                  El pago fue confirmado. Completa el wizard para activar el cliente.
                 </p>
               )}
             </section>
@@ -578,12 +591,293 @@ function TransferDetailDrawer({ transferId, onClose }: { transferId: string; onC
   );
 }
 
+// ── Monthly confirm mini-modal (with partial payment support) ─────────────────
+
+type ExcessMode = "excess_to_next" | "excess_pending" | "correct_amount";
+
+function monthLabelToPeriodKey(label: string): string {
+  const MONTH_MAP: Record<string, string> = {
+    enero: "01", febrero: "02", marzo: "03", abril: "04",
+    mayo: "05", junio: "06", julio: "07", agosto: "08",
+    septiembre: "09", octubre: "10", noviembre: "11", diciembre: "12",
+  };
+  const parts = (label ?? "").toLowerCase().split(" de ");
+  if (parts.length !== 2) return label ?? "";
+  const [mon, yr] = parts;
+  return `${yr.trim()}-${MONTH_MAP[mon.trim()] ?? "01"}`;
+}
+
+function periodKeyToLabel(key: string): string {
+  const NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const [yr, mo] = key.split("-");
+  return `${NAMES[parseInt(mo) - 1] ?? mo} ${yr}`;
+}
+
+function MonthlyConfirmModal({ transfer, onClose }: { transfer: TransferRecord; onClose: () => void }) {
+  const store = useAdminStore();
+  const client = store.clients.find((c) => c.id === transfer.specialistId);
+  const expectedAmount = client?.monthlyAmount ?? 0;
+
+  // Default period key from paymentMonth label; admin can override
+  const defaultPeriodKey = transfer.paymentMonth
+    ? monthLabelToPeriodKey(transfer.paymentMonth)
+    : new Date().toISOString().slice(0, 7);
+
+  const [periodKey, setPeriodKey] = useState(defaultPeriodKey);
+  const [excessMode, setExcessMode] = useState<ExcessMode>("correct_amount");
+  const [partialConfirmed, setPartialConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  // Find existing period record for the selected period
+  const existingPeriod = store.monthlyPeriods.find(
+    (p) => p.clientId === transfer.specialistId && p.period === periodKey
+  );
+  const paidSoFar = existingPeriod?.paidAmount ?? 0;
+  const remaining = existingPeriod ? existingPeriod.remainingAmount : expectedAmount;
+
+  const isPartial = transfer.amount < remaining;
+  const isExcess  = transfer.amount > remaining && remaining > 0;
+  const isFull    = transfer.amount === remaining || (remaining <= 0 && transfer.amount > 0);
+
+  // Resolve the apply mode
+  const applyMode: "full" | "partial" | "excess_to_next" | "excess_pending" =
+    isPartial ? "partial"
+    : isExcess ? (excessMode === "excess_to_next" ? "excess_to_next" : excessMode === "excess_pending" ? "excess_pending" : "full")
+    : "full";
+
+  const afterPaid = Math.min(paidSoFar + transfer.amount, expectedAmount);
+  const afterRemaining = Math.max(0, remaining - transfer.amount);
+
+  // Build 12 period options around today for the dropdown
+  const periodOptions = useMemo(() => {
+    const opts: { key: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      opts.push({ key: k, label: periodKeyToLabel(k) });
+    }
+    return opts;
+  }, []);
+
+  function handleConfirm() {
+    if (excessMode === "correct_amount" && isExcess) {
+      // Don't apply — admin must correct amount elsewhere; just close
+      onClose();
+      return;
+    }
+    store.applyMonthlyInstallment(transfer.id, periodKey, applyMode);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-md bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-2xl">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b-[0.5px] border-[var(--border)]">
+          <div>
+            <h2 className="text-[var(--text-primary)] font-semibold text-sm">Confirmar mensualidad</h2>
+            <p className="text-[var(--text-muted)] text-xs mt-0.5 font-mono">{transfer.referenceNumber}</p>
+          </div>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-lg w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--bg-elevated)] transition-colors">×</button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          {/* Client info */}
+          <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1.5">
+            {client && <p className="text-sm font-medium text-[var(--text-primary)]">{client.business.name}</p>}
+            {client && <p className="text-[11px] font-mono text-[var(--text-muted)]">{client.clientNumber}</p>}
+          </div>
+
+          {/* Period selector */}
+          <div>
+            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5 uppercase tracking-wide">Periodo al que se aplica</label>
+            <select
+              className={S.select}
+              value={periodKey}
+              onChange={(e) => setPeriodKey(e.target.value)}
+            >
+              {periodOptions.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Payment breakdown */}
+          <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Mensualidad esperada</span>
+              <span className="font-medium text-[var(--text-primary)]">${expectedAmount.toLocaleString("es-MX")}</span>
+            </div>
+            {paidSoFar > 0 && (
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Abonado previamente</span>
+                <span className="font-medium text-[var(--accent)]">${paidSoFar.toLocaleString("es-MX")}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t-[0.5px] border-[var(--border)] pt-1.5">
+              <span className="text-[var(--text-muted)]">Monto recibido</span>
+              <span className="font-bold text-[var(--text-primary)]">${transfer.amount.toLocaleString("es-MX")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Saldo después del abono</span>
+              <span className={`font-bold ${afterRemaining > 0 ? "text-[var(--danger)]" : "text-[var(--accent)]"}`}>
+                ${Math.max(0, afterRemaining).toLocaleString("es-MX")}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Estado resultante</span>
+              <span className={`font-semibold text-[11px] ${afterRemaining <= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"}`}>
+                {afterRemaining <= 0 ? "Pagado" : isPartial ? "Pago parcial" : "Pago parcial"}
+              </span>
+            </div>
+          </div>
+
+          {/* Excess handling */}
+          {isExcess && (
+            <div className="border-[0.5px] border-[var(--danger)] rounded-[var(--radius-surface)] px-4 py-3 space-y-2">
+              <p className="text-xs font-semibold text-[var(--danger)]">El pago supera el saldo del periodo (excedente: ${(transfer.amount - remaining).toLocaleString("es-MX")})</p>
+              <div className="space-y-1.5">
+                {(["excess_to_next", "excess_pending", "correct_amount"] as ExcessMode[]).map((m) => (
+                  <label key={m} className="flex items-center gap-2 cursor-pointer select-none text-xs text-[var(--text-primary)]">
+                    <input type="radio" name="excessMode" value={m} checked={excessMode === m} onChange={() => setExcessMode(m)} className="accent-[var(--danger)]" />
+                    {m === "excess_to_next"   && "Aplicar excedente al siguiente periodo"}
+                    {m === "excess_pending"   && "Dejar excedente pendiente de asignación"}
+                    {m === "correct_amount"   && "Corregir monto (no aplicar ahora)"}
+                  </label>
+                ))}
+              </div>
+              {excessMode === "excess_pending" && (
+                <p className="text-[10px] text-[var(--danger)]">⚠ El excedente quedará sin asignar hasta que se aplique manualmente en el siguiente periodo.</p>
+              )}
+            </div>
+          )}
+
+          {/* Partial explicit confirmation */}
+          {isPartial && (
+            <div className="border-[0.5px] rounded-[var(--radius-surface)] px-4 py-3 space-y-2 border-[var(--danger)]">
+              <p className="text-[11px] text-[var(--danger)] font-medium">Pago parcial — quedará un saldo de ${afterRemaining.toLocaleString("es-MX")} pendiente en este periodo.</p>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={partialConfirmed}
+                  onChange={(e) => { setPartialConfirmed(e.target.checked); if (!e.target.checked) setConfirmed(false); }}
+                  className="mt-0.5 accent-[var(--danger)]"
+                />
+                <span className="text-xs text-[var(--danger)] font-semibold">Registrar como pago parcial (confirmo el saldo pendiente)</span>
+              </label>
+            </div>
+          )}
+
+          <label className={`flex items-start gap-3 select-none ${isPartial && !partialConfirmed ? "opacity-40 pointer-events-none" : "cursor-pointer"}`}>
+            <input
+              type="checkbox"
+              checked={confirmed}
+              onChange={(e) => setConfirmed(e.target.checked)}
+              className="mt-0.5 accent-[var(--accent)]"
+              disabled={isPartial && !partialConfirmed}
+            />
+            <span className="text-sm text-[var(--text-primary)]">Confirmo que este pago fue recibido correctamente.</span>
+          </label>
+
+          <div className="flex gap-3 pt-1">
+            <button className={S.btnDanger + " flex-1"} onClick={onClose}>Cancelar</button>
+            <button
+              className={S.btnPrimary + " flex-1"}
+              disabled={!confirmed || (isPartial && !partialConfirmed)}
+              style={{ opacity: confirmed && (!isPartial || partialConfirmed) ? 1 : 0.45 }}
+              onClick={handleConfirm}
+            >
+              {excessMode === "correct_amount" && isExcess ? "Cerrar sin aplicar" : "✓ Aplicar abono"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Payment rules panel ───────────────────────────────────────────────────────
+
+function PaymentRulesPanel() {
+  const { bankAccountConfig } = useAdminStore();
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className={S.section}>Cómo se clasifican los pagos</p>
+        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4 space-y-3">
+          <RuleRow
+            icon="◎"
+            title="Pago de apertura"
+            body={`El cliente pone como referencia el número del vendedor más los últimos 4 dígitos de su teléfono. Ejemplo: ${TRANSFER_REFERENCE_RULES.sellerExample}`}
+          />
+          <RuleRow
+            icon="↺"
+            title="Mensualidad"
+            body={`El cliente pone su número de cliente como referencia. Ejemplo: ${TRANSFER_REFERENCE_RULES.clientExample}`}
+          />
+          <RuleRow
+            icon="?"
+            title="Sin identificar"
+            body="La referencia no coincide con ningún vendedor ni cliente. El administrador debe clasificarlo manualmente."
+          />
+        </div>
+      </div>
+
+      <div>
+        <p className={S.section}>Flujo de activación (apertura)</p>
+        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4 space-y-2">
+          {[
+            "El cliente envía el pago de apertura con el número de vendedor como referencia.",
+            "El administrador registra la transferencia y verifica el pago.",
+            "El wizard solicita solo los datos mínimos: responsable, negocio, subdominio y teléfono de acceso.",
+            "Al confirmar: se crea el cliente, se genera el historial de pagos y se autoriza la comisión del vendedor.",
+            "El cliente recibe acceso a su panel de especialista.",
+          ].map((step, i) => (
+            <div key={i} className="flex gap-3 text-xs text-[var(--text-primary)]">
+              <span className="text-[var(--accent)] font-bold shrink-0">{i + 1}.</span>
+              <span>{step}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {bankAccountConfig && (
+        <div>
+          <p className={S.section}>Cuenta para recepción de pagos</p>
+          <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4 space-y-2">
+            <p className="text-xs text-[var(--text-primary)] font-medium">{bankAccountConfig.bank}</p>
+            <p className="text-[11px] text-[var(--text-muted)]">Titular: {bankAccountConfig.accountHolder}</p>
+            <p className="text-[11px] font-mono text-[var(--text-muted)]">CLABE: {bankAccountConfig.clabe}</p>
+            {bankAccountConfig.requiredConcept && (
+              <p className="text-[11px] text-[var(--text-muted)]">Concepto requerido: <span className="text-[var(--accent)]">{bankAccountConfig.requiredConcept}</span></p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RuleRow({ icon, title, body }: { icon: string; title: string; body: string }) {
+  return (
+    <div className="flex gap-3">
+      <span className="text-[var(--accent)] font-bold text-base w-5 shrink-0">{icon}</span>
+      <div>
+        <p className="text-xs font-semibold text-[var(--text-primary)]">{title}</p>
+        <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{body}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main view ─────────────────────────────────────────────────────────────────
 
 export function TransfersView() {
   const store = useAdminStore();
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activationTransfer, setActivationTransfer] = useState<TransferRecord | null>(null);
+  const [monthlyConfirmTransfer, setMonthlyConfirmTransfer] = useState<TransferRecord | null>(null);
+  const [activeTab, setActiveTab] = useState<"transfers" | "rules">("transfers");
   const [filterType, setFilterType] = useState<TransferType | "all">("all");
   const [filterStatus, setFilterStatus] = useState<TransferStatus | "all">("all");
   const [filterMonth, setFilterMonth] = useState("all");
@@ -623,7 +917,7 @@ export function TransfersView() {
   }, [store.transfers, filterType, filterStatus, filterMonth, search]);
 
   // Summary stats
-  const totalAmount   = filtered.reduce((s, t) => s + t.amount, 0);
+  const totalAmount   = filtered.filter((t) => t.status !== "rejected" && t.status !== "refunded").reduce((s, t) => s + t.amount, 0);
   const pendingCount  = filtered.filter((t) => t.status === "pending").length;
   const verifiedCount = filtered.filter((t) => t.status === "verified").length;
   const openingTotal  = filtered.filter((t) => t.type === "opening" && t.status === "verified").reduce((s, t) => s + t.amount, 0);
@@ -631,20 +925,36 @@ export function TransfersView() {
 
   const hasFilters = filterType !== "all" || filterStatus !== "all" || filterMonth !== "all" || search.trim();
 
+  const pendingCount2 = store.transfers.filter((t) => t.status === "pending" || t.status === "pending_activation").length;
+
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-7">
-      <div className="flex items-center justify-between mb-6">
+    <div>
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-[var(--text-primary)] font-semibold text-base">Transferencias</h2>
           <p className="text-[var(--text-muted)] text-xs mt-0.5">
-            {store.transfers.length} total · {store.transfers.filter((t) => t.status === "pending").length} pendientes
+            {store.transfers.length} total · {pendingCount2} requieren acción
           </p>
         </div>
-        <button className={S.btnPrimary} onClick={() => setShowAdd(true)}>+ Registrar transferencia</button>
+        {activeTab === "transfers" && (
+          <button className={S.btnPrimary} onClick={() => setShowAdd(true)}>+ Registrar transferencia</button>
+        )}
       </div>
 
+      {/* Tab nav */}
+      <TabBar className="mb-6">
+        {([["transfers", "Transferencias"], ["rules", "Reglas de pago"]] as const).map(([tab, label]) => (
+          <TabButton key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)} className="px-4 py-2.5 mr-4">
+            {label}
+          </TabButton>
+        ))}
+      </TabBar>
+
+      {activeTab === "rules" && <PaymentRulesPanel />}
+      {activeTab === "transfers" && (<>
+
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+      <StatGrid cols={5} className="mb-6">
         {[
           { label: "Monto total",    value: `$${totalAmount.toLocaleString("es-MX")}`, sub: `${filtered.length} transferencias` },
           { label: "Pendientes",     value: pendingCount,          sub: "por verificar" },
@@ -652,14 +962,9 @@ export function TransfersView() {
           { label: "Total aperturas", value: `$${openingTotal.toLocaleString("es-MX")}`, sub: "verificadas" },
           { label: "Total mensual",  value: `$${monthlyTotal.toLocaleString("es-MX")}`, sub: "verificadas" },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl px-4 py-4 relative overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-[var(--accent)]" />
-            <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1">{s.label}</p>
-            <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{s.value}</p>
-            <p className="text-[10px] text-[var(--text-muted)]">{s.sub}</p>
-          </div>
+          <StatCell key={s.label} label={s.label} value={s.value} sub={s.sub} />
         ))}
-      </div>
+      </StatGrid>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4 items-end">
@@ -709,7 +1014,7 @@ export function TransfersView() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
+      <div className="rounded-none overflow-hidden bg-[var(--bg-base)] border-[0.5px] border-[var(--border)]">
         <div className="px-5 py-3.5 border-b-[0.5px] border-[var(--border)]">
           <p className="text-[11px] text-[var(--text-muted)]">{filtered.length} transferencias</p>
         </div>
@@ -802,23 +1107,59 @@ export function TransfersView() {
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      {t.status === "pending" ? (
-                        <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button className={S.btnPrimary + " !px-2 !py-1 !text-[11px]"}
-                            onClick={() => {
-                              if (t.type === "opening") store.verifyOpeningTransfer(t.id);
-                              else store.verifyMonthlyTransfer(t.id);
-                            }}>
+                      <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {t.status === "pending" && t.type === "opening" && (
+                          <button
+                            className={S.btnPrimary + " !px-2 !py-1 !text-[11px]"}
+                            onClick={() => setActivationTransfer(t)}
+                          >
+                            Activar
+                          </button>
+                        )}
+                        {t.status === "pending" && t.type === "monthly" && (
+                          <button
+                            className={S.btnPrimary + " !px-2 !py-1 !text-[11px]"}
+                            onClick={() => setMonthlyConfirmTransfer(t)}
+                          >
                             Confirmar
                           </button>
-                          <button className="px-2 py-1 rounded text-[11px] text-[var(--danger)] border-[0.5px] border-[var(--danger)] hover:bg-[var(--danger)] hover:text-[var(--bg-base)] transition-colors"
-                            onClick={() => store.rejectTransfer(t.id)}>
+                        )}
+                        {t.status === "pending" && t.type === "unidentified" && (
+                          <button
+                            className="px-2 py-1 rounded text-[11px] text-[var(--text-muted)] border-[0.5px] border-[var(--border)] hover:text-[var(--text-primary)] transition-colors"
+                            onClick={() => setSelectedId(t.id)}
+                          >
+                            Clasificar
+                          </button>
+                        )}
+                        {t.status === "pending_activation" && (
+                          <button
+                            className={S.btnPrimary + " !px-2 !py-1 !text-[11px]"}
+                            onClick={() => setActivationTransfer(t)}
+                          >
+                            Completar
+                          </button>
+                        )}
+                        {t.status === "activation_error" && (
+                          <button
+                            className="px-2 py-1 rounded text-[11px] text-[var(--danger)] border-[0.5px] border-[var(--danger)] hover:bg-[var(--danger)] hover:text-[var(--bg-base)] transition-colors"
+                            onClick={() => setActivationTransfer(t)}
+                          >
+                            Reintentar
+                          </button>
+                        )}
+                        {(t.status === "pending" || t.status === "pending_activation") && (
+                          <button
+                            className="px-2 py-1 rounded text-[11px] text-[var(--danger)] border-[0.5px] border-[var(--danger)] hover:bg-[var(--danger)] hover:text-[var(--bg-base)] transition-colors"
+                            onClick={() => store.rejectTransfer(t.id)}
+                          >
                             ✕
                           </button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-[var(--text-muted)]">Ver →</span>
-                      )}
+                        )}
+                        {t.status !== "pending" && t.status !== "pending_activation" && t.status !== "activation_error" && (
+                          <span className="text-[10px] text-[var(--text-muted)]">Ver →</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -828,8 +1169,12 @@ export function TransfersView() {
         </div>
       </div>
 
-      {showAdd    && <AddTransferModal onClose={() => setShowAdd(false)} />}
-      {selectedId && <TransferDetailDrawer transferId={selectedId} onClose={() => setSelectedId(null)} />}
+      </>)} {/* end activeTab === "transfers" */}
+
+      {showAdd              && <AddTransferModal onClose={() => setShowAdd(false)} />}
+      {selectedId           && <TransferDetailDrawer transferId={selectedId} onClose={() => setSelectedId(null)} onRequestMonthlyConfirm={(t) => { setSelectedId(null); setMonthlyConfirmTransfer(t); }} />}
+      {activationTransfer   && <ActivationWizard transfer={activationTransfer} onClose={() => setActivationTransfer(null)} />}
+      {monthlyConfirmTransfer && <MonthlyConfirmModal transfer={monthlyConfirmTransfer} onClose={() => setMonthlyConfirmTransfer(null)} />}
     </div>
   );
 }

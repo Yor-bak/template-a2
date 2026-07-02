@@ -4,6 +4,8 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import type {
@@ -33,8 +35,13 @@ import type {
   BusinessType,
   PreClientStatus,
   PreClient,
+  ActivationInput,
   MonthlyFixedExpense,
+  FixedExpensePayment,
+  FixedExpenseFrequency,
+  FixedExpenseStatus,
   OtherFinancialMovement,
+  PaymentMethod,
   MonthlyTaxRecord,
   InvoiceRecord,
   InvoiceStatus,
@@ -43,15 +50,22 @@ import type {
   MonthlyCloseRecord,
   MonthlyCloseStatus,
   FinancialLogItem,
+  BankAccountConfig,
 } from "@/types/user";
+import type { AdminRole, Permission } from "@/lib/adminPermissions";
+import { hasPermission } from "@/lib/adminPermissions";
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-const ADMIN_CREDS = { email: "admin@templatea2.com", password: "admin123" };
+import { loginAdminUser, type AdminUser } from "@/lib/adminUsers";
 
 interface AdminAuthValue {
   isAuthenticated: boolean;
-  login: (email: string, password: string) => boolean;
+  role: AdminRole;
+  displayName: string;
+  currentUser: AdminUser | null;
+  can: (permission: Permission) => boolean;
+  login: (identifier: string, password: string) => boolean;
   logout: () => void;
 }
 
@@ -59,16 +73,39 @@ const AdminAuthCtx = createContext<AdminAuthValue | null>(null);
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const login = useCallback((e: string, p: string) => {
-    if (e === ADMIN_CREDS.email && p === ADMIN_CREDS.password) {
+  const [role, setRoleState] = useState<AdminRole>("admin");
+  const [displayName, setDisplayName] = useState("Admin J2EC");
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
+
+  const login = useCallback((identifier: string, password: string) => {
+    // Phone-based login via the central adminUsers store — single source of truth
+    // for Superadmin (hidden), Admin and Contador.
+    const result = loginAdminUser(identifier, password);
+    if (result) {
       setIsAuthenticated(true);
+      setRoleState(result.user.role);
+      setDisplayName(`${result.user.firstName} ${result.user.lastName}`);
+      setCurrentUser(result.user);
       return true;
     }
     return false;
   }, []);
-  const logout = useCallback(() => setIsAuthenticated(false), []);
+
+  const logout = useCallback(() => {
+    setIsAuthenticated(false);
+    setRoleState("admin");
+    setDisplayName("Admin J2EC");
+    setCurrentUser(null);
+  }, []);
+
+  const can = useCallback(
+    (permission: Permission) =>
+      hasPermission(role, permission, currentUser?.permissions as { granted?: Permission[]; revoked?: Permission[] } | undefined),
+    [role, currentUser],
+  );
+
   return (
-    <AdminAuthCtx.Provider value={{ isAuthenticated, login, logout }}>
+    <AdminAuthCtx.Provider value={{ isAuthenticated, role, displayName, currentUser, can, login, logout }}>
       {children}
     </AdminAuthCtx.Provider>
   );
@@ -103,8 +140,9 @@ export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
 };
 
 export const PLAN_LABELS: Record<UserPlan, string> = {
-  standard: "Standard",
-  pro: "Pro",
+  standard:     "Standard",
+  cowork:       "Cowork",
+  intelligence: "Intelligence",
 };
 
 export const ONBOARDING_STATUS_LABELS: Record<OnboardingStatus, string> = {
@@ -122,6 +160,7 @@ export const DOC_TYPE_LABELS: Record<ClientDocument["type"], string> = {
 };
 
 export const COMMISSION_STATUS_LABELS: Record<CommissionStatus, string> = {
+  waiting_first_monthly_payment: "Esp. 1ª mensualidad",
   pending: "Pendiente",
   authorized: "Autorizada",
   paid: "Pagada",
@@ -136,32 +175,32 @@ export const CONTRACT_DOC_STATUS_LABELS: Record<ContractDocStatus, string> = {
 };
 
 export const TRANSFER_TYPE_LABELS: Record<TransferType, string> = {
-  opening: "Apertura",
-  monthly: "Mensualidad",
+  opening:      "Apertura",
+  monthly:      "Mensualidad",
+  unidentified: "Sin identificar",
 };
 
 export const TRANSFER_STATUS_LABELS: Record<TransferStatus, string> = {
-  pending: "Pendiente",
-  verified: "Verificada",
-  rejected: "Rechazada",
-  refunded: "Reembolsada",
+  pending:            "Pendiente",
+  pending_activation: "Pend. activación",
+  activation_error:   "Error activación",
+  verified:           "Verificada",
+  rejected:           "Rechazada",
+  refunded:           "Reembolsada",
 };
 
 export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
-  dentist: "Dentista",
-  doctor: "Médico",
+  dentist:         "Dentista",
+  doctor:          "Médico",
   physiotherapist: "Fisioterapeuta",
-  nutritionist: "Nutriólogo/a",
-  psychologist: "Psicólogo/a",
-  veterinarian: "Veterinario/a",
-  other: "Otro",
+  nutritionist:    "Nutriólogo/a",
+  psychologist:    "Psicólogo/a",
+  veterinarian:    "Veterinario/a",
+  gym:             "Gimnasio",
+  other:           "Otro",
 };
 
 export const PRE_CLIENT_STATUS_LABELS: Record<PreClientStatus, string> = {
-  new: "Nuevo",
-  contacted: "Contactado",
-  interested: "Interesado",
-  negotiating: "Negociando",
   awaiting_payment: "Esperando pago",
   converted: "Convertido",
   discarded: "Descartado",
@@ -500,7 +539,16 @@ export function expenseAppliesToMonth(expense: MonthlyFixedExpense, year: number
   const start  = expense.startDate.slice(0, 7);
   if (start > target) return false;
   if (expense.endDate && expense.endDate.slice(0, 7) < target) return false;
-  return true;
+
+  if (expense.frequency === "monthly") return true;
+
+  // Calculate months elapsed from the start month to the target month
+  const [sy, sm] = start.split("-").map(Number);
+  const monthsDiff = (year - sy) * 12 + (month - sm);
+  const cycle = expense.frequency === "bimonthly" ? 2
+              : expense.frequency === "quarterly"  ? 3
+              : 12; // annual
+  return monthsDiff % cycle === 0;
 }
 
 export function getActiveFixedExpensesByMonth(
@@ -672,39 +720,58 @@ const EMPTY_CL: OnboardingChecklist = {
 // ── Mock fixed expenses ───────────────────────────────────────────────────────
 
 const MOCK_FIXED_EXPENSES: MonthlyFixedExpense[] = [
-  { id: "exp1", name: "Servidor cloud", description: "DigitalOcean droplet",
-    amount: 350, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
-  { id: "exp2", name: "Hosting", description: "Dominio + SSL",
-    amount: 120, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
-  { id: "exp3", name: "Software de diseño", description: "Figma + herramientas",
-    amount: 200, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
-  { id: "exp4", name: "Contabilidad", description: "Honorarios contador",
-    amount: 800, active: true, startDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
-  { id: "exp5", name: "Publicidad Meta", description: "Ads en FB/Instagram",
-    amount: 500, active: false, startDate: "2026-01-01", endDate: "2026-05-31",
-    createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-06-01T00:00:00Z" },
-  { id: "exp6", name: "Renta coworking", description: "Espacio de trabajo Q1",
-    amount: 1500, active: false, startDate: "2026-01-01", endDate: "2026-03-31",
-    createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp1", name: "Servidor cloud", category: "Tecnología", description: "DigitalOcean droplet",
+    amount: 350, frequency: "monthly", status: "paid", nextDueDate: "2026-07-01",
+    active: true, startDate: "2026-01-01", paymentHistory: [], createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp2", name: "Hosting", category: "Tecnología", description: "Dominio + SSL",
+    amount: 120, frequency: "annual", status: "paid", nextDueDate: "2027-01-01",
+    active: true, startDate: "2026-01-01", paymentHistory: [], createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp3", name: "Software de diseño", category: "Tecnología", description: "Figma + herramientas",
+    amount: 200, frequency: "monthly", status: "pending", nextDueDate: "2026-07-01",
+    active: true, startDate: "2026-01-01", paymentHistory: [], createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp4", name: "Contabilidad", category: "Servicios profesionales", description: "Honorarios contador",
+    amount: 800, frequency: "monthly", status: "pending", nextDueDate: "2026-07-05",
+    active: true, startDate: "2026-01-01", paymentHistory: [], createdAt: "2026-01-01T00:00:00Z" },
+  { id: "exp5", name: "Publicidad Meta", category: "Marketing", description: "Ads en FB/Instagram",
+    amount: 500, frequency: "monthly", status: "paid",
+    active: false, startDate: "2026-01-01", endDate: "2026-05-31",
+    paymentHistory: [], createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-06-01T00:00:00Z" },
+  { id: "exp6", name: "Renta coworking", category: "Espacio", description: "Espacio de trabajo Q1",
+    amount: 1500, frequency: "monthly", status: "paid",
+    active: false, startDate: "2026-01-01", endDate: "2026-03-31",
+    paymentHistory: [], createdAt: "2026-01-01T00:00:00Z" },
 ];
 
 // ── Mock other financial movements ────────────────────────────────────────────
 
 const MOCK_OTHER_MOVEMENTS: OtherFinancialMovement[] = [
-  { id: "mov1", type: "other_income", name: "Servicio de consultoría",
+  { id: "mov1", type: "other_income", name: "Servicio de consultoría", category: "extraordinary",
     description: "Asesoría de implementación para cliente externo",
-    amount: 2500, movementDate: "2026-03-15", reference: "CONS-001",
+    amount: 2500, movementDate: "2026-03-15", method: "transfer", reference: "CONS-001",
     createdAt: "2026-03-15T10:00:00Z" },
-  { id: "mov2", type: "other_expense", name: "Capacitación equipo",
+  { id: "mov2", type: "other_expense", name: "Capacitación equipo", category: "extraordinary",
     description: "Taller de UX para el equipo",
-    amount: 1200, movementDate: "2026-02-20", reference: "CAP-001",
+    amount: 1200, movementDate: "2026-02-20", method: "transfer", reference: "CAP-001",
     createdAt: "2026-02-20T10:00:00Z" },
-  { id: "mov3", type: "other_income", name: "Venta de licencia adicional",
-    amount: 800, movementDate: "2026-05-10", createdAt: "2026-05-10T10:00:00Z" },
-  { id: "mov4", type: "other_expense", name: "Compra de equipo",
+  { id: "mov3", type: "other_income", name: "Venta de licencia adicional", category: "other",
+    amount: 800, movementDate: "2026-05-10", method: "transfer", createdAt: "2026-05-10T10:00:00Z" },
+  { id: "mov4", type: "other_expense", name: "Compra de equipo", category: "equipment",
     description: "Monitor para nuevo integrante",
-    amount: 3500, movementDate: "2026-04-05", createdAt: "2026-04-05T10:00:00Z" },
+    amount: 3500, movementDate: "2026-04-05", method: "card", createdAt: "2026-04-05T10:00:00Z" },
 ];
+
+const MOCK_BANK_ACCOUNT: BankAccountConfig = {
+  id: "bank1",
+  bank: "BBVA",
+  accountHolder: "Template A2 S.A. de C.V.",
+  accountNumber: "0123456789",
+  clabe: "012345678901234567",
+  cardNumber: "",
+  requiredConcept: "Mensualidad [N° cliente]",
+  paymentInstructions: "Incluir el número de cliente en el concepto de la transferencia.",
+  active: true,
+  createdAt: "2026-01-01T00:00:00Z",
+};
 
 // ── Mock tax records ──────────────────────────────────────────────────────────
 
@@ -823,19 +890,19 @@ const MOCK_FINANCIAL_LOG: FinancialLogItem[] = [
 const MOCK_SALES_REPS: SalesRep[] = [
   {
     id: "rep1", sellerNumber: "VEN-0001", name: "Pedro González",
-    phone: "5512340001", accountNumber: "BBVA 4152 3130 1234 5678",
+    phone: "5512340001", bankName: "BBVA", accountNumber: "4152 3130 1234 5678",
     active: true, fixedCommissionAmount: 500,
     createdAt: "2025-11-01T00:00:00Z",
   },
   {
     id: "rep2", sellerNumber: "VEN-0002", name: "Lucía Ramírez",
-    phone: "5512340002", accountNumber: "Banamex 5204 1652 9876 5432",
+    phone: "5512340002", bankName: "Banamex", accountNumber: "5204 1652 9876 5432",
     active: true, fixedCommissionAmount: 400,
     createdAt: "2025-11-15T00:00:00Z",
   },
   {
     id: "rep3", sellerNumber: "VEN-0003", name: "Carlos Vega",
-    phone: "5512340003", accountNumber: "HSBC 4213 0011 2233 4455",
+    phone: "5512340003", bankName: "HSBC", accountNumber: "4213 0011 2233 4455",
     active: false, fixedCommissionAmount: 500,
     createdAt: "2025-12-01T00:00:00Z",
   },
@@ -1332,7 +1399,7 @@ const MOCK_CLIENTS: AdminClient[] = [
     businessType: "dentist",
     specialist: spec1, business: business1,
     slug: "negocio-sonrisa", subdomain: "negocio-sonrisa.templatea2.com",
-    plan: "pro", isPro: true,
+    plan: "cowork",
     paymentStatus: "paid", clientStatus: "active", accessActive: true,
     publicPageStatus: "published",
     contractType: "one_year", activationDate: "2026-01-01", contractEndDate: "2026-12-31",
@@ -1362,7 +1429,7 @@ const MOCK_CLIENTS: AdminClient[] = [
     businessType: "physiotherapist",
     specialist: spec2, business: business2,
     slug: "doctor-mendoza", subdomain: "doctor-mendoza.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2026-05-01", contractEndDate: "2026-10-31",
@@ -1389,7 +1456,7 @@ const MOCK_CLIENTS: AdminClient[] = [
     businessType: "dentist",
     specialist: spec3, business: business3,
     slug: "dental-familiar", subdomain: "dental-familiar.templatea2.com",
-    plan: "pro", isPro: true,
+    plan: "cowork",
     paymentStatus: "overdue", clientStatus: "suspended", accessActive: false,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2025-12-01", contractEndDate: "2026-05-31",
@@ -1413,7 +1480,7 @@ const MOCK_CLIENTS: AdminClient[] = [
     businessType: "physiotherapist",
     specialist: spec4, business: business4,
     slug: "fisio-movimiento", subdomain: "fisio-movimiento.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "published",
     contractType: "six_months", activationDate: "2026-01-01", contractEndDate: "2026-06-30",
@@ -1448,7 +1515,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Ciudad de México", state: "Ciudad de México", postalCode: "03800",
       phone: "5544001122" },
     slug: "nutricion-equilibrio", subdomain: "nutricion-equilibrio.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "grace_period", clientStatus: "active", accessActive: true,
     publicPageStatus: "published",
     contractType: "six_months", activationDate: "2026-03-01", contractEndDate: "2026-08-31",
@@ -1481,7 +1548,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Ciudad de México", state: "Ciudad de México", postalCode: "06140",
       phone: "5533009988" },
     slug: "psicovida-consultorio", subdomain: "psicovida-consultorio.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "pending", clientStatus: "active", accessActive: false,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2026-04-01", contractEndDate: "2026-09-30",
@@ -1514,7 +1581,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Ciudad de México", state: "Ciudad de México", postalCode: "03100",
       phone: "5577443322" },
     slug: "vetpaws-clinica", subdomain: "vetpaws-clinica.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "cancelled", clientStatus: "cancelled", accessActive: false,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2026-01-15", contractEndDate: "2026-07-14",
@@ -1546,7 +1613,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Naucalpan de Juárez", state: "Estado de México", postalCode: "53120",
       phone: "5566112233" },
     slug: "consultorio-villanueva", subdomain: "consultorio-villanueva.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2026-05-15", contractEndDate: "2026-11-14",
@@ -1578,7 +1645,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Ciudad de México", state: "Ciudad de México", postalCode: "06140",
       phone: "5511220033" },
     slug: "bienestar-camila", subdomain: "bienestar-camila.templatea2.com",
-    plan: "pro", isPro: true,
+    plan: "cowork",
     paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "hidden",
     contractType: "one_year", activationDate: "2026-04-01", contractEndDate: "2027-03-31",
@@ -1611,7 +1678,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Ciudad de México", state: "Ciudad de México", postalCode: "06600",
       phone: "5522334455" },
     slug: "sonrisas-aguilar", subdomain: "sonrisas-aguilar.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "pending", clientStatus: "active", accessActive: true,
     publicPageStatus: "published",
     contractType: "six_months", activationDate: "2026-02-01", contractEndDate: "2026-07-31",
@@ -1644,7 +1711,7 @@ const MOCK_CLIENTS: AdminClient[] = [
       city: "Ciudad de México", state: "Ciudad de México", postalCode: "02450",
       phone: "5599887766" },
     slug: "fisionat-studio", subdomain: "fisionat-studio.templatea2.com",
-    plan: "standard", isPro: false,
+    plan: "standard",
     paymentStatus: "overdue", clientStatus: "active", accessActive: false,
     publicPageStatus: "hidden",
     contractType: "six_months", activationDate: "2025-09-01", contractEndDate: "2026-02-28",
@@ -1659,6 +1726,40 @@ const MOCK_CLIENTS: AdminClient[] = [
     documents: [], contracts: [],
     createdAt: "2025-09-02T10:00:00Z", updatedAt: "2026-03-01T00:00:00Z",
     lastPaymentAt: "2025-11-05",
+  },
+  // c12 — Gimnasio (vertical Gimnasios)
+  {
+    id: "c12", clientNumber: "TA2-0012",
+    businessType: "gym",
+    specialist: {
+      firstName: "Roberto", lastNamePaternal: "Gutiérrez", lastNameMaternal: "Sosa",
+      publicName: "Roberto Gutiérrez",
+      phone: "5511223344",
+      email: "roberto@ironfit.mx",
+      shortDescription: "Dueño y director del gimnasio IronFit.",
+    },
+    business: { name: "IronFit Gym", commercialName: "IronFit",
+      street: "Blvd. Deportivo", exteriorNumber: "45",
+      colony: "Polanco", municipality: "Miguel Hidalgo",
+      city: "Ciudad de México", state: "Ciudad de México", postalCode: "11550",
+      phone: "5511223344", whatsapp: "5511223344" },
+    slug: "ironfit-gym", subdomain: "ironfit-gym.templatea2.com",
+    plan: "standard",
+    paymentStatus: "paid", clientStatus: "active", accessActive: true,
+    publicPageStatus: "published",
+    contractType: "one_year", activationDate: "2026-03-01", contractEndDate: "2027-02-28",
+    monthlyAmount: 399,
+    paymentHistory: mockHistory("2026-03-01", "one_year", 399, 4),
+    onboardingStatus: "in_progress",
+    onboardingChecklist: { basicData: true, services: false, address: true, paymentMethods: false, templateSelected: false, colorsSelected: false, testimonials: false },
+    internalNotes: "Cliente Gimnasio piloto. Producto Gimnasios en desarrollo.",
+    salesRepId: "rep2", salesRepName: "Luis Pérez", sellerNumber: "VEN-0002",
+    activityLog: [
+      { id: "a-c12-1", date: "2026-03-01T10:00:00Z", action: "Cliente creado", detail: "Apertura verificada — IronFit Gym", actor: "Admin" },
+    ],
+    documents: [], contracts: [],
+    createdAt: "2026-03-01T10:00:00Z",
+    lastPaymentAt: "2026-06-01", nextPaymentDueAt: "2026-07-01",
   },
 ];
 
@@ -1688,8 +1789,8 @@ const MOCK_PRE_CLIENTS: PreClient[] = [
     businessType: "doctor",
     sellerId: "rep2",
     sellerNumber: "VEN-0002",
-    status: "negotiating",
-    notes: "Interesado en plan Pro anual. Solicita descuento por pago adelantado.",
+    status: "awaiting_payment",
+    notes: "Interesado en plan anual. Solicita descuento por pago adelantado.",
     createdAt: "2026-06-10T09:00:00Z",
     updatedAt: "2026-06-18T11:00:00Z",
   },
@@ -1702,8 +1803,8 @@ const MOCK_PRE_CLIENTS: PreClient[] = [
     businessType: "nutritionist",
     sellerId: "rep1",
     sellerNumber: "VEN-0001",
-    status: "interested",
-    notes: "Pidió demo de la plataforma. Seguimiento pendiente para esta semana.",
+    status: "awaiting_payment",
+    notes: "Pidió demo de la plataforma. Seguimiento pendiente.",
     createdAt: "2026-06-08T15:00:00Z",
   },
   {
@@ -1712,7 +1813,7 @@ const MOCK_PRE_CLIENTS: PreClient[] = [
     specialistName: "Roberto Torres",
     phone: "5500112233",
     businessType: "physiotherapist",
-    status: "contacted",
+    status: "awaiting_payment",
     notes: "Contactado por WhatsApp. Pendiente llamada de presentación.",
     createdAt: "2026-06-12T10:00:00Z",
   },
@@ -1723,7 +1824,7 @@ const MOCK_PRE_CLIENTS: PreClient[] = [
     phone: "5511002233",
     businessName: "PsicoBalance",
     businessType: "psychologist",
-    status: "new",
+    status: "awaiting_payment",
     createdAt: "2026-06-20T16:00:00Z",
   },
   {
@@ -1792,17 +1893,31 @@ interface AdminStoreValue {
   replaceContract: (clientId: string, contractId: string, doc: Omit<ClientContractDocument, "id" | "clientId" | "version" | "uploadedAt">) => void;
   updateContractStatus: (clientId: string, contractId: string, status: ContractDocStatus, signedAt?: string) => void;
 
+  // Client access
+  updateClientAccessPhone: (clientId: string, phone: string) => void;
+  setMustChangePassword: (clientId: string, value: boolean) => void;
+  updateClientLastAccess: (clientId: string) => void;
+
   // Transfers
   addTransfer: (data: AddTransferInput) => string | null; // returns id or null if ref duplicate
   verifyOpeningTransfer: (transferId: string) => void;
+  activateClientFromTransfer: (transferId: string, input: ActivationInput) => void;
   verifyMonthlyTransfer: (transferId: string) => void;
+  applyMonthlyInstallment: (
+    transferId: string,
+    periodKey: string,
+    mode: "full" | "partial" | "excess_to_next" | "excess_pending"
+  ) => void;
   rejectTransfer: (transferId: string) => void;
   refundTransfer: (transferId: string) => void;
 
   // Commissions
   authorizeCommission: (commissionId: string) => void;
   markCommissionPaid: (commissionId: string, transferRef?: string, transferDate?: string) => void;
+  markCommissionsPaid: (ids: string[], opts: { paidAt: string; method: PaymentMethod; reference?: string; note?: string }) => void;
   cancelCommission: (commissionId: string) => void;
+  ensureFirstMonthlyCommission: (clientId: string) => void;
+  cancelWaitingFirstMonthlyCommission: (clientId: string) => void;
 
   // Sales reps
   addSalesRep: (data: Omit<SalesRep, "id" | "sellerNumber" | "createdAt">) => void;
@@ -1819,6 +1934,9 @@ interface AdminStoreValue {
   updatePreClient: (id: string, patch: Partial<PreClient>) => void;
   setPreClientStatus: (id: string, status: PreClientStatus) => void;
 
+  // Monthly payment periods (partial payments)
+  monthlyPeriods: import("@/types/user").MonthlyPaymentPeriod[];
+
   // Finance module state
   fixedExpenses: MonthlyFixedExpense[];
   otherMovements: OtherFinancialMovement[];
@@ -1827,15 +1945,22 @@ interface AdminStoreValue {
   bankMovements: BankMovement[];
   monthlyCloses: MonthlyCloseRecord[];
   financialLog: FinancialLogItem[];
+  bankAccountConfig: BankAccountConfig | null;
 
   // Fixed expenses
-  addFixedExpense: (data: Omit<MonthlyFixedExpense, "id" | "createdAt">) => void;
+  addFixedExpense: (data: Omit<MonthlyFixedExpense, "id" | "createdAt" | "paymentHistory">) => void;
   updateFixedExpense: (id: string, patch: Partial<MonthlyFixedExpense>) => void;
+  markFixedExpensePaid: (id: string, payment: Omit<FixedExpensePayment, "id">) => void;
   toggleFixedExpense: (id: string) => void;
+  deleteFixedExpense: (id: string) => void;
 
   // Other movements
   addOtherMovement: (data: Omit<OtherFinancialMovement, "id" | "createdAt">) => void;
+  updateOtherMovement: (id: string, patch: Partial<OtherFinancialMovement>) => void;
   deleteOtherMovement: (id: string) => void;
+
+  // Bank account config
+  saveBankAccountConfig: (data: Omit<BankAccountConfig, "id" | "createdAt" | "updatedAt">) => void;
 
   // Tax records
   upsertTaxRecord: (year: number, month: number, data: Partial<Omit<MonthlyTaxRecord, "id" | "year" | "month" | "createdAt">>) => void;
@@ -1857,27 +1982,33 @@ interface AdminStoreValue {
   // Legacy aliases
   users: AdminClient[];
   updateUser: (id: string, patch: Partial<AdminClient>) => void;
-  togglePro: (id: string) => void;
   updateClinic: (id: string, patch: Partial<BusinessInfo>) => void;
 }
+
+// ── First-monthly commission constants ───────────────────────────────────────
+
+export const FIRST_MONTHLY_COMMISSION_TYPE = "first_monthly_payment";
+const FIRST_MONTHLY_COMMISSION_CONCEPT     = "Comisión por primera mensualidad";
 
 const AdminStoreCtx = createContext<AdminStoreValue | null>(null);
 
 export function AdminStoreProvider({ children }: { children: ReactNode }) {
-  const [clients, setClients] = useState<AdminClient[]>(MOCK_CLIENTS);
-  const [salesReps, setSalesReps] = useState<SalesRep[]>(MOCK_SALES_REPS);
-  const [transfers, setTransfers] = useState<TransferRecord[]>(MOCK_TRANSFERS);
-  const [commissions, setCommissions] = useState<CommissionRecord[]>(MOCK_COMMISSIONS);
-  const [fortnights, setFortnights] = useState<Fortnight[]>(MOCK_FORTNIGHTS);
-  const [adminLog, setAdminLog] = useState<ActivityLogItem[]>(MOCK_ADMIN_LOG);
-  const [preClients, setPreClients] = useState<PreClient[]>(MOCK_PRE_CLIENTS);
-  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>(MOCK_FIXED_EXPENSES);
-  const [otherMovements, setOtherMovements] = useState<OtherFinancialMovement[]>(MOCK_OTHER_MOVEMENTS);
-  const [taxRecords, setTaxRecords] = useState<MonthlyTaxRecord[]>(MOCK_TAX_RECORDS);
-  const [invoices, setInvoices] = useState<InvoiceRecord[]>(MOCK_INVOICES);
-  const [bankMovements, setBankMovements] = useState<BankMovement[]>(MOCK_BANK_MOVEMENTS);
-  const [monthlyCloses, setMonthlyCloses] = useState<MonthlyCloseRecord[]>(MOCK_MONTHLY_CLOSES);
-  const [financialLog, setFinancialLog] = useState<FinancialLogItem[]>(MOCK_FINANCIAL_LOG);
+  const [clients, setClients] = useState<AdminClient[]>([]);
+  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
+  const [transfers, setTransfers] = useState<TransferRecord[]>([]);
+  const [commissions, setCommissions] = useState<CommissionRecord[]>([]);
+  const [fortnights, setFortnights] = useState<Fortnight[]>([]);
+  const [adminLog, setAdminLog] = useState<ActivityLogItem[]>([]);
+  const [preClients, setPreClients] = useState<PreClient[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
+  const [otherMovements, setOtherMovements] = useState<OtherFinancialMovement[]>([]);
+  const [taxRecords, setTaxRecords] = useState<MonthlyTaxRecord[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+  const [bankMovements, setBankMovements] = useState<BankMovement[]>([]);
+  const [monthlyCloses, setMonthlyCloses] = useState<MonthlyCloseRecord[]>([]);
+  const [financialLog, setFinancialLog] = useState<FinancialLogItem[]>([]);
+  const [bankAccountConfig, setBankAccountConfig] = useState<BankAccountConfig | null>(null);
+  const [monthlyPeriods, setMonthlyPeriods] = useState<import("@/types/user").MonthlyPaymentPeriod[]>([]);
 
   function addToAdminLog(action: string, detail?: string) {
     setAdminLog((prev) => [mkLog(action, detail), ...prev].slice(0, 300));
@@ -1915,7 +2046,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const setPlan = useCallback((id: string, plan: UserPlan) => {
     setClients((prev) =>
       withLog(
-        prev.map((c) => (c.id !== id ? c : { ...c, plan, isPro: plan === "pro" })),
+        prev.map((c) => (c.id !== id ? c : { ...c, plan })),
         id, `Plan cambiado a ${PLAN_LABELS[plan]}`
       )
     );
@@ -2055,9 +2186,117 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
           clientId, "Vendedor asignado", `${sellerNumber} — ${repName}`
         )
       );
+      // Update any waiting first-monthly commission for this client
+      setCommissions((prev) =>
+        prev.map((c) =>
+          c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+          c.clientId === clientId &&
+          c.status === "waiting_first_monthly_payment"
+            ? { ...c, salesRepId: repId, sellerNumber }
+            : c
+        )
+      );
     },
     []
   );
+
+  // ── First-monthly commission lifecycle ─────────────────────────────────────
+
+  function ensureFirstMonthlyCommission(clientId: string) {
+    const client = clients.find((c) => c.id === clientId);
+    if (!client || !client.salesRepId) return;
+
+    const alreadyLive = commissions.some(
+      (c) =>
+        c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+        c.clientId === clientId &&
+        c.status !== "cancelled"
+    );
+    if (alreadyLive) {
+      // Just ensure the flag is on
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id !== clientId ? c : { ...c, firstMonthlyPaymentGeneratesCommission: true }
+        )
+      );
+      return;
+    }
+
+    const rep = salesReps.find((r) => r.id === client.salesRepId);
+    if (!rep) return;
+
+    const now = new Date().toISOString();
+    const commId = crypto.randomUUID();
+    const newComm: CommissionRecord = {
+      id: commId,
+      salesRepId: rep.id,
+      sellerNumber: rep.sellerNumber,
+      transferId: "waiting",
+      clientId,
+      clientNumber: client.clientNumber,
+      businessName: client.business.name,
+      amount: client.monthlyAmount ?? 0,
+      status: "waiting_first_monthly_payment",
+      generatedAt: now,
+      fortnightId: getFortnightId(now.split("T")[0]),
+      commissionType: FIRST_MONTHLY_COMMISSION_TYPE,
+      description: FIRST_MONTHLY_COMMISSION_CONCEPT,
+    };
+
+    setCommissions((prev) => {
+      if (prev.some(
+        (c) =>
+          c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+          c.clientId === clientId &&
+          c.status !== "cancelled"
+      )) return prev;
+      return [...prev, newComm];
+    });
+
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id !== clientId ? c : {
+          ...c,
+          firstMonthlyPaymentGeneratesCommission: true,
+          firstMonthlyCommissionId: commId,
+        }
+      )
+    );
+  }
+
+  function cancelWaitingFirstMonthlyCommission(clientId: string) {
+    setCommissions((prev) =>
+      prev.map((c) =>
+        c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+        c.clientId === clientId &&
+        c.status === "waiting_first_monthly_payment"
+          ? { ...c, status: "cancelled" as CommissionStatus }
+          : c
+      )
+    );
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id !== clientId ? c : {
+          ...c,
+          firstMonthlyPaymentGeneratesCommission: false,
+          firstMonthlyCommissionGenerated: false,
+          firstMonthlyCommissionId: undefined,
+        }
+      )
+    );
+  }
+
+  function activateFirstMonthlyCommission(clientId: string, transferId: string) {
+    setCommissions((prev) =>
+      prev.map((c) =>
+        c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+        c.clientId === clientId &&
+        c.status === "waiting_first_monthly_payment"
+          ? { ...c, status: "authorized" as CommissionStatus, transferId, authorizedAt: new Date().toISOString() }
+          : c
+      )
+    );
+  }
 
   const updateSpecialist = useCallback((id: string, patch: Partial<SpecialistInfo>) => {
     setClients((prev) =>
@@ -2165,66 +2404,90 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     return id;
   }
 
-  // verifyOpeningTransfer creates a client + commission from the transfer
+  // verifyOpeningTransfer marks payment confirmed but does NOT create a client yet.
+  // Call activateClientFromTransfer() after the activation wizard completes.
   function verifyOpeningTransfer(transferId: string) {
     const transfer = transfers.find((t) => t.id === transferId);
-    if (!transfer || transfer.type !== "opening" || transfer.status !== "pending") return;
-    if (transfer.clientId) return; // already processed — prevent double-creation
+    if (!transfer || transfer.type !== "opening") return;
+    if (transfer.status !== "pending" && transfer.status !== "activation_error") return;
+    if (transfer.clientId) return; // already provisioned
+
+    const now = new Date().toISOString();
+    setTransfers((prev) =>
+      prev.map((t) =>
+        t.id !== transferId
+          ? t
+          : { ...t, status: "pending_activation" as TransferStatus, verifiedAt: now }
+      )
+    );
+    addToAdminLog("Pago confirmado — activación pendiente", `${transfer.referenceNumber}`);
+  }
+
+  // activateClientFromTransfer provisions the client from an opening transfer.
+  // Idempotent: if clientId is already set the call is a no-op.
+  function activateClientFromTransfer(transferId: string, input: ActivationInput) {
+    const transfer = transfers.find((t) => t.id === transferId);
+    if (!transfer || transfer.type !== "opening") return;
+    if (transfer.clientId) return; // already provisioned — idempotent guard
 
     const now = new Date().toISOString();
     const clientId = "clt-" + transferId;
     const clientNumber = generateClientNumber(clients);
 
-    // 1. Mark transfer verified
-    setTransfers((prev) =>
-      prev.map((t) =>
-        t.id !== transferId
-          ? t
-          : { ...t, status: "verified" as TransferStatus, verifiedAt: now, clientId, clientNumber }
-      )
-    );
-
-    // 2. Create client
-    const names = (transfer.prospectName ?? "").trim().split(/\s+/);
-    const slug = generateSlug(transfer.prospectiveBusinessName ?? transfer.prospectName ?? "negocio");
-    const activationDate = transfer.transferDate;
-    const contractType: ContractType = "six_months";
-    const paymentHistory = generatePaymentHistory(activationDate, contractType, transfer.amount);
+    const slug = input.slug || generateSlug(input.businessName);
+    const paymentHistory = generatePaymentHistory(input.activationDate, input.contractType, input.monthlyAmount);
     const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
-    const contractEndDate = generateContractEndDate(activationDate, contractType);
+    const contractEndDate = generateContractEndDate(input.activationDate, input.contractType);
 
     const newClient: AdminClient = {
       id: clientId, clientNumber,
+      businessType: input.businessType,
       specialist: {
-        firstName: names[0] ?? "Especialista",
-        lastNamePaternal: names[1] ?? "",
-        lastNameMaternal: names.slice(2).join(" ") || undefined,
-        publicName: transfer.prospectName ?? "Especialista",
-        phone: transfer.prospectPhone,
-        whatsapp: transfer.prospectPhone,
+        firstName: input.firstName,
+        lastNamePaternal: input.lastName,
+        publicName: `${input.firstName} ${input.lastName}`.trim(),
+        phone: input.phone,
+        whatsapp: input.phone,
+        email: input.email,
       },
-      business: { name: transfer.prospectiveBusinessName ?? transfer.prospectName ?? "Negocio" },
+      business: { name: input.businessName, businessType: input.businessType },
       slug, subdomain: buildSubdomain(slug),
-      plan: "standard", isPro: false,
+      accessPhone: input.accessPhone?.replace(/[^\d]/g, "") || input.phone?.replace(/[^\d]/g, ""),
+      mustChangePassword: input.mustChangePassword ?? true,
+      plan: input.plan,
       paymentStatus, clientStatus: "active", accessActive,
       publicPageStatus: "hidden",
-      contractType, activationDate, contractEndDate, monthlyAmount: transfer.amount,
+      contractType: input.contractType,
+      activationDate: input.activationDate,
+      contractEndDate,
+      monthlyAmount: input.monthlyAmount,
+      firstMonthlyPaymentGeneratesCommission: input.firstMonthlyPaymentGeneratesCommission,
       paymentHistory,
       onboardingStatus: "not_started",
       onboardingChecklist: { ...EMPTY_CL },
       salesRepId: transfer.sellerId,
       salesRepName: transfer.sellerName,
       sellerNumber: transfer.sellerNumber,
-      activityLog: [mkLog("Cliente creado", `Apertura verificada — ${transfer.referenceNumber}`)],
+      activityLog: [mkLog("Cliente creado", `Apertura activada — ${transfer.referenceNumber}`)],
       documents: [], contracts: [],
       createdAt: now,
     };
+
     setClients((prev) => {
       if (prev.some((c) => c.id === clientId)) return prev;
       return [...prev, newClient];
     });
 
-    // 3. Create commission (authorized immediately per spec)
+    // Update transfer with clientId and mark verified
+    setTransfers((prev) =>
+      prev.map((t) =>
+        t.id !== transferId
+          ? t
+          : { ...t, status: "verified" as TransferStatus, clientId, clientNumber }
+      )
+    );
+
+    // Create commission (authorized immediately)
     const fortnightId = getFortnightId(transfer.transferDate);
     const commissionId = "com-" + transferId;
     setCommissions((prev) => {
@@ -2235,7 +2498,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
         sellerNumber: transfer.sellerNumber ?? "",
         transferId,
         clientId, clientNumber,
-        businessName: transfer.prospectiveBusinessName ?? "",
+        businessName: input.businessName,
         amount: transfer.fixedCommissionAmount ?? 0,
         status: "authorized",
         generatedAt: now, authorizedAt: now,
@@ -2244,30 +2507,65 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       return [...prev, commission];
     });
 
-    // 4. Ensure fortnight
-    const fnId = fortnightId;
+    // Ensure fortnight
     setFortnights((prev) => {
-      if (prev.some((f) => f.id === fnId)) return prev;
+      if (prev.some((f) => f.id === fortnightId)) return prev;
       const label = getFortnightLabel(transfer.transferDate);
       const d = new Date(transfer.transferDate + "T00:00:00");
       const half = d.getDate() <= 15 ? 1 : 2;
-      return [...prev, { id: fnId, year: d.getFullYear(), month: d.getMonth() + 1, half: half as 1 | 2, label, closed: false }];
+      return [...prev, { id: fortnightId, year: d.getFullYear(), month: d.getMonth() + 1, half: half as 1 | 2, label, closed: false }];
     });
 
-    // 5. Mark pre-client as converted if linked
+    // Mark pre-client converted if linked
     if (transfer.preClientId) {
       setPreClients((prev) =>
         prev.map((p) =>
           p.id !== transfer.preClientId
             ? p
-            : { ...p, status: "converted" as PreClientStatus, convertedClientId: clientId, updatedAt: now }
+            : { ...p, status: "converted" as PreClientStatus, convertedClientId: clientId, convertedAt: now, updatedAt: now }
         )
       );
     }
 
-    // 6. Log
-    addToAdminLog("Apertura verificada", `${transfer.referenceNumber} — ${transfer.prospectiveBusinessName}`);
-    addToAdminLog("Cliente creado", `${clientNumber} — ${transfer.prospectiveBusinessName}`);
+    // Create provisional "waiting" first-monthly commission if requested
+    if (input.firstMonthlyPaymentGeneratesCommission && transfer.sellerId) {
+      const rep = salesReps.find((r) => r.id === transfer.sellerId);
+      if (rep) {
+        const fmCommId = crypto.randomUUID();
+        const waitingComm: CommissionRecord = {
+          id: fmCommId,
+          salesRepId: rep.id,
+          sellerNumber: rep.sellerNumber,
+          transferId: "waiting",
+          clientId,
+          clientNumber,
+          businessName: input.businessName,
+          amount: input.monthlyAmount ?? 0,
+          status: "waiting_first_monthly_payment",
+          generatedAt: now,
+          fortnightId: getFortnightId(now.split("T")[0]),
+          commissionType: FIRST_MONTHLY_COMMISSION_TYPE,
+          description: FIRST_MONTHLY_COMMISSION_CONCEPT,
+        };
+        setCommissions((prev) => {
+          if (prev.some(
+            (c) =>
+              c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+              c.clientId === clientId &&
+              c.status !== "cancelled"
+          )) return prev;
+          return [...prev, waitingComm];
+        });
+        setClients((prev) =>
+          prev.map((c) =>
+            c.id !== clientId ? c : { ...c, firstMonthlyCommissionId: fmCommId }
+          )
+        );
+        addToAdminLog("Com. 1ª mensualidad (en espera)", `${clientNumber} — ${rep.sellerNumber}`);
+      }
+    }
+
+    addToAdminLog("Cliente activado", `${clientNumber} — ${input.businessName}`);
     addToAdminLog("Comisión generada (autorizada)", `${transfer.sellerNumber ?? ""} — $${transfer.fixedCommissionAmount ?? 0}`);
   }
 
@@ -2309,9 +2607,170 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     addToAdminLog("Mensualidad marcada pagada", `${transfer.clientNumber} — ${transfer.paymentMonth}`);
   }
 
+  // Convert "junio de 2026" → "2026-06"
+  function monthLabelToPeriodKey(label: string): string {
+    const MONTH_MAP: Record<string, string> = {
+      enero: "01", febrero: "02", marzo: "03", abril: "04",
+      mayo: "05", junio: "06", julio: "07", agosto: "08",
+      septiembre: "09", octubre: "10", noviembre: "11", diciembre: "12",
+    };
+    const parts = label.toLowerCase().split(" de ");
+    if (parts.length !== 2) return label;
+    const [mon, yr] = parts;
+    return `${yr.trim()}-${MONTH_MAP[mon.trim()] ?? "01"}`;
+  }
+
+  // applyMonthlyInstallment — the partial-payment aware alternative to verifyMonthlyTransfer
+  function applyMonthlyInstallment(
+    transferId: string,
+    periodKey: string,
+    mode: "full" | "partial" | "excess_to_next" | "excess_pending",
+  ) {
+    const transfer = transfers.find((t) => t.id === transferId);
+    if (!transfer || transfer.type !== "monthly" || transfer.status !== "pending") return;
+    if (!transfer.specialistId) return;
+
+    const client = clients.find((c) => c.id === transfer.specialistId);
+    const expectedAmount = client?.monthlyAmount ?? 0;
+    const now = new Date().toISOString();
+    const today = now.split("T")[0];
+    const installmentId = `inst-${Date.now()}`;
+
+    // Determine effective amount for this period (cap at remaining if excess_to_next / excess_pending)
+    setMonthlyPeriods((prev) => {
+      const existing = prev.find((p) => p.clientId === transfer.specialistId && p.period === periodKey);
+      const paidSoFar = existing?.paidAmount ?? 0;
+      const remaining = existing ? existing.remainingAmount : expectedAmount;
+      const applyAmount = (mode === "excess_to_next" || mode === "excess_pending")
+        ? Math.min(transfer.amount, remaining)
+        : transfer.amount;
+
+      const newPaid = paidSoFar + applyAmount;
+      const newRemaining = Math.max(0, (existing ? existing.remainingAmount : expectedAmount) - applyAmount);
+      const newStatus: import("@/types/user").MonthlyPaymentPeriod["status"] =
+        newRemaining <= 0 ? "paid" : newPaid > 0 ? "partial" : "pending";
+
+      const installment: import("@/types/user").PaymentInstallment = {
+        id: installmentId,
+        amount: applyAmount,
+        date: today,
+        method: undefined,
+        reference: transfer.referenceNumber,
+        transferId: transfer.id,
+      };
+
+      if (existing) {
+        return prev.map((p) =>
+          p.clientId === transfer.specialistId && p.period === periodKey
+            ? { ...p, paidAmount: newPaid, remainingAmount: newRemaining, status: newStatus, installments: [...p.installments, installment] }
+            : p
+        );
+      } else {
+        const newPeriod: import("@/types/user").MonthlyPaymentPeriod = {
+          id: `period-${transfer.specialistId}-${periodKey}`,
+          clientId: transfer.specialistId!,
+          period: periodKey,
+          expectedAmount,
+          paidAmount: newPaid,
+          remainingAmount: newRemaining,
+          status: newStatus,
+          installments: [installment],
+        };
+        return [...prev, newPeriod];
+      }
+    });
+
+    // If excess_to_next: create / update the next period with the surplus
+    if (mode === "excess_to_next") {
+      const existing = monthlyPeriods.find((p) => p.clientId === transfer.specialistId && p.period === periodKey);
+      const remaining = existing ? existing.remainingAmount : expectedAmount;
+      const surplus = transfer.amount - Math.min(transfer.amount, remaining);
+      if (surplus > 0) {
+        const [yr, mo] = periodKey.split("-").map(Number);
+        const nextDate = new Date(yr, mo, 1); // next month
+        const nextKey = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
+        const nextInstallment: import("@/types/user").PaymentInstallment = {
+          id: `inst-next-${Date.now()}`,
+          amount: surplus,
+          date: today,
+          reference: transfer.referenceNumber,
+          transferId: transfer.id,
+        };
+        setMonthlyPeriods((prev) => {
+          const nextPeriod = prev.find((p) => p.clientId === transfer.specialistId && p.period === nextKey);
+          if (nextPeriod) {
+            const np = nextPeriod.paidAmount + surplus;
+            const nr = Math.max(0, nextPeriod.remainingAmount - surplus);
+            return prev.map((p) =>
+              p.clientId === transfer.specialistId && p.period === nextKey
+                ? { ...p, paidAmount: np, remainingAmount: nr, status: nr <= 0 ? "paid" : "partial", installments: [...p.installments, nextInstallment] }
+                : p
+            );
+          }
+          return [...prev, {
+            id: `period-${transfer.specialistId}-${nextKey}`,
+            clientId: transfer.specialistId!,
+            period: nextKey,
+            expectedAmount,
+            paidAmount: surplus,
+            remainingAmount: Math.max(0, expectedAmount - surplus),
+            status: surplus >= expectedAmount ? "paid" : "partial",
+            installments: [nextInstallment],
+          }];
+        });
+      }
+    }
+
+    // Mark transfer as verified
+    setTransfers((prev) =>
+      prev.map((t) =>
+        t.id !== transferId ? t : { ...t, status: "verified" as TransferStatus, verifiedAt: now }
+      )
+    );
+
+    // Also update the legacy paymentHistory on the client for backwards compat
+    if (transfer.paymentMonth) {
+      setClients((prev) => {
+        const mapped = prev.map((c) => {
+          if (c.id !== transfer.specialistId) return c;
+          const paymentHistory = c.paymentHistory.map((p) => {
+            if (p.monthLabel !== transfer.paymentMonth) return p;
+            const periodStatus = mode === "full" || mode === "excess_to_next" || mode === "excess_pending"
+              ? "paid" as MonthlyPaymentStatus
+              : "pending" as MonthlyPaymentStatus;
+            return { ...p, status: periodStatus, paidAt: today, transferReference: transfer.referenceNumber, transferDate: transfer.transferDate, transferId: transfer.id };
+          });
+          const { paymentStatus, accessActive } = recalcPaymentStatus(paymentHistory);
+          return { ...c, paymentHistory, paymentStatus, accessActive };
+        });
+        return withLog(mapped, transfer.specialistId!, "Mensualidad verificada", `${transfer.paymentMonth} — ${transfer.referenceNumber}`);
+      });
+    }
+
+    addToAdminLog("Mensualidad aplicada", `${transfer.clientNumber} — ${periodKey} (${mode})`);
+
+    // Activate waiting first-monthly commission on first confirmed payment (any amount)
+    const clientForComm = clients.find((c) => c.id === transfer.specialistId);
+    if (clientForComm) {
+      const firstPeriodKey = clientForComm.activationDate.slice(0, 7);
+      if (periodKey === firstPeriodKey) {
+        const waitingComm = commissions.find(
+          (c) =>
+            c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+            c.clientId === clientForComm.id &&
+            c.status === "waiting_first_monthly_payment"
+        );
+        if (waitingComm) {
+          activateFirstMonthlyCommission(clientForComm.id, transfer.id);
+          addToAdminLog(FIRST_MONTHLY_COMMISSION_CONCEPT + " — activada", `${clientForComm.clientNumber}`);
+        }
+      }
+    }
+  }
+
   function rejectTransfer(transferId: string) {
     const transfer = transfers.find((t) => t.id === transferId);
-    if (!transfer || transfer.status !== "pending") return;
+    if (!transfer || (transfer.status !== "pending" && transfer.status !== "pending_activation")) return;
     const now = new Date().toISOString();
     setTransfers((prev) =>
       prev.map((t) =>
@@ -2341,6 +2800,30 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       )
     );
     addToAdminLog("Transferencia reembolsada", transfer.referenceNumber);
+  }
+
+  // ── Client access actions ───────────────────────────────────────────────────
+
+  function updateClientAccessPhone(clientId: string, phone: string) {
+    const norm = phone.replace(/[^\d]/g, "");
+    setClients((prev) =>
+      withLog(
+        prev.map((c) => c.id !== clientId ? c : { ...c, accessPhone: norm }),
+        clientId, "Teléfono de acceso actualizado", norm,
+      )
+    );
+  }
+
+  function setMustChangePassword(clientId: string, value: boolean) {
+    setClients((prev) =>
+      prev.map((c) => c.id !== clientId ? c : { ...c, mustChangePassword: value })
+    );
+  }
+
+  function updateClientLastAccess(clientId: string) {
+    setClients((prev) =>
+      prev.map((c) => c.id !== clientId ? c : { ...c, lastAccessAt: new Date().toISOString() })
+    );
   }
 
   // ── Commission actions ──────────────────────────────────────────────────────
@@ -2373,6 +2856,26 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       );
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    []
+  );
+
+  const markCommissionsPaid = useCallback(
+    (ids: string[], opts: { paidAt: string; method: PaymentMethod; reference?: string; note?: string }) => {
+      setCommissions((prev) =>
+        prev.map((c) => {
+          if (!ids.includes(c.id) || c.status !== "authorized") return c;
+          addToAdminLog("Comisión pagada", `${c.sellerNumber} — $${c.amount}`);
+          return {
+            ...c,
+            status: "paid" as CommissionStatus,
+            paidAt: new Date(opts.paidAt + "T12:00:00").toISOString(),
+            paidTransferRef: opts.reference,
+            paidTransferDate: opts.paidAt,
+          };
+        })
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -2507,8 +3010,8 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setFinancialLog((prev) => [entry, ...prev].slice(0, 500));
   }
 
-  const addFixedExpense = useCallback((data: Omit<MonthlyFixedExpense, "id" | "createdAt">) => {
-    const expense: MonthlyFixedExpense = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+  const addFixedExpense = useCallback((data: Omit<MonthlyFixedExpense, "id" | "createdAt" | "paymentHistory">) => {
+    const expense: MonthlyFixedExpense = { ...data, id: crypto.randomUUID(), paymentHistory: [], createdAt: new Date().toISOString() };
     setFixedExpenses((prev) => [...prev, expense]);
     addFinancialLogEntry("Gasto fijo creado", data.name, undefined, `$${data.amount}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2518,6 +3021,34 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     setFixedExpenses((prev) =>
       prev.map((e) => e.id !== id ? e : { ...e, ...patch, updatedAt: new Date().toISOString() })
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const markFixedExpensePaid = useCallback((id: string, payment: Omit<FixedExpensePayment, "id">) => {
+    setFixedExpenses((prev) =>
+      prev.map((e) => {
+        if (e.id !== id) return e;
+        const paymentRecord: FixedExpensePayment = { ...payment, id: crypto.randomUUID() };
+        // Calculate next due date based on frequency
+        const nextDate = new Date(payment.paidAt + "T00:00:00");
+        if (e.frequency === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+        else if (e.frequency === "bimonthly") nextDate.setMonth(nextDate.getMonth() + 2);
+        else if (e.frequency === "quarterly") nextDate.setMonth(nextDate.getMonth() + 3);
+        else if (e.frequency === "annual") nextDate.setFullYear(nextDate.getFullYear() + 1);
+        const nextDueDate = nextDate.toISOString().split("T")[0];
+        addFinancialLogEntry("Gasto fijo pagado", e.name, undefined, `$${payment.amount}`);
+        return { ...e, status: "paid" as FixedExpenseStatus, nextDueDate, paymentHistory: [...e.paymentHistory, paymentRecord], updatedAt: new Date().toISOString() };
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const deleteFixedExpense = useCallback((id: string) => {
+    setFixedExpenses((prev) => {
+      const e = prev.find((x) => x.id === id);
+      if (e) addFinancialLogEntry("Gasto fijo eliminado", e.name);
+      return prev.filter((x) => x.id !== id);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2546,9 +3077,28 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const updateOtherMovement = useCallback((id: string, patch: Partial<OtherFinancialMovement>) => {
+    setOtherMovements((prev) => prev.map((m) => m.id !== id ? m : { ...m, ...patch }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const deleteOtherMovement = useCallback((id: string) => {
-    setOtherMovements((prev) => prev.filter((m) => m.id !== id));
-    addFinancialLogEntry("Movimiento eliminado", id);
+    setOtherMovements((prev) => {
+      const m = prev.find((x) => x.id === id);
+      if (m) addFinancialLogEntry("Movimiento eliminado", m.name);
+      return prev.filter((x) => x.id !== id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveBankAccountConfig = useCallback((data: Omit<BankAccountConfig, "id" | "createdAt" | "updatedAt">) => {
+    setBankAccountConfig((prev) => ({
+      ...data,
+      id: prev?.id ?? crypto.randomUUID(),
+      createdAt: prev?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    addFinancialLogEntry("Cuenta bancaria actualizada", data.bank);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2657,35 +3207,115 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     return rec?.status === "closed";
   }
 
-  const togglePro = useCallback((id: string) => {
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id !== id ? c : { ...c, isPro: !c.isPro, plan: !c.isPro ? "pro" : "standard" }
-      )
-    );
-  }, []);
+  // ── First-monthly commission reconciliation ─────────────────────────────────
+  // Safety net: ensures commission state is consistent with client flags and
+  // monthly payment records. Runs whenever relevant state changes.
+  const reconciledRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const toAdd: CommissionRecord[] = [];
+    const toActivate: { id: string; transferId: string }[] = [];
+    const clientPatches: { id: string; commId: string }[] = [];
+
+    for (const client of clients) {
+      if (!client.firstMonthlyPaymentGeneratesCommission) continue;
+      if (!client.salesRepId) continue;
+
+      const existingComm = [...commissions, ...toAdd].find(
+        (c) =>
+          c.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+          c.clientId === client.id &&
+          c.status !== "cancelled"
+      );
+
+      if (!existingComm) {
+        // Flag on but no live commission: create "waiting"
+        if (reconciledRef.current.has(`create-${client.id}`)) continue;
+        const rep = salesReps.find((r) => r.id === client.salesRepId);
+        if (!rep) continue;
+        const now = new Date().toISOString();
+        const commId = crypto.randomUUID();
+        toAdd.push({
+          id: commId,
+          salesRepId: rep.id,
+          sellerNumber: rep.sellerNumber,
+          transferId: "waiting",
+          clientId: client.id,
+          clientNumber: client.clientNumber,
+          businessName: client.business.name,
+          amount: client.monthlyAmount ?? 0,
+          status: "waiting_first_monthly_payment",
+          generatedAt: now,
+          fortnightId: getFortnightId(now.split("T")[0]),
+          commissionType: FIRST_MONTHLY_COMMISSION_TYPE,
+          description: FIRST_MONTHLY_COMMISSION_CONCEPT,
+        });
+        clientPatches.push({ id: client.id, commId });
+        reconciledRef.current.add(`create-${client.id}`);
+      } else if (existingComm.status === "waiting_first_monthly_payment") {
+        // Waiting commission + first period has at least one payment: activate
+        if (reconciledRef.current.has(`activate-${client.id}`)) continue;
+        const firstPeriodKey = client.activationDate.slice(0, 7);
+        const period = monthlyPeriods.find(
+          (p) => p.clientId === client.id && p.period === firstPeriodKey
+        );
+        if (period && period.installments.length > 0) {
+          const lastTransferId =
+            period.installments[period.installments.length - 1]?.transferId ?? "reconciled";
+          toActivate.push({ id: existingComm.id, transferId: lastTransferId });
+          reconciledRef.current.add(`activate-${client.id}`);
+        }
+      }
+    }
+
+    if (toAdd.length > 0) {
+      setCommissions((prev) => [...prev, ...toAdd]);
+      setClients((prev) =>
+        prev.map((c) => {
+          const patch = clientPatches.find((p) => p.id === c.id);
+          if (!patch) return c;
+          return { ...c, firstMonthlyCommissionId: patch.commId };
+        })
+      );
+    }
+
+    if (toActivate.length > 0) {
+      setCommissions((prev) =>
+        prev.map((c) => {
+          const upd = toActivate.find((u) => u.id === c.id);
+          if (!upd) return c;
+          return { ...c, status: "pending" as CommissionStatus, transferId: upd.transferId };
+        })
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, monthlyPeriods, commissions]);
 
   const value: AdminStoreValue = {
     clients, salesReps, transfers, commissions, fortnights, adminLog, preClients,
+    monthlyPeriods,
     fixedExpenses, otherMovements, taxRecords, invoices, bankMovements, monthlyCloses, financialLog,
+    bankAccountConfig,
     updateClient,
     setPaymentStatus, setClientStatus, setPlan, setAccess, setPublicPageStatus,
     setMonthStatus, markMonthPaid, regenerateHistory, renewContract,
     updateOnboardingChecklist, setNotes, setSlug, setAssignedTo, assignSalesRep,
     updateSpecialist, updateBusiness, addDocument,
     addContract, replaceContract, updateContractStatus,
-    addTransfer, verifyOpeningTransfer, verifyMonthlyTransfer, rejectTransfer, refundTransfer,
-    authorizeCommission, markCommissionPaid, cancelCommission,
+    updateClientAccessPhone, setMustChangePassword, updateClientLastAccess,
+    addTransfer, verifyOpeningTransfer, activateClientFromTransfer, verifyMonthlyTransfer, applyMonthlyInstallment, rejectTransfer, refundTransfer,
+    authorizeCommission, markCommissionPaid, markCommissionsPaid, cancelCommission,
+    ensureFirstMonthlyCommission, cancelWaitingFirstMonthlyCommission,
     addSalesRep, updateSalesRep, toggleSalesRep,
     ensureFortnight, closeFortnight, reopenFortnight,
     addPreClient, updatePreClient, setPreClientStatus,
-    addFixedExpense, updateFixedExpense, toggleFixedExpense,
-    addOtherMovement, deleteOtherMovement,
+    addFixedExpense, updateFixedExpense, markFixedExpensePaid, toggleFixedExpense, deleteFixedExpense,
+    addOtherMovement, updateOtherMovement, deleteOtherMovement,
+    saveBankAccountConfig,
     upsertTaxRecord, markTaxPaid,
     addInvoice, updateInvoice,
     addBankMovement, reconcileBankMovement,
     closeMonth, reopenMonth, isMonthClosed,
-    users: clients, updateUser: updateClient, togglePro,
+    users: clients, updateUser: updateClient,
     updateClinic: updateBusiness,
   };
 

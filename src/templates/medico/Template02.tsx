@@ -140,7 +140,7 @@ export function MedicoTemplate02({ profile, onPaletteChange, isPreview = false }
       className={`${outfit.variable} ${ibmPlexSans.variable} ${jetbrainsMono.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-ibm-plex-sans)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
       {/* Header: horizontal tab nav, not a sidebar — this is a "panel" you scan left to right */}

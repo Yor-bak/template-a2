@@ -165,7 +165,7 @@ export function VeterinarioTemplate02({ profile, onPaletteChange, isPreview = fa
       className={`${baloo2.variable} ${mulish.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-mulish)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

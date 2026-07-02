@@ -1,15 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Phone, MessageCircle, HeadsetIcon } from "lucide-react";
+import { Phone, MessageCircle, HeadsetIcon, Copy, Check, Hash } from "lucide-react";
 import { loadGlobalSettings, normalizePhone } from "@/lib/globalSettings";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AtencionClientePage() {
   const [phone, setPhone] = useState("");
+  const [copied, setCopied] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const settings = loadGlobalSettings();
     setPhone(settings.customerSupport.phone);
   }, []);
+
+  const clientNumber = user?.clientNumber ?? null;
+
+  function handleCopyNumber() {
+    if (!clientNumber) return;
+    navigator.clipboard.writeText(clientNumber).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const cleanPhone = normalizePhone(phone);
   const hasPhone = cleanPhone.length > 0;
@@ -24,6 +37,33 @@ export default function AtencionClientePage() {
           <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Atención a cliente</h1>
         </div>
         <p className="text-[var(--ds-text-muted)] text-sm ml-13">Soporte directo del equipo de Template A2</p>
+      </div>
+
+      {/* Client number card */}
+      <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm p-5 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Hash className="w-4 h-4 text-[var(--ds-primary)]" />
+          <p className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide">Tu número de cliente</p>
+        </div>
+        {clientNumber ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-2xl font-extrabold font-mono text-[var(--ds-text)] tracking-wide">
+              {clientNumber}
+            </span>
+            <button
+              onClick={handleCopyNumber}
+              className="flex items-center gap-1.5 text-xs font-medium text-[var(--ds-primary)] bg-[var(--ds-surface-muted)] px-3 py-1.5 rounded-lg hover:bg-[var(--ds-surface)] border border-[var(--ds-border)] transition-colors"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copiado" : "Copiar número"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--ds-text-muted)]">Número de cliente pendiente de asignación</p>
+        )}
+        <p className="text-xs text-[var(--ds-text-muted)] mt-2">
+          Comparte este número cuando solicites soporte o realices el pago de tu mensualidad.
+        </p>
       </div>
 
       <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm p-6 space-y-5">
@@ -41,7 +81,7 @@ export default function AtencionClientePage() {
             <div className="flex gap-3">
               <a
                 href={`tel:${cleanPhone}`}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-[var(--ds-primary)] text-white py-3 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] py-3 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors"
               >
                 <Phone className="w-4 h-4" />
                 Llamar

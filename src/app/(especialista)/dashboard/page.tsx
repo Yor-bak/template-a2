@@ -63,20 +63,20 @@ export default function DashboardPage() {
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={GRID_PATTERN} />
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-[var(--ds-accent)] text-xs font-bold uppercase tracking-widest mb-1.5">Panel de gestión</p>
-            <h1 className="text-2xl font-extrabold text-white mb-1">
+            <p className="text-[var(--ds-primary-fg)]/70 text-xs font-bold uppercase tracking-widest mb-1.5">Panel de gestión</p>
+            <h1 className="text-2xl font-extrabold text-[var(--ds-primary-fg)] mb-1">
               Buenos días, {config.dentistName}
             </h1>
-            <p className="text-white/50 text-sm">
+            <p className="text-[var(--ds-primary-fg)]/50 text-sm">
               Gestiona tus citas, clientes e ingresos desde un solo lugar.
             </p>
-            <p className="text-white/30 text-xs mt-2 capitalize">{dateStr}</p>
+            <p className="text-[var(--ds-primary-fg)]/30 text-xs mt-2 capitalize">{dateStr}</p>
           </div>
           <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-shrink-0">
             {/* Plan badge */}
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
               isManualPlan
-                ? "bg-white/10 text-white/70 border-white/15"
+                ? "bg-[var(--ds-primary-fg)]/10 text-[var(--ds-primary-fg)]/70 border-[var(--ds-primary-fg)]/15"
                 : "bg-[var(--ds-accent)]/20 text-[var(--ds-accent)] border-[var(--color-accent)]/30"
             }`}>
               {isManualPlan ? <PenLine className="w-3 h-3" /> : <Bot className="w-3 h-3" />}

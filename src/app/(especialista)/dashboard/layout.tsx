@@ -8,57 +8,7 @@ import { EquipoProvider } from "@/contexts/EquipoContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Menu } from "lucide-react";
 import type { DashboardColorSet } from "@/types/profile";
-
-function applySidebarTokens(el: HTMLElement, colors: DashboardColorSet, isDark: boolean) {
-  if (isDark) {
-    el.style.setProperty("--ds-sidebar-bg",        colors.background);
-    el.style.setProperty("--ds-sidebar-fg",        colors.text);
-    el.style.setProperty("--ds-sidebar-muted",     colors.textMuted);
-    el.style.setProperty("--ds-sidebar-accent",    colors.accent);
-    el.style.setProperty("--ds-sidebar-active-bg", colors.surface);
-    el.style.setProperty("--ds-sidebar-hover-bg",  colors.surfaceMuted);
-    el.style.setProperty("--ds-sidebar-border",    colors.border);
-  } else {
-    el.style.setProperty("--ds-sidebar-bg",        colors.primary);
-    el.style.setProperty("--ds-sidebar-fg",        colors.primaryForeground);
-    el.style.setProperty("--ds-sidebar-muted",     colors.primaryForeground);
-    el.style.setProperty("--ds-sidebar-accent",    colors.accent);
-    el.style.setProperty("--ds-sidebar-active-bg", "rgba(255,255,255,0.10)");
-    el.style.setProperty("--ds-sidebar-hover-bg",  "rgba(255,255,255,0.06)");
-    el.style.setProperty("--ds-sidebar-border",    "rgba(255,255,255,0.08)");
-  }
-}
-
-function applyDashboardColors(el: HTMLElement, colors: DashboardColorSet) {
-  // Core ds-* tokens
-  el.style.setProperty("--ds-bg",             colors.background);
-  el.style.setProperty("--ds-surface",         colors.surface);
-  el.style.setProperty("--ds-surface-muted",   colors.surfaceMuted);
-  el.style.setProperty("--ds-surface-elevated",colors.surfaceElevated ?? colors.surface);
-  el.style.setProperty("--ds-primary",         colors.primary);
-  el.style.setProperty("--ds-primary-fg",      colors.primaryForeground);
-  el.style.setProperty("--ds-accent",          colors.accent);
-  el.style.setProperty("--ds-text",            colors.text);
-  el.style.setProperty("--ds-text-muted",      colors.textMuted);
-  el.style.setProperty("--ds-border",          colors.border);
-  // Semantic state tokens
-  el.style.setProperty("--ds-success",         colors.success         ?? "#2e7a4a");
-  el.style.setProperty("--ds-success-fg",      colors.successForeground ?? "#d0eedd");
-  el.style.setProperty("--ds-warning",         colors.warning         ?? "#9a6a10");
-  el.style.setProperty("--ds-error",           colors.error           ?? "#b03030");
-  el.style.setProperty("--ds-ring",            colors.ring            ?? colors.accent);
-  // Alias --color-* so existing components without ds-* still work
-  el.style.setProperty("--color-background",   colors.background);
-  el.style.setProperty("--color-card",         colors.surface);
-  el.style.setProperty("--color-primary",      colors.primary);
-  el.style.setProperty("--color-primary-dark", colors.primary);
-  el.style.setProperty("--color-accent",       colors.accent);
-  // accent-soft: use a safe rgba instead of hex append
-  el.style.setProperty("--color-accent-soft",  colors.surfaceMuted);
-  el.style.setProperty("--color-text",         colors.text);
-  el.style.setProperty("--color-muted-text",   colors.textMuted);
-  el.style.setProperty("--color-border",       colors.border);
-}
+import { applyDashboardColors, applySidebarTokens } from "@/lib/applyDashboardColors";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -107,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div ref={rootRef} data-dashboard-root className="flex h-screen bg-[var(--color-background)] overflow-hidden">
+    <div ref={rootRef} data-dashboard-root data-ds-theme-root className="flex h-screen bg-[var(--color-background)] overflow-hidden">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

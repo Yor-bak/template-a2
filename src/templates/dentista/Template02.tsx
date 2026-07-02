@@ -107,7 +107,7 @@ export function DentistaTemplate02({ profile, onPaletteChange, isPreview = false
       className={`${sourceSerif4.variable} ${sourceSans3.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-source-sans)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} align="right" />
       )}
       <div className="mx-auto flex max-w-7xl">

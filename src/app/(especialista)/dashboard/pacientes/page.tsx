@@ -83,7 +83,7 @@ export default function ClientesPage() {
           </button>
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors"
+            className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl text-sm font-bold transition-colors"
           >
             <Plus className="w-4 h-4" />
             Nuevo cliente
@@ -228,7 +228,7 @@ export default function ClientesPage() {
             {clients.length === 0 && (
               <button
                 onClick={() => setShowNew(true)}
-                className="mt-4 inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl text-sm font-bold"
+                className="mt-4 inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl text-sm font-bold"
               >
                 <Plus className="w-4 h-4" />
                 Registrar primer cliente

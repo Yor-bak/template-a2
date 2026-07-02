@@ -462,7 +462,7 @@ export function ServiceForm({ open, editingService, onClose }: ServiceFormProps)
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-60"
+            className="flex-1 bg-[var(--color-primary)] text-[var(--ds-primary-fg)] py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-60"
           >
             {submitting ? "Guardando..." : editingService ? "Guardar cambios" : "Crear servicio"}
           </button>

@@ -1,16 +1,24 @@
 "use client";
 import { useState } from "react";
 import { useAdminStore } from "@/store/adminStore";
-import { S, Th, BadgeEl, COMMISSION_META } from "./adminUi";
+import { S, Th, BadgeEl, COMMISSION_META, TabBar, TabButton } from "./adminUi";
 import { SalesRepDrawer } from "./SalesRepDrawer";
+import { ComisionesTab } from "./FinanceView";
+import { getAuthorizedCommissionDebt } from "@/store/adminStore";
 
 export function SalesRepView() {
   const store = useAdminStore();
   const [showAdd, setShowAdd] = useState(false);
   const [selectedRepId, setSelectedRepId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"vendedores" | "comisiones">("vendedores");
+  const currentYear = new Date().getFullYear();
+
+  const pendingComms = getAuthorizedCommissionDebt(store.commissions, currentYear);
+  const pendingCommsTotal = pendingComms.reduce((s, c) => s + c.amount, 0);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [commission, setCommission] = useState("500");
   const [formError, setFormError] = useState("");
@@ -26,31 +34,55 @@ export function SalesRepView() {
     store.addSalesRep({
       name: name.trim(),
       phone: phone.trim() || undefined,
+      bankName: bankName.trim() || undefined,
       accountNumber: accountNumber.trim() || undefined,
       active: true,
       fixedCommissionAmount,
     });
-    setName(""); setPhone(""); setAccountNumber(""); setCommission("500"); setFormError("");
+    setName(""); setPhone(""); setBankName(""); setAccountNumber(""); setCommission("500"); setFormError("");
     setShowAdd(false);
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-7">
-      <div className="flex items-center justify-between mb-6">
+    <div>
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-[var(--text-primary)] font-semibold text-base">Vendedores</h2>
           <p className="text-[var(--text-muted)] text-xs mt-0.5">
             {store.salesReps.length} registrados · {store.salesReps.filter((r) => r.active).length} activos
+            {pendingCommsTotal > 0 && (
+              <> · <span className="text-[var(--danger)] font-semibold">Comisiones pendientes: ${pendingCommsTotal.toLocaleString("es-MX")}</span></>
+            )}
           </p>
         </div>
-        <button className={S.btnPrimary} onClick={() => setShowAdd((v) => !v)}>
-          {showAdd ? "Cancelar" : "+ Nuevo vendedor"}
-        </button>
+        {activeTab === "vendedores" && (
+          <button className={S.btnPrimary} onClick={() => setShowAdd((v) => !v)}>
+            {showAdd ? "Cancelar" : "+ Nuevo vendedor"}
+          </button>
+        )}
       </div>
+
+      {/* Tab nav */}
+      <TabBar className="mb-5">
+        {([{ key: "vendedores", label: "Vendedores" }, { key: "comisiones", label: "Comisiones" }] as const).map((t) => (
+          <TabButton key={t.key} active={activeTab === t.key} onClick={() => setActiveTab(t.key)} className="px-3.5 py-2.5 mr-1">
+            {t.label}
+            {t.key === "comisiones" && pendingCommsTotal > 0 && (
+              <span className="ml-1.5 text-[10px] text-[var(--danger)]">●</span>
+            )}
+          </TabButton>
+        ))}
+      </TabBar>
+
+      {activeTab === "comisiones" && (
+        <ComisionesTab year={currentYear} month={null} />
+      )}
+
+      {activeTab === "vendedores" && (<>
 
       {showAdd && (
         <form onSubmit={handleAdd}
-          className="mb-6 bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-xl p-5 space-y-4">
+          className="mb-6 bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] p-5 space-y-4">
           <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.14em]">Nuevo vendedor</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="col-span-2 md:col-span-1">
@@ -66,14 +98,19 @@ export function SalesRepView() {
               <input className={S.input} type="number" min="0" step="1" value={commission}
                 onChange={(e) => setCommission(e.target.value)} placeholder="500" />
             </div>
-            <div className="col-span-2 md:col-span-3">
-              <label className={S.label}>Número de cuenta (para pago de comisiones)</label>
+            <div>
+              <label className={S.label}>Banco</label>
+              <input className={S.input} value={bankName} onChange={(e) => setBankName(e.target.value)}
+                placeholder="BBVA" />
+            </div>
+            <div>
+              <label className={S.label}>Número de cuenta</label>
               <input className={S.input} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder="BBVA 4152 3130 0000 0000" />
+                placeholder="4152 3130 0000 0000" />
             </div>
           </div>
           {formError && (
-            <p className="text-[var(--danger)] text-xs bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-lg px-3 py-2">
+            <p className="text-[var(--danger)] text-xs">
               {formError}
             </p>
           )}
@@ -81,7 +118,7 @@ export function SalesRepView() {
         </form>
       )}
 
-      <div className="rounded-xl overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
+      <div className="rounded-none overflow-hidden bg-[var(--bg-base)] border-[0.5px] border-[var(--border)]">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -89,6 +126,7 @@ export function SalesRepView() {
                 <Th>N° Vendedor</Th>
                 <Th>Nombre</Th>
                 <Th>Teléfono</Th>
+                <Th>Banco</Th>
                 <Th>Cuenta</Th>
                 <Th>Estado</Th>
                 <Th right>Com. fija</Th>
@@ -102,7 +140,7 @@ export function SalesRepView() {
             <tbody>
               {store.salesReps.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
+                  <td colSpan={12} className="px-5 py-12 text-center text-[var(--text-muted)] text-sm">
                     Sin vendedores registrados
                   </td>
                 </tr>
@@ -126,15 +164,14 @@ export function SalesRepView() {
                     <td className="px-5 py-3.5">
                       <p className="text-[11px] text-[var(--text-muted)]">{rep.phone ?? "—"}</p>
                     </td>
+                    <td className="px-5 py-3.5">
+                      <p className="text-[11px] text-[var(--text-muted)]">{rep.bankName ?? "—"}</p>
+                    </td>
                     <td className="px-5 py-3.5 max-w-[160px]">
                       <p className="font-mono text-[10px] text-[var(--text-muted)] truncate">{rep.accountNumber ?? "—"}</p>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border-[0.5px] ${
-                        rep.active
-                          ? "bg-[var(--accent-muted)] text-[var(--accent)] border-[var(--accent)]"
-                          : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)]"
-                      }`}>
+                      <span className={`text-[11px] font-medium ${rep.active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}`}>
                         {rep.active ? "Activo" : "Inactivo"}
                       </span>
                     </td>
@@ -174,17 +211,16 @@ export function SalesRepView() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-4">
         {(["pending", "authorized", "paid", "cancelled"] as const).map((s) => (
-          <span key={s} className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
-            <BadgeEl meta={COMMISSION_META[s]} /> {COMMISSION_META[s].label}
-          </span>
+          <BadgeEl key={s} meta={COMMISSION_META[s]} />
         ))}
       </div>
 
       {selectedRepId && (
         <SalesRepDrawer repId={selectedRepId} onClose={() => setSelectedRepId(null)} />
       )}
+      </>)}
     </div>
   );
 }

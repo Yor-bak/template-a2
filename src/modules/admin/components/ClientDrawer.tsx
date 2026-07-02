@@ -3,19 +3,26 @@ import { useState } from "react";
 import type {
   ClientStatus, ContractType, MonthlyPaymentStatus,
   OnboardingChecklist, PaymentStatus, PublicPageStatus, UserPlan,
+  BusinessType, MonthlyPaymentPeriod,
 } from "@/types/user";
 import {
   useAdminStore, CONTRACT_TYPE_LABELS, CLIENT_STATUS_LABELS,
-  PAYMENT_STATUS_LABELS, DOC_TYPE_LABELS,
+  PAYMENT_STATUS_LABELS, DOC_TYPE_LABELS, BUSINESS_TYPE_LABELS,
+  FIRST_MONTHLY_COMMISSION_TYPE,
 } from "@/store/adminStore";
+import { getBusinessVertical, hasPermission } from "@/lib/adminPermissions";
+import { useAdminAuth } from "@/store/adminStore";
 import {
   S, BadgeEl, PlanBadge, AccessBadge, SectionTitle, Divider, DRow,
   PAYMENT_META, CLIENT_META, MONTH_META, ONBOARDING_META, PAGE_META,
-  fmtDate, fmtDateTime,
+  fmtDate, fmtDateTime, TabBar, TabButton,
 } from "./adminUi";
 import { ContractsTab } from "./ContractsTab";
+import { adminResetClientPassword, generateTempPassword, getClientCredentialInfo } from "@/lib/clientAuth";
+import { formatPhoneDisplay, validatePhoneNumber } from "@/lib/phoneUtils";
+import { checkSubdomainAvailability, normalizeSubdomain } from "@/lib/transferRules";
 
-type Tab = "general" | "datos" | "pagos" | "contratos" | "config";
+type Tab = "general" | "datos" | "pagos" | "contratos" | "config" | "acceso";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "general",   label: "General"          },
@@ -23,6 +30,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "pagos",     label: "Pagos"            },
   { key: "contratos", label: "Contratos"        },
   { key: "config",    label: "Config"           },
+  { key: "acceso",    label: "Acceso"           },
 ];
 
 const CHECKLIST_LABELS: Record<keyof OnboardingChecklist, string> = {
@@ -76,9 +84,6 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
               onClick={() => store.setPublicPageStatus(c.id, c.publicPageStatus === "published" ? "hidden" : "published")}>
               {c.publicPageStatus === "published" ? "Ocultar página" : "Publicar página"}
             </button>
-            <button className={S.btnRose} onClick={() => store.togglePro(c.id)}>
-              {c.isPro ? "Quitar Pro" : "↑ Pro"}
-            </button>
           </div>
         </section>
 
@@ -101,7 +106,8 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
               <select className={S.select} value={c.plan}
                 onChange={(e) => store.setPlan(c.id, e.target.value as UserPlan)}>
                 <option value="standard">Standard</option>
-                <option value="pro">Pro</option>
+                <option value="cowork">Cowork</option>
+                <option value="intelligence">Intelligence</option>
               </select>
             </div>
           </div>
@@ -127,6 +133,43 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
               ))}
             </select>
           </div>
+          {c.salesRepId && (() => {
+            const fmComm = store.commissions.find(
+              (x) =>
+                x.commissionType === FIRST_MONTHLY_COMMISSION_TYPE &&
+                x.clientId === c.id &&
+                x.status !== "cancelled"
+            );
+            const isLocked = fmComm
+              ? (["pending", "authorized", "paid"] as string[]).includes(fmComm.status)
+              : false;
+            return (
+              <label className="flex items-start gap-2 cursor-pointer select-none mt-3">
+                <input
+                  type="checkbox"
+                  checked={!!c.firstMonthlyPaymentGeneratesCommission}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      store.ensureFirstMonthlyCommission(c.id);
+                    } else {
+                      store.cancelWaitingFirstMonthlyCommission(c.id);
+                    }
+                  }}
+                  className="mt-0.5 accent-[var(--accent)]"
+                  disabled={isLocked}
+                />
+                <div>
+                  <span className="text-xs text-[var(--text-primary)]">Comisión al pago de la 1ª mensualidad</span>
+                  {fmComm?.status === "waiting_first_monthly_payment" && (
+                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Esperando primera mensualidad</p>
+                  )}
+                  {fmComm && fmComm.status !== "waiting_first_monthly_payment" && (
+                    <p className="text-[10px] text-[var(--accent)] mt-0.5">✓ Comisión pendiente de pago</p>
+                  )}
+                </div>
+              </label>
+            );
+          })()}
         </section>
 
         <Divider />
@@ -175,8 +218,19 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
 
         <Divider />
 
-        <FieldGroup title="Metadatos">
+        <FieldGroup title="Identificación y acceso">
           <DataRow label="N° de cliente" value={c.clientNumber} />
+          <DRow label="Teléfono de acceso">
+            <span className="font-mono text-[var(--text-primary)]">
+              {c.accessPhone ? c.accessPhone : (c.specialist.phone ?? "—")}
+            </span>
+          </DRow>
+          {c.specialist.email && <DataRow label="Correo de contacto" value={c.specialist.email} />}
+        </FieldGroup>
+
+        <Divider />
+
+        <FieldGroup title="Metadatos">
           <DataRow label="Creado"        value={fmtDate(c.createdAt)} />
           {c.updatedAt && <DataRow label="Actualizado" value={fmtDateTime(c.updatedAt)} />}
         </FieldGroup>
@@ -189,10 +243,26 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
   function DatosTab() {
     const s  = c.specialist;
     const b  = c.business;
+    const vertical = getBusinessVertical(c.businessType);
     return (
       <div className="space-y-6">
+        {/* Tipo / vertical */}
         <section>
-          <SectionTitle>Especialista</SectionTitle>
+          <SectionTitle>Tipo de negocio</SectionTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-[var(--text-muted)]">
+              {c.businessType ? BUSINESS_TYPE_LABELS[c.businessType as BusinessType] : "Sin definir"}
+            </span>
+            {vertical === "gimnasios" && (
+              <span className="text-[10px] text-[var(--text-muted)] italic">
+                Producto Gimnasios — pendiente de configuración
+              </span>
+            )}
+          </div>
+        </section>
+        <Divider />
+        <section>
+          <SectionTitle>Responsable del negocio</SectionTitle>
           <div className="space-y-1.5">
             <DataRow label="Nombre"
               value={`${s.firstName} ${s.lastNamePaternal}${s.lastNameMaternal ? " " + s.lastNameMaternal : ""}`} />
@@ -200,7 +270,7 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
           </div>
         </section>
         <Divider />
-        <FieldGroup title="Contacto del especialista">
+        <FieldGroup title="Contacto del responsable">
           {s.phone && (
             <DRow label="Teléfono">
               <a href={`tel:${s.phone}`} className="text-[var(--accent)] hover:underline">{s.phone}</a>
@@ -234,7 +304,7 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
         )}
         <Divider />
         <section>
-          <SectionTitle>Negocio / Consultorio</SectionTitle>
+          <SectionTitle>Información del negocio</SectionTitle>
           <div className="space-y-1.5">
             <DataRow label="Nombre" value={b.name} />
             {b.commercialName && <DataRow label="Nombre comercial" value={b.commercialName} />}
@@ -273,15 +343,107 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
     );
   }
 
+  // ── Partial payment periods section ────────────────────────────────────────
+
+  function PeriodsSection({ clientId, expectedAmount }: { clientId: string; expectedAmount: number }) {
+    const { monthlyPeriods } = useAdminStore();
+    const periods: MonthlyPaymentPeriod[] = (monthlyPeriods ?? [])
+      .filter((p) => p.clientId === clientId)
+      .sort((a, b) => a.period.localeCompare(b.period));
+
+    if (periods.length === 0) return null;
+
+    const statusLabel: Record<MonthlyPaymentPeriod["status"], string> = {
+      pending:  "Pendiente",
+      partial:  "Pago parcial",
+      paid:     "Pagado",
+      overdue:  "Vencido",
+    };
+    const statusCls: Record<MonthlyPaymentPeriod["status"], string> = {
+      pending: "text-[var(--text-muted)] font-medium",
+      partial: "text-[var(--danger)] font-medium",
+      paid:    "text-[var(--accent)] font-medium",
+      overdue: "text-[var(--danger)] font-medium",
+    };
+
+    function periodLabel(key: string) {
+      const NAMES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+      const [yr, mo] = key.split("-");
+      return `${NAMES[parseInt(mo) - 1] ?? mo} ${yr}`;
+    }
+
+    return (
+      <section>
+        <SectionTitle>Abonos por periodo</SectionTitle>
+        <div className="space-y-2">
+          {periods.map((period) => (
+            <div key={period.id} className="border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] overflow-hidden">
+              {/* Period header */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--bg-elevated)]">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-[var(--text-primary)]">{periodLabel(period.period)}</span>
+                  <span className={`text-[10.5px] ${statusCls[period.status]}`}>
+                    {statusLabel[period.status]}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-[var(--text-primary)]">
+                    ${period.paidAmount.toLocaleString("es-MX")}
+                    <span className="text-[var(--text-muted)] font-normal"> / ${period.expectedAmount.toLocaleString("es-MX")}</span>
+                  </p>
+                  {period.remainingAmount > 0 && (
+                    <p className="text-[10px] text-[var(--danger)]">Saldo: ${period.remainingAmount.toLocaleString("es-MX")}</p>
+                  )}
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="h-1 bg-[var(--bg-base)]">
+                <div
+                  className={`h-full transition-all ${period.status === "paid" ? "bg-[var(--accent)]" : "bg-[var(--danger)]"}`}
+                  style={{ width: `${period.expectedAmount ? Math.min(100, (period.paidAmount / period.expectedAmount) * 100) : 0}%` }}
+                />
+              </div>
+              {/* Installments */}
+              {period.installments.length > 0 && (
+                <div className="divide-y-[0.5px] divide-[var(--border)]">
+                  {period.installments.map((inst, i) => (
+                    <div key={inst.id} className="flex items-center justify-between px-4 py-2 text-[11px]">
+                      <div className="flex items-center gap-2 text-[var(--text-muted)]">
+                        <span className="w-4 h-4 rounded-full bg-[var(--accent-muted)] text-[var(--accent)] flex items-center justify-center text-[9px] font-bold">{i + 1}</span>
+                        <span>{fmtDate(inst.date)}</span>
+                        {inst.method && <span className="capitalize">{inst.method}</span>}
+                        {inst.reference && <span className="font-mono text-[10px]">{inst.reference}</span>}
+                      </div>
+                      <span className="font-semibold text-[var(--text-primary)]">${inst.amount.toLocaleString("es-MX")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   // ── Tab: Pagos ──────────────────────────────────────────────────────────────
 
   function PagosTab() {
-    const [editActiv, setEditActiv] = useState(c.activationDate);
-    const [editType, setEditType]   = useState<ContractType>(c.contractType);
     const [transferEdit, setTransferEdit] = useState<{ monthId: string; ref: string; date: string } | null>(null);
+    const [renewConfirm, setRenewConfirm] = useState(false);
     const paidCount   = c.paymentHistory.filter((p) => p.status === "paid").length;
     const totalMonths = c.paymentHistory.length;
     const isExpired   = new Date(c.contractEndDate) < new Date();
+
+    // Calculate new contract dates for renewal preview
+    const renewStartDate = new Date().toISOString().split("T")[0];
+    const renewEndMs = new Date();
+    if (renewType === "six_months") renewEndMs.setMonth(renewEndMs.getMonth() + 6);
+    else renewEndMs.setFullYear(renewEndMs.getFullYear() + 1);
+    const renewEndDate = renewEndMs.toISOString().split("T")[0];
+    const renewNextPayment = new Date();
+    renewNextPayment.setMonth(renewNextPayment.getMonth() + 1);
+    const renewNextPaymentDate = renewNextPayment.toISOString().split("T")[0];
 
     return (
       <div className="space-y-5">
@@ -299,46 +461,9 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
         </FieldGroup>
 
         {/* Fechas de pago resumen */}
-        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl px-4 py-3 space-y-1.5">
+        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-3 space-y-1.5">
           {c.lastPaymentAt    && <DataRow label="Último pago real"     value={fmtDate(c.lastPaymentAt)} />}
           {c.nextPaymentDueAt && <DataRow label="Próximo vencimiento"  value={fmtDate(c.nextPaymentDueAt)} />}
-        </div>
-
-        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl p-4 space-y-3">
-          <p className="text-[var(--text-muted)] text-xs font-medium">Renovar contrato desde hoy</p>
-          <div className="flex gap-2">
-            <select className={`${S.select} flex-1`} value={renewType}
-              onChange={(e) => setRenewType(e.target.value as ContractType)}>
-              {(Object.entries(CONTRACT_TYPE_LABELS) as [ContractType, string][]).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-            <button className={S.btnRose} onClick={() => store.renewContract(c.id, renewType)}>Renovar</button>
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-xl p-4 space-y-3">
-          <p className="text-[var(--text-muted)] text-xs font-medium">Ajustar fechas del contrato</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={S.label}>Inicio</label>
-              <input type="date" className={S.input} value={editActiv}
-                onChange={(e) => setEditActiv(e.target.value)} />
-            </div>
-            <div>
-              <label className={S.label}>Tipo</label>
-              <select className={S.select} value={editType}
-                onChange={(e) => setEditType(e.target.value as ContractType)}>
-                {(Object.entries(CONTRACT_TYPE_LABELS) as [ContractType, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <button className={S.btnSecondary}
-            onClick={() => store.regenerateHistory(c.id, editActiv, editType)}>
-            Aplicar y regenerar historial
-          </button>
         </div>
 
         <Divider />
@@ -362,6 +487,9 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
           </div>
           <p className="text-[10px] text-[var(--text-muted)]">{paidCount}/{totalMonths} meses pagados</p>
         </section>
+
+        {/* ── Partial payment periods ────────────────────────────── */}
+        <PeriodsSection clientId={c.id} expectedAmount={c.monthlyAmount ?? 0} />
 
         <section>
           <SectionTitle>Historial mensual</SectionTitle>
@@ -437,6 +565,44 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
             ))}
           </div>
         </section>
+
+        <Divider />
+
+        {/* Renovación de contrato — at the bottom, separate from payments */}
+        <section className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] p-4 space-y-3">
+          <SectionTitle>Renovación de contrato</SectionTitle>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            Genera un nuevo ciclo de pagos desde hoy, reemplazando las fechas actuales del contrato.
+          </p>
+          <div className="flex gap-2">
+            <select className={`${S.select} flex-1`} value={renewType}
+              onChange={(e) => setRenewType(e.target.value as ContractType)}>
+              {(Object.entries(CONTRACT_TYPE_LABELS) as [ContractType, string][]).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+            <button className={S.btnRose} onClick={() => setRenewConfirm(true)}>Renovar contrato desde hoy</button>
+          </div>
+
+          {renewConfirm && (
+            <div className="bg-[var(--bg-base)] border-[0.5px] border-[var(--accent)] rounded-[var(--radius-surface)] p-3 space-y-2 mt-2">
+              <p className="text-xs font-semibold text-[var(--text-primary)]">Confirmar renovación</p>
+              <div className="text-[11px] text-[var(--text-muted)] space-y-1">
+                <p>Cliente: <span className="text-[var(--text-primary)]">{c.business.name} — {c.specialist.publicName}</span></p>
+                <p>Plan: <span className="text-[var(--text-primary)]">{CONTRACT_TYPE_LABELS[renewType]}</span></p>
+                <p>Nuevo inicio: <span className="text-[var(--text-primary)]">{fmtDate(renewStartDate)}</span></p>
+                <p>Nuevo vencimiento: <span className="text-[var(--accent)]">{fmtDate(renewEndDate)}</span></p>
+                <p>Próximo pago: <span className="text-[var(--text-primary)]">{fmtDate(renewNextPaymentDate)}</span></p>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button className={S.btnPrimary + " flex-1 !text-xs !py-1.5"} onClick={() => { store.renewContract(c.id, renewType); setRenewConfirm(false); }}>
+                  Confirmar renovación
+                </button>
+                <button className={S.btnSecondary + " !text-xs !py-1.5"} onClick={() => setRenewConfirm(false)}>Cancelar</button>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     );
   }
@@ -483,7 +649,7 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
             <div className="space-y-2">
               {c.documents.map((doc) => (
                 <div key={doc.id}
-                  className="flex items-center justify-between bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-lg px-3 py-2">
+                  className="flex items-center justify-between bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-control)] px-3 py-2">
                   <div>
                     <p className="text-xs text-[var(--text-primary)]">{doc.name}</p>
                     <p className="text-[10px] text-[var(--text-muted)]">
@@ -561,12 +727,12 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[var(--bg-base)] border-l-[0.5px] border-[var(--border)] flex flex-col h-full">
+      <div className="relative w-full max-w-md bg-[var(--bg-surface)] border-l-[0.5px] border-[var(--border)] shadow-[0_1px_3px_rgba(0,0,0,.35)] flex flex-col h-full">
 
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b-[0.5px] border-[var(--border)] shrink-0">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--bg-base)] text-sm font-bold shrink-0 bg-[var(--accent)]">
+            <div className="w-10 h-10 rounded-[var(--radius-surface)] flex items-center justify-center text-[var(--bg-base)] text-sm font-bold shrink-0 bg-[var(--accent)]">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -581,7 +747,12 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
                 )}
               </div>
               <h2 className="text-[var(--text-primary)] font-semibold text-sm leading-tight truncate">{c.business.name}</h2>
-              <p className="text-[var(--text-muted)] text-xs mt-0.5">{c.specialist.publicName}</p>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5">
+                {c.specialist.publicName}
+                {c.businessType && (
+                  <span className="ml-1.5 text-[10px] font-mono text-[var(--border)]">· {BUSINESS_TYPE_LABELS[c.businessType as BusinessType]}</span>
+                )}
+              </p>
             </div>
             <button onClick={onClose}
               className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors text-lg shrink-0">
@@ -599,18 +770,13 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b-[0.5px] border-[var(--border)] shrink-0 px-1 bg-[var(--bg-surface)] overflow-x-auto">
+        <TabBar className="shrink-0 px-4">
           {TABS.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-3 py-3 text-[11px] font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
-                tab === t.key
-                  ? "text-[var(--accent)] border-[var(--accent)]"
-                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]"
-              }`}>
+            <TabButton key={t.key} active={tab === t.key} onClick={() => setTab(t.key)} className="px-3 py-3 mr-1">
               {t.label}
-            </button>
+            </TabButton>
           ))}
-        </div>
+        </TabBar>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto adm-scroll px-5 py-5">
@@ -619,8 +785,291 @@ export function ClientDrawer({ clientId, onClose }: { clientId: string; onClose:
           {tab === "pagos"     && <PagosTab   />}
           {tab === "contratos" && <ContractsTab client={c} />}
           {tab === "config"    && <ConfigTab  />}
+          {tab === "acceso"    && <AccesoTab  />}
         </div>
       </div>
     </div>
   );
+
+  // ── AccesoTab ────────────────────────────────────────────────────────────────
+
+  function AccesoTab() {
+    const auth = useAdminAuth();
+    const canViewAccess    = auth.can("client.access.view");
+    const canEditAccess    = auth.can("client.access.edit");
+    const canResetPassword = auth.can("client.password.reset");
+    const canEditSubdomain = auth.can("client.subdomain.edit");
+
+    const credInfo = getClientCredentialInfo(c.id);
+
+    // Password reset wizard state
+    const [resetStep, setResetStep] = useState<0 | 1 | 2 | 3>(0); // 0=hidden 1=confirm 2=set 3=done
+    const [resetReason, setResetReason] = useState("");
+    const [newPw, setNewPw] = useState("");
+    const [showNewPw, setShowNewPw] = useState(false);
+    const [confirmNewPw, setConfirmNewPw] = useState("");
+    const [tempPwCopied, setTempPwCopied] = useState(false);
+    const [resetError, setResetError] = useState("");
+    const [generatedPw, setGeneratedPw] = useState("");
+
+    // Phone edit state
+    const [phoneEdit, setPhoneEdit] = useState<string | null>(null);
+    const [phoneError, setPhoneError] = useState("");
+
+    // Subdomain edit state
+    const [subEdit, setSubEdit] = useState<string | null>(null);
+    const [subError, setSubError] = useState("");
+    const [subMsg, setSubMsg] = useState("");
+
+    const store = useAdminStore();
+    const clients = store.clients;
+
+    function handleGenTempPw() {
+      const pw = generateTempPassword();
+      setNewPw(pw);
+      setConfirmNewPw(pw);
+      setGeneratedPw(pw);
+    }
+
+    function handleResetConfirm() {
+      setResetError("");
+      if (!newPw.trim()) { setResetError("La contraseña es obligatoria."); return; }
+      if (newPw.length < 6) { setResetError("Mínimo 6 caracteres."); return; }
+      if (newPw !== confirmNewPw) { setResetError("Las contraseñas no coinciden."); return; }
+      const ok = adminResetClientPassword(c.id, newPw, auth.displayName);
+      if (ok.success) {
+        store.setMustChangePassword(c.id, true);
+        store.updateClientLastAccess(c.id);
+        setResetStep(3);
+      } else {
+        setResetError("No se encontró la credencial del cliente.");
+      }
+    }
+
+    function handlePhoneSave() {
+      const v = validatePhoneNumber(phoneEdit ?? "");
+      if (!v.valid) { setPhoneError(v.message); return; }
+      store.updateClientAccessPhone(c.id, phoneEdit!);
+      setPhoneEdit(null);
+      setPhoneError("");
+    }
+
+    function handleSubSave() {
+      const norm = normalizeSubdomain(subEdit ?? "");
+      const chk = checkSubdomainAvailability(norm, clients, c.id);
+      if (!chk.available) { setSubError(chk.message); return; }
+      store.setSlug(c.id, norm);
+      setSubEdit(null);
+      setSubError("");
+      setSubMsg("Subdominio actualizado.");
+    }
+
+    if (!canViewAccess) {
+      return (
+        <div className="py-12 text-center text-[var(--text-muted)] text-sm">
+          No tienes permiso para ver los datos de acceso.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Access info */}
+        <section>
+          <SectionTitle>Datos de acceso</SectionTitle>
+          <div className="space-y-3 bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4">
+            <DRow label="Número de cliente">{c.clientNumber}</DRow>
+            <DRow label="Teléfono de acceso">
+              {phoneEdit !== null ? (
+                <div className="flex flex-col gap-1 items-end">
+                  <div className="flex gap-2">
+                    <input
+                      className={`${S.input} !py-1 !text-xs w-36`}
+                      value={phoneEdit}
+                      onChange={(e) => { setPhoneEdit(e.target.value); setPhoneError(""); }}
+                      placeholder="10 dígitos"
+                    />
+                    <button className={`${S.btnPrimary} !px-2 !py-1 !text-[11px]`} onClick={handlePhoneSave}>Guardar</button>
+                    <button className={`${S.btnSecondary} !px-2 !py-1 !text-[11px]`} onClick={() => setPhoneEdit(null)}>×</button>
+                  </div>
+                  {phoneError && <p className="text-[10px] text-[var(--danger)]">{phoneError}</p>}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[var(--text-primary)]">
+                    {credInfo.accessPhone ? formatPhoneDisplay(credInfo.accessPhone) : (c.accessPhone ? formatPhoneDisplay(c.accessPhone) : "—")}
+                  </span>
+                  {canEditAccess && (
+                    <button className="text-[10px] text-[var(--accent)] hover:underline" onClick={() => setPhoneEdit(credInfo.accessPhone ?? c.accessPhone ?? "")}>
+                      Editar
+                    </button>
+                  )}
+                </div>
+              )}
+            </DRow>
+            <DRow label="Correo de contacto">{c.specialist.email ?? "—"}</DRow>
+            <DRow label="Estado de acceso">{c.accessActive ? "Activo" : "Inactivo"}</DRow>
+            <DRow label="Cambio de contraseña pendiente">{c.mustChangePassword ? "Sí" : "No"}</DRow>
+            {c.lastAccessAt && <DRow label="Último acceso">{fmtDateTime(c.lastAccessAt)}</DRow>}
+            {!credInfo.hasCredential && (
+              <p className="text-[11px] text-[var(--text-muted)] bg-[var(--bg-base)] rounded px-2 py-1.5">
+                Este cliente no tiene credenciales configuradas aún. Se configuran durante la activación.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Subdomain */}
+        <section>
+          <SectionTitle>Subdominio</SectionTitle>
+          <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4 space-y-3">
+            {subEdit !== null ? (
+              <div className="space-y-2">
+                <input
+                  className={S.input}
+                  value={subEdit}
+                  onChange={(e) => { setSubEdit(normalizeSubdomain(e.target.value)); setSubError(""); setSubMsg(""); }}
+                />
+                <p className="text-[10px] text-[var(--text-muted)]">Vista previa: {subEdit || "…"}.templatea2.com</p>
+                <p className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-base)] rounded px-2 py-1">
+                  ⚠️ Cambiar el subdominio puede afectar enlaces compartidos, códigos QR e integraciones existentes.
+                </p>
+                {subError && <p className="text-[11px] text-[var(--danger)]">{subError}</p>}
+                <div className="flex gap-2">
+                  <button className={`${S.btnPrimary} flex-1`} onClick={handleSubSave}>Guardar subdominio</button>
+                  <button className={S.btnSecondary} onClick={() => { setSubEdit(null); setSubError(""); setSubMsg(""); }}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-mono text-[var(--text-primary)]">{c.slug}</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{c.subdomain}</p>
+                </div>
+                {canEditSubdomain && (
+                  <button className="text-[11px] text-[var(--accent)] hover:underline" onClick={() => { setSubEdit(c.slug); setSubMsg(""); }}>
+                    Editar
+                  </button>
+                )}
+              </div>
+            )}
+            {subMsg && <p className="text-[11px] text-[var(--accent)]">{subMsg}</p>}
+          </div>
+        </section>
+
+        {/* Password reset — Superadmin only */}
+        {canResetPassword && (
+          <section>
+            <SectionTitle>Restablecer contraseña</SectionTitle>
+
+            {resetStep === 0 && (
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4">
+                <p className="text-xs text-[var(--text-muted)] mb-3">
+                  El Superadmin puede restablecer la contraseña. El cliente deberá cambiarla en su próximo acceso. La contraseña actual nunca es visible.
+                </p>
+                <button className={S.btnDanger + " w-full"} onClick={() => setResetStep(1)}>
+                  Restablecer contraseña
+                </button>
+              </div>
+            )}
+
+            {resetStep === 1 && (
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-[var(--radius-surface)] px-4 py-4 space-y-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-[var(--text-primary)]">Confirmar restablecimiento</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">Cliente: <b>{c.clientNumber}</b> — {c.specialist.publicName}</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">Teléfono: {credInfo.accessPhone ? formatPhoneDisplay(credInfo.accessPhone) : "—"}</p>
+                </div>
+                <div>
+                  <label className={S.label}>Motivo (opcional)</label>
+                  <input className={S.input} value={resetReason} onChange={(e) => setResetReason(e.target.value)} placeholder="Ej. Cliente olvidó su contraseña" />
+                </div>
+                <div className="flex gap-2">
+                  <button className={S.btnPrimary + " flex-1"} onClick={() => setResetStep(2)}>Continuar</button>
+                  <button className={S.btnSecondary} onClick={() => { setResetStep(0); setResetReason(""); }}>Cancelar</button>
+                </div>
+              </div>
+            )}
+
+            {resetStep === 2 && (
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-[var(--radius-surface)] px-4 py-4 space-y-4">
+                <p className="text-xs font-semibold text-[var(--text-primary)]">Establecer contraseña temporal</p>
+                <button
+                  type="button"
+                  className="text-[11px] text-[var(--accent)] hover:underline"
+                  onClick={handleGenTempPw}
+                >
+                  ⚡ Generar contraseña temporal
+                </button>
+                <div>
+                  <label className={S.label}>Nueva contraseña *</label>
+                  <div className="relative">
+                    <input
+                      className={`${S.input} pr-16`}
+                      type={showNewPw ? "text" : "password"}
+                      value={newPw}
+                      onChange={(e) => { setNewPw(e.target.value); setResetError(""); }}
+                      placeholder="Mín. 6 caracteres"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      onClick={() => setShowNewPw(!showNewPw)}
+                    >
+                      {showNewPw ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className={S.label}>Confirmar contraseña *</label>
+                  <input
+                    className={`${S.input} ${confirmNewPw && confirmNewPw !== newPw ? "border-[var(--danger)]" : ""}`}
+                    type={showNewPw ? "text" : "password"}
+                    value={confirmNewPw}
+                    onChange={(e) => setConfirmNewPw(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+                {resetError && <p className="text-[11px] text-[var(--danger)]">{resetError}</p>}
+                <p className="text-[10px] text-[var(--text-muted)]">
+                  ¿Confirmas el restablecimiento de la contraseña? El cliente deberá cambiarla en su próximo acceso.
+                </p>
+                <div className="flex gap-2">
+                  <button className={S.btnDanger + " flex-1"} onClick={handleResetConfirm}>Confirmar restablecimiento</button>
+                  <button className={S.btnSecondary} onClick={() => { setResetStep(0); setNewPw(""); setConfirmNewPw(""); setResetError(""); }}>Cancelar</button>
+                </div>
+              </div>
+            )}
+
+            {resetStep === 3 && (
+              <div className="bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] px-4 py-4 space-y-3">
+                <p className="text-xs font-semibold text-[var(--accent)]">✓ Contraseña restablecida</p>
+                <p className="text-[11px] text-[var(--text-muted)]">El cliente deberá cambiar su contraseña al iniciar sesión.</p>
+                {generatedPw && (
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-mono bg-[var(--bg-base)] border-[0.5px] border-[var(--border)] rounded px-3 py-2 flex-1">
+                      {generatedPw}
+                    </p>
+                    <button
+                      className={`${S.btnSecondary} !px-2 !py-1 !text-[11px]`}
+                      onClick={() => { navigator.clipboard.writeText(generatedPw); setTempPwCopied(true); setTimeout(() => setTempPwCopied(false), 2000); }}
+                    >
+                      {tempPwCopied ? "✓ Copiado" : "Copiar"}
+                    </button>
+                  </div>
+                )}
+                {generatedPw && (
+                  <p className="text-[10px] text-[var(--text-muted)]">Comparte esta contraseña con el cliente por un canal seguro. No se mostrará de nuevo.</p>
+                )}
+                <button className={S.btnSecondary + " w-full"} onClick={() => { setResetStep(0); setNewPw(""); setConfirmNewPw(""); setGeneratedPw(""); }}>
+                  Cerrar
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    );
+  }
 }

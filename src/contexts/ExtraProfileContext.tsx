@@ -6,7 +6,11 @@ import type {
   TemplateImages, DashboardTheme, DashboardColorSet, PaymentInstructions,
   ServiceTemplateMedia,
 } from "@/types/profile";
-import { getThemePreset, DEFAULT_THEME_ID } from "@/lib/dashboardThemes";
+import {
+  getThemePreset, DEFAULT_THEME_ID,
+  getDarkThemePreset, DEFAULT_DARK_THEME_ID,
+  DASHBOARD_DARK_THEME_PRESETS,
+} from "@/lib/dashboardThemes";
 import { DEFAULT_PUBLIC_PROFILE } from "@/data/defaultProfile";
 
 const STORAGE_KEY = "template-a2-public-profile";
@@ -30,15 +34,34 @@ interface BusinessExtra {
 }
 
 const _defaultPreset = getThemePreset(DEFAULT_THEME_ID);
+const _defaultDarkPreset = getDarkThemePreset(DEFAULT_DARK_THEME_ID);
 export const DEFAULT_DASHBOARD_LIGHT: DashboardColorSet = _defaultPreset.light;
-export const DEFAULT_DASHBOARD_DARK: DashboardColorSet = _defaultPreset.dark;
+export const DEFAULT_DASHBOARD_DARK: DashboardColorSet = _defaultDarkPreset.colors;
 
 const DEFAULT_DASHBOARD_THEME: DashboardTheme = {
   selectedThemeId: DEFAULT_THEME_ID,
+  selectedDarkThemeId: DEFAULT_DARK_THEME_ID,
   mode: "light",
   lightColors: _defaultPreset.light,
-  darkColors: _defaultPreset.dark,
+  darkColors: _defaultDarkPreset.colors,
 };
+
+const VALID_DARK_THEME_IDS = new Set(DASHBOARD_DARK_THEME_PRESETS.map((t) => t.id));
+
+/**
+ * Migrates a persisted DashboardTheme from the pre-2026-07 model (dark colors
+ * derived from the same preset as the light theme) to the 5 approved dark
+ * palettes. Idempotent: once selectedDarkThemeId is a valid new id, this is a
+ * no-op on every subsequent run. Never touches selectedThemeId/lightColors/mode.
+ */
+function migrateDashboardTheme(theme: DashboardTheme): DashboardTheme {
+  const storedDarkId = theme.selectedDarkThemeId;
+  if (storedDarkId && VALID_DARK_THEME_IDS.has(storedDarkId)) {
+    return theme; // already migrated — no-op
+  }
+  const fallback = getDarkThemePreset(DEFAULT_DARK_THEME_ID);
+  return { ...theme, selectedDarkThemeId: fallback.id, darkColors: fallback.colors };
+}
 
 export interface ExtraProfileState {
   specialistExtra: SpecialistExtra;
@@ -121,7 +144,13 @@ function loadFromStorage(): ExtraProfileState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_EXTRA;
     const parsed = JSON.parse(raw) as Partial<ExtraProfileState>;
-    return { ...DEFAULT_EXTRA, ...parsed };
+    const merged = { ...DEFAULT_EXTRA, ...parsed };
+    const migratedTheme = migrateDashboardTheme(merged.dashboardTheme);
+    if (migratedTheme !== merged.dashboardTheme) {
+      merged.dashboardTheme = migratedTheme;
+      saveToStorage(merged); // persist the migration immediately, once, idempotently
+    }
+    return merged;
   } catch {
     return DEFAULT_EXTRA;
   }

@@ -87,15 +87,15 @@ export function ContractsOverview({ onOpenClient }: { onOpenClient: (id: string)
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap">
           {FILTER_OPTS.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-medium border-[0.5px] transition-colors ${
+              className={`text-[11px] font-medium transition-colors pb-[3px] border-b ${
                 filter === f.key
-                  ? "bg-[var(--accent)] text-[var(--bg-base)] border-[var(--accent)]"
-                  : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-[var(--accent)]"
+                  ? "text-[var(--text-primary)] border-[var(--accent)]"
+                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]"
               }`}>
               {f.label}
             </button>
@@ -111,7 +111,7 @@ export function ContractsOverview({ onOpenClient }: { onOpenClient: (id: string)
       </div>
 
       {/* Table */}
-      <div className="rounded-xl overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
+      <div className="rounded-none overflow-hidden bg-[var(--bg-base)] border-[0.5px] border-[var(--border)]">
         <div className="px-5 py-3 border-b-[0.5px] border-[var(--border)]">
           <p className="text-[11px] text-[var(--text-muted)]">
             {filtered.length} {filtered.length === 1 ? "contrato" : "contratos"}
@@ -183,11 +183,11 @@ export function ContractsOverview({ onOpenClient }: { onOpenClient: (id: string)
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       {isExpired ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border-[0.5px] bg-[var(--bg-elevated)] text-[var(--danger)] border-[var(--danger)]">
+                        <span className="text-[10px] font-medium text-[var(--danger)]">
                           Vencido
                         </span>
                       ) : isExpiring ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border-[0.5px] bg-[var(--accent-muted)] text-[var(--accent)] border-[var(--accent)]">
+                        <span className="text-[10px] font-medium text-[var(--accent)]">
                           {daysLeft === 0 ? "Vence hoy" : `${daysLeft} día${daysLeft !== 1 ? "s" : ""}`}
                         </span>
                       ) : c.clientStatus === "cancelled" ? (

@@ -2,13 +2,14 @@
 import { useState, useEffect } from "react";
 import type {
   ContractType, PublicPageStatus, UserPlan, ClientStatus,
-  SpecialistInfo, BusinessInfo,
+  SpecialistInfo, BusinessInfo, BusinessType,
 } from "@/types/user";
 import type { NewClientInput } from "@/store/adminStore";
 import {
   useAdminStore, generateSlug, buildSubdomain,
-  generateContractEndDate, CONTRACT_TYPE_LABELS, MX_STATES,
+  generateContractEndDate, CONTRACT_TYPE_LABELS, BUSINESS_TYPE_LABELS, MX_STATES,
 } from "@/store/adminStore";
+import { getBusinessVertical } from "@/lib/adminPermissions";
 import { S, C, fmtDate } from "./adminUi";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -29,13 +30,14 @@ const EMPTY_BUSINESS: BusinessInfo = {
 const today = new Date().toISOString().split("T")[0];
 const EMPTY: NewClientInput = {
   specialist: EMPTY_SPECIALIST, business: EMPTY_BUSINESS,
-  slug: "", plan: "standard", isPro: false,
+  businessType: "other",
+  slug: "", plan: "standard",
   clientStatus: "active", publicPageStatus: "hidden",
   contractType: "six_months", activationDate: today,
   monthlyAmount: 299, onboardingChecklist: EMPTY_CL,
   salesRepId: "", salesRepName: "", assignedTo: "", internalNotes: "",
 };
-const STEPS = ["Especialista", "Negocio", "Cuenta", "Contrato"];
+const STEPS = ["Responsable", "Negocio", "Cuenta", "Contrato"];
 
 // ── Step bar ──────────────────────────────────────────────────────────────────
 
@@ -87,9 +89,17 @@ function G3({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-3 gap-4">{children}</div>;
 }
 
-// ── Step 1: Especialista ──────────────────────────────────────────────────────
+// ── Step 1: Responsable ───────────────────────────────────────────────────────
 
-function StepEspecialista({ data, onChange }: { data: SpecialistInfo; onChange: (p: Partial<SpecialistInfo>) => void }) {
+function StepResponsable({
+  data, businessType, onChange, onBusinessType,
+}: {
+  data: SpecialistInfo;
+  businessType: BusinessType;
+  onChange: (p: Partial<SpecialistInfo>) => void;
+  onBusinessType: (t: BusinessType) => void;
+}) {
+  const vertical = getBusinessVertical(businessType);
   const inp = (field: keyof SpecialistInfo, placeholder: string, type = "text") => (
     <input type={type} className={S.input}
       value={(data[field] as string | undefined) ?? ""}
@@ -104,22 +114,43 @@ function StepEspecialista({ data, onChange }: { data: SpecialistInfo; onChange: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.firstName, data.lastNamePaternal, data.lastNameMaternal]);
 
+  const namePlaceholder = vertical === "gimnasios" ? "Gerente o dueño" : "Mariana";
+  const publicNameHint  = vertical === "gimnasios"
+    ? '"Roberto Gutiérrez"'
+    : '"Dra. Mariana López"';
+  const descPlaceholder = vertical === "gimnasios"
+    ? "Director del gimnasio con 10 años de trayectoria…"
+    : "Especialista con 9 años de experiencia…";
+
   return (
     <div className="space-y-5">
+      {/* Tipo de negocio — siempre visible en el primer paso */}
       <section>
-        <p className={S.section}>Nombre legal</p>
+        <p className={S.section}>Tipo de negocio</p>
+        <F label="Tipo *">
+          <select className={S.select} value={businessType}
+            onChange={(e) => onBusinessType(e.target.value as BusinessType)}>
+            {(Object.entries(BUSINESS_TYPE_LABELS) as [BusinessType, string][]).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        </F>
+      </section>
+
+      <section>
+        <p className={S.section}>Nombre del responsable</p>
         <G3>
-          <F label="Nombre *">{inp("firstName", "Mariana")}</F>
+          <F label="Nombre *">{inp("firstName", namePlaceholder)}</F>
           <F label="Apellido paterno *">{inp("lastNamePaternal", "López")}</F>
           <F label="Apellido materno">{inp("lastNameMaternal", "Fernández")}</F>
         </G3>
       </section>
       <section>
         <p className={S.section}>Nombre público</p>
-        <F label="Nombre en página *" hint='"Dra. Mariana López"'>
+        <F label="Nombre en página *" hint={publicNameHint}>
           <input className={S.input} value={data.publicName}
             onChange={(e) => onChange({ publicName: e.target.value })}
-            placeholder="Dra. Mariana López" />
+            placeholder={vertical === "gimnasios" ? "Roberto Gutiérrez" : "Dra. Mariana López"} />
         </F>
       </section>
       <section>
@@ -127,7 +158,7 @@ function StepEspecialista({ data, onChange }: { data: SpecialistInfo; onChange: 
         <G3>
           <F label="Teléfono">{inp("phone", "5512345678")}</F>
           <F label="WhatsApp">{inp("whatsapp", "5512345678")}</F>
-          <F label="Correo">{inp("email", "dra@clinica.mx", "email")}</F>
+          <F label="Correo">{inp("email", vertical === "gimnasios" ? "gerente@gym.mx" : "dra@clinica.mx", "email")}</F>
         </G3>
       </section>
       <section>
@@ -136,13 +167,13 @@ function StepEspecialista({ data, onChange }: { data: SpecialistInfo; onChange: 
           <F label="Descripción corta">
             <input className={S.input} value={data.shortDescription ?? ""}
               onChange={(e) => onChange({ shortDescription: e.target.value })}
-              placeholder="Especialista con 9 años de experiencia…" />
+              placeholder={descPlaceholder} />
           </F>
           <F label="Biografía">
             <textarea className={`${S.input} min-h-[80px] resize-none`}
               value={data.bio ?? ""}
               onChange={(e) => onChange({ bio: e.target.value })}
-              placeholder="Egresada de la UNAM…" />
+              placeholder={vertical === "gimnasios" ? "Historia del gimnasio…" : "Egresada de la UNAM…"} />
           </F>
         </div>
       </section>
@@ -152,7 +183,17 @@ function StepEspecialista({ data, onChange }: { data: SpecialistInfo; onChange: 
 
 // ── Step 2: Negocio ───────────────────────────────────────────────────────────
 
-function StepNegocio({ data, onChange }: { data: BusinessInfo; onChange: (p: Partial<BusinessInfo>) => void }) {
+function StepNegocio({
+  data, businessType, onChange,
+}: {
+  data: BusinessInfo;
+  businessType: BusinessType;
+  onChange: (p: Partial<BusinessInfo>) => void;
+}) {
+  const vertical = getBusinessVertical(businessType);
+  const namePlaceholder = vertical === "gimnasios" ? "IronFit Gym" : "Clínica Dental Sonrisa";
+  const contactLabel = vertical === "gimnasios" ? "Contacto del negocio" : "Contacto del negocio";
+
   const inp = (field: keyof BusinessInfo, placeholder: string) => (
     <input className={S.input}
       value={(data[field] as string | undefined) ?? ""}
@@ -164,8 +205,8 @@ function StepNegocio({ data, onChange }: { data: BusinessInfo; onChange: (p: Par
       <section>
         <p className={S.section}>Nombre</p>
         <G2>
-          <F label="Nombre del negocio *">{inp("name", "Clínica Dental Sonrisa")}</F>
-          <F label="Nombre comercial" hint="Si difiere del oficial">{inp("commercialName", "Sonrisa")}</F>
+          <F label="Nombre del negocio *">{inp("name", namePlaceholder)}</F>
+          <F label="Nombre comercial" hint="Si difiere del oficial">{inp("commercialName", vertical === "gimnasios" ? "IronFit" : "Sonrisa")}</F>
         </G2>
       </section>
       <section>
@@ -194,7 +235,7 @@ function StepNegocio({ data, onChange }: { data: BusinessInfo; onChange: (p: Par
         </div>
       </section>
       <section>
-        <p className={S.section}>Contacto del consultorio</p>
+        <p className={S.section}>{contactLabel}</p>
         <G3>
           <F label="Teléfono">{inp("phone", "5512345678")}</F>
           <F label="WhatsApp">{inp("whatsapp", "5512345678")}</F>
@@ -239,7 +280,8 @@ function StepCuenta({
           <F label="Plan">
             <select className={S.select} value={plan} onChange={(e) => onPlan(e.target.value as UserPlan)}>
               <option value="standard">Standard</option>
-              <option value="pro">Pro</option>
+              <option value="cowork">Cowork</option>
+              <option value="intelligence">Intelligence</option>
             </select>
           </F>
           <F label="Estado">
@@ -320,7 +362,7 @@ function StepContrato({
             </F>
           </G3>
           {endDate && (
-            <div className="flex items-center justify-between bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-lg px-4 py-3">
+            <div className="flex items-center justify-between bg-[var(--bg-elevated)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-control)] px-4 py-3">
               <span className="text-xs text-[var(--text-muted)]">Fecha de vencimiento calculada</span>
               <span className="text-xs font-mono text-[var(--accent)]">{fmtDate(endDate)}</span>
             </div>
@@ -347,12 +389,13 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
 
-  const setSpec     = (p: Partial<SpecialistInfo>) => setForm((f) => ({ ...f, specialist: { ...f.specialist, ...p } }));
-  const setBusiness = (p: Partial<BusinessInfo>)   => setForm((f) => ({ ...f, business:   { ...f.business,   ...p } }));
+  const setSpec        = (p: Partial<SpecialistInfo>) => setForm((f) => ({ ...f, specialist: { ...f.specialist, ...p } }));
+  const setBusiness    = (p: Partial<BusinessInfo>)   => setForm((f) => ({ ...f, business:   { ...f.business,   ...p } }));
+  const setBusinessType = (t: BusinessType) => setForm((f) => ({ ...f, businessType: t }));
 
   function validateStep() {
     if (step === 0) {
-      if (!form.specialist.firstName.trim())       return "El nombre del especialista es obligatorio.";
+      if (!form.specialist.firstName.trim())       return "El nombre del responsable es obligatorio.";
       if (!form.specialist.lastNamePaternal.trim()) return "El apellido paterno es obligatorio.";
       if (!form.specialist.publicName.trim())       return "El nombre público es obligatorio.";
     }
@@ -376,13 +419,16 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-xl w-full max-w-2xl max-h-[94vh] flex flex-col">
+      <div className="bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] w-full max-w-2xl max-h-[94vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b-[0.5px] border-[var(--border)] shrink-0">
           <div>
             <h2 className="text-[var(--text-primary)] font-semibold">Nuevo cliente</h2>
-            <p className="text-[var(--text-muted)] text-xs mt-0.5">Completa los 4 pasos para registrar el consultorio</p>
+            <p className="text-[var(--text-muted)] text-xs mt-0.5">
+              Completa los 4 pasos para registrar al cliente
+              {form.businessType ? ` · ${BUSINESS_TYPE_LABELS[form.businessType as BusinessType]}` : ""}
+            </p>
           </div>
           <button onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors text-lg">
@@ -394,15 +440,28 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto adm-scroll px-6 py-5">
-          {step === 0 && <StepEspecialista data={form.specialist} onChange={setSpec}     />}
-          {step === 1 && <StepNegocio      data={form.business}   onChange={setBusiness} />}
+          {step === 0 && (
+            <StepResponsable
+              data={form.specialist}
+              businessType={(form.businessType ?? "other") as BusinessType}
+              onChange={setSpec}
+              onBusinessType={setBusinessType}
+            />
+          )}
+          {step === 1 && (
+            <StepNegocio
+              data={form.business}
+              businessType={(form.businessType ?? "other") as BusinessType}
+              onChange={setBusiness}
+            />
+          )}
           {step === 2 && (
             <StepCuenta
               slug={form.slug} plan={form.plan}
               clientStatus={form.clientStatus} publicPageStatus={form.publicPageStatus}
               salesRepId={form.salesRepId ?? ""}
               onSlug={(v) => setForm((p) => ({ ...p, slug: v }))}
-              onPlan={(v) => setForm((p) => ({ ...p, plan: v, isPro: v === "pro" }))}
+              onPlan={(v) => setForm((p) => ({ ...p, plan: v }))}
               onStatus={(v) => setForm((p) => ({ ...p, clientStatus: v }))}
               onPage={(v) => setForm((p) => ({ ...p, publicPageStatus: v }))}
               onSalesRep={(id, name) => setForm((p) => ({ ...p, salesRepId: id, salesRepName: name }))}
@@ -420,7 +479,7 @@ export function NewClientModal({ onClose }: { onClose: () => void }) {
             />
           )}
           {error && (
-            <p className="mt-4 text-[var(--danger)] text-xs bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-lg px-4 py-2.5">
+            <p className="mt-4 text-[var(--danger)] text-xs">
               {error}
             </p>
           )}

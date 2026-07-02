@@ -115,7 +115,7 @@ export function DentistaTemplate03({ profile, onPaletteChange, isPreview = false
       className={`${outfit.variable} ${plusJakarta.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-plus-jakarta)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
       {/* Header: fijo, con CTA de llamada de alto contraste como en la referencia */}

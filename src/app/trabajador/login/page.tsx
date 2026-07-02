@@ -107,7 +107,7 @@ export default function WorkerLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[var(--ds-primary)] text-white font-semibold py-3 rounded-xl text-sm hover:opacity-90 transition-opacity disabled:opacity-60 mt-2"
+              className="w-full bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] font-semibold py-3 rounded-xl text-sm hover:opacity-90 transition-opacity disabled:opacity-60 mt-2"
             >
               {loading ? "Verificando…" : "Iniciar sesión"}
             </button>

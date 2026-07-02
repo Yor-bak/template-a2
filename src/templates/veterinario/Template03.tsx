@@ -206,7 +206,7 @@ export function VeterinarioTemplate03({ profile, onPaletteChange, isPreview = fa
       className={`${libreFranklin.variable} ${hankenGrotesk.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-hanken)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

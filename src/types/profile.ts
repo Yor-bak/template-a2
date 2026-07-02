@@ -180,10 +180,31 @@ export interface DashboardColorSet {
   warning?: string;
   error?: string;
   ring?: string;
+  // Extended tokens (optional) — used by the 5 approved dark palettes for
+  // finer-grained states. Light presets omit these; applyDashboardColors
+  // derives safe fallbacks from the fields above so appearance is unchanged.
+  bgHover?: string;
+  bgSelected?: string;
+  borderStrong?: string;
+  divider?: string;
+  accentHover?: string;
+  accentSoft?: string;
+  accentForeground?: string;
+  textSecondary?: string;
+  textDisabled?: string;
+  successSoft?: string;
+  warningSoft?: string;
+  errorSoft?: string;
+  info?: string;
+  infoSoft?: string;
+  overlay?: string;
+  fontFamily?: string;
 }
 
 export interface DashboardTheme {
   selectedThemeId: string;
+  /** Dark palette id — one of the 5 approved dark themes (see src/lib/dashboardThemes.ts) */
+  selectedDarkThemeId: string;
   mode: "light" | "dark" | "system";
   lightColors: DashboardColorSet;
   darkColors: DashboardColorSet;

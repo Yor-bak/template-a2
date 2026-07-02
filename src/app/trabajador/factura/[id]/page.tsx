@@ -114,7 +114,7 @@ export default function FacturaPage() {
           <div className="ml-auto">
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               <Printer className="w-4 h-4" />
               Imprimir
@@ -125,7 +125,7 @@ export default function FacturaPage() {
         {/* Receipt card */}
         <div className="receipt-card max-w-lg mx-auto bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="bg-[var(--ds-primary)] text-white px-6 py-5">
+          <div className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-6 py-5">
             <div className="flex items-start justify-between">
               <div>
                 <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 mb-3">

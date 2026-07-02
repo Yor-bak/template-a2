@@ -120,7 +120,7 @@ export function EsteticaTemplate01({ profile, onPaletteChange, isPreview = false
       className={`${playfair.variable} ${sora.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-sora)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
       {/* Floating round CTA, not a header/nav bar */}

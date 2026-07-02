@@ -164,7 +164,7 @@ export function EsteticaTemplate03({ profile, onPaletteChange, isPreview = false
       className={`${bodoniModa.variable} ${jost.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-jost)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

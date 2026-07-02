@@ -219,9 +219,11 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
   const pendingFollowUps = followUps.filter((f) => f.status === "pending");
   const totalPlanPending = plans.reduce((s, p) => s + p.pendingAmount, 0);
 
+  const clinicalHistoryEnabled = config.features?.clinicalHistory !== false;
+
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: "resumen", label: "Resumen", icon: Phone },
-    { id: "historial", label: "Historial clínico", icon: ShieldAlert },
+    ...(clinicalHistoryEnabled ? [{ id: "historial" as Tab, label: "Historial clínico", icon: ShieldAlert }] : []),
     { id: "planes", label: `Planes (${plans.length})`, icon: ClipboardList },
     { id: "pagos", label: "Pagos", icon: CreditCard },
     { id: "seguimientos", label: `Seguimientos (${pendingFollowUps.length})`, icon: Bell },
@@ -288,7 +290,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
                   <div><label className={lblCls}>Teléfono</label><input value={resumenForm.phone} onChange={(e) => setResumenForm((f) => ({ ...f, phone: e.target.value }))} className={inp} /></div>
                   <div><label className={lblCls}>Fecha de nacimiento</label><input type="date" value={resumenForm.dateOfBirth} onChange={(e) => setResumenForm((f) => ({ ...f, dateOfBirth: e.target.value }))} className={inp} /></div>
                   <div><label className={lblCls}>Notas internas</label><textarea value={resumenForm.notes} onChange={(e) => setResumenForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className={`${inp} resize-none`} /></div>
-                  <button onClick={saveResumen} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold">Guardar</button>
+                  <button onClick={saveResumen} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold">Guardar</button>
                 </div>
               ) : (
                 <div className="space-y-2 text-sm">
@@ -328,7 +330,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                     )}
                   </div>
-                  <button onClick={() => { if (tagInput.trim()) addTag(tagInput); else setShowTagSug(false); }} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-[var(--ds-primary)] text-white rounded-xl font-semibold">
+                  <button onClick={() => { if (tagInput.trim()) addTag(tagInput); else setShowTagSug(false); }} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] rounded-xl font-semibold">
                     <Plus className="w-3 h-3" />Agregar
                   </button>
                 </div>
@@ -363,7 +365,15 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {/* ── Historial clínico ── */}
-      {tab === "historial" && (
+      {tab === "historial" && !clinicalHistoryEnabled && (
+        <div className="text-center py-16 text-[var(--ds-text-muted)]">
+          <ShieldAlert className="w-8 h-8 mx-auto mb-3 opacity-30" />
+          <p className="font-semibold text-sm">Módulo desactivado</p>
+          <p className="text-xs mt-1">El historial clínico está desactivado para este negocio.</p>
+          <p className="text-xs mt-0.5">Puedes activarlo desde <strong>Configuración → Módulos</strong>.</p>
+        </div>
+      )}
+      {tab === "historial" && clinicalHistoryEnabled && (
         <div className="space-y-5">
           <div className="flex items-start gap-3 bg-[var(--ds-warning)]/10 border border-[var(--ds-warning)]/30 rounded-2xl p-4 text-sm text-[var(--ds-warning)]">
             <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -424,7 +434,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
                   <div><label className={lblCls}>Recomendaciones</label><input type="text" value={noteForm.recommendations} onChange={(e) => setNoteForm((f) => ({ ...f, recommendations: e.target.value }))} className={inp} /></div>
                   <div><label className={lblCls}>Próxima visita</label><input type="text" value={noteForm.nextVisitSuggestion} onChange={(e) => setNoteForm((f) => ({ ...f, nextVisitSuggestion: e.target.value }))} className={inp} /></div>
                 </div>
-                <button onClick={submitNote} disabled={!noteForm.title.trim() || !noteForm.description.trim()} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar nota</button>
+                <button onClick={submitNote} disabled={!noteForm.title.trim() || !noteForm.description.trim()} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar nota</button>
               </div>
             )}
             {notes.length === 0 ? (
@@ -458,7 +468,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-[var(--ds-text)]">Planes de atención</h2>
-            <button onClick={() => { setEditPlanId(null); setShowPlanForm((v) => !v); }} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl">
+            <button onClick={() => { setEditPlanId(null); setShowPlanForm((v) => !v); }} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl">
               <Plus className="w-4 h-4" />Nuevo plan
             </button>
           </div>
@@ -511,7 +521,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
 
               <div className="flex gap-3">
                 <button onClick={() => { setShowPlanForm(false); setEditPlanId(null); }} className="border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)]">Cancelar</button>
-                <button onClick={savePlan} disabled={!planForm.name.trim() || planForm.items.length === 0} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar plan</button>
+                <button onClick={savePlan} disabled={!planForm.name.trim() || planForm.items.length === 0} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar plan</button>
               </div>
             </div>
           )}
@@ -576,7 +586,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-[var(--ds-text)]">Pagos</h2>
-            <button onClick={() => setShowPayForm((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl">
+            <button onClick={() => setShowPayForm((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl">
               <Plus className="w-4 h-4" />Registrar pago
             </button>
           </div>
@@ -610,7 +620,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
               <div><label className={lblCls}>Notas</label><textarea value={payForm.notes} onChange={(e) => setPayForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className={`${inp} resize-none`} /></div>
               <div className="flex gap-3">
                 <button onClick={() => setShowPayForm(false)} className="border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)]">Cancelar</button>
-                <button onClick={savePay} disabled={!payForm.concept.trim() || !payForm.amount} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar pago</button>
+                <button onClick={savePay} disabled={!payForm.concept.trim() || !payForm.amount} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar pago</button>
               </div>
             </div>
           )}
@@ -666,7 +676,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="font-bold text-[var(--ds-text)]">Seguimientos</h2>
-            <button onClick={() => setShowFuForm((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl">
+            <button onClick={() => setShowFuForm((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl">
               <Plus className="w-4 h-4" />Nuevo seguimiento
             </button>
           </div>
@@ -692,7 +702,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
               <div><label className={lblCls}>Descripción</label><textarea value={fuForm.description} onChange={(e) => setFuForm((f) => ({ ...f, description: e.target.value }))} rows={2} className={`${inp} resize-none`} /></div>
               <div className="flex gap-3">
                 <button onClick={() => setShowFuForm(false)} className="border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)]">Cancelar</button>
-                <button onClick={saveFu} disabled={!fuForm.title.trim() || !fuForm.dueDate} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar seguimiento</button>
+                <button onClick={saveFu} disabled={!fuForm.title.trim() || !fuForm.dueDate} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar seguimiento</button>
               </div>
             </div>
           )}
@@ -735,7 +745,7 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         <div className="space-y-4">
           <div className="flex justify-between items-center flex-wrap gap-3">
             <h2 className="font-bold text-[var(--ds-text)]">Fotos y archivos</h2>
-            <button onClick={() => setShowFileForm((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl">
+            <button onClick={() => setShowFileForm((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl">
               <Plus className="w-4 h-4" />Agregar archivo
             </button>
           </div>
@@ -759,16 +769,16 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setShowFileForm(false)} className="border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)]">Cancelar</button>
-                <button onClick={saveFile} disabled={!fileForm.name.trim() || !fileForm.url.trim()} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar archivo</button>
+                <button onClick={saveFile} disabled={!fileForm.name.trim() || !fileForm.url.trim()} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar archivo</button>
               </div>
             </div>
           )}
 
           {/* Category filter */}
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setCatFilter("all")} className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${catFilter === "all" ? "bg-[var(--ds-primary)] text-white border-[var(--ds-primary)]" : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)]"}`}>Todos</button>
+            <button onClick={() => setCatFilter("all")} className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${catFilter === "all" ? "bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] border-[var(--ds-primary)]" : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)]"}`}>Todos</button>
             {(Object.keys(FILE_CATEGORY_LABELS) as FileCategory[]).map((cat) => (
-              <button key={cat} onClick={() => setCatFilter(cat)} className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${catFilter === cat ? "bg-[var(--ds-primary)] text-white border-[var(--ds-primary)]" : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)]"}`}>
+              <button key={cat} onClick={() => setCatFilter(cat)} className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${catFilter === cat ? "bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] border-[var(--ds-primary)]" : "border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg)]"}`}>
                 {FILE_CATEGORY_LABELS[cat]}
               </button>
             ))}

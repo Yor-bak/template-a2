@@ -170,7 +170,7 @@ export function NutriologoTemplate03({ profile, onPaletteChange, isPreview = fal
       className={`${quicksand.variable} ${mulish.variable} min-h-screen bg-[var(--c-bg)] pb-28 text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-mulish)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

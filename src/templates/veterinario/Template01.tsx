@@ -152,7 +152,7 @@ export function VeterinarioTemplate01({ profile, onPaletteChange, isPreview = fa
       className={`${archivo.variable} ${karla.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-karla)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
       {/* Header */}

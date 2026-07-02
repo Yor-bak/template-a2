@@ -150,7 +150,7 @@ export function NutriologoTemplate02({ profile, onPaletteChange, isPreview = fal
       className={`${marcellus.variable} ${mukta.variable} min-h-screen bg-[var(--c-bg)] pb-28 text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-mukta)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

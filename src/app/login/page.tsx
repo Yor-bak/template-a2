@@ -2,80 +2,89 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { ApiError } from "@/lib/api/client";
-import { Eye, EyeOff, Shield } from "lucide-react";
+import { Eye, EyeOff, Phone } from "lucide-react";
+import { validatePhoneNumber } from "@/lib/phoneUtils";
+import { SPECIALIST_DEMO_ACCOUNT } from "@/lib/clientAuth";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, user, isLoading } = useAuth();
 
-  const [email, setEmail] = useState("dentista@demo.com");
-  const [password, setPassword] = useState("demo123");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && user) router.replace("/dashboard");
+    if (!isLoading && user) {
+      if (user.mustChangePassword) {
+        router.replace("/dashboard/configuracion?tab=seguridad");
+      } else {
+        router.replace("/dashboard");
+      }
+    }
   }, [user, isLoading, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!email.trim() || !password.trim()) {
+    if (!phone.trim() || !password.trim()) {
       setError("Completa todos los campos.");
       return;
     }
     setSubmitting(true);
     try {
-      const ok = await login(email, password);
-      if (ok) {
-        router.replace("/dashboard");
-      } else {
-        setError("Credenciales incorrectas. Revisa tu correo y contraseña.");
+      const ok = await login(phone.trim(), password);
+      if (!ok) {
+        setError("Número de teléfono o contraseña incorrectos.");
         setSubmitting(false);
       }
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 0) {
-        setError("No se pudo conectar con el backend. Verifica que FastAPI esté corriendo en localhost:8000.");
-      } else {
-        setError("Ocurrió un error inesperado. Intenta de nuevo.");
-        console.error("[Login] Error inesperado:", err);
-      }
+      // redirect handled by useEffect
+    } catch {
+      setError("Ocurrió un error inesperado. Intenta de nuevo.");
       setSubmitting(false);
     }
   }
 
   if (isLoading) return null;
 
+  const phoneValid = !phone || validatePhoneNumber(phone).valid;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-teal-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--ds-bg)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <Shield className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 bg-[var(--ds-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Phone className="w-7 h-7 text-[var(--ds-primary-fg)]" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Panel dental</h1>
-          <p className="text-gray-500 text-sm mt-1">Acceso exclusivo para el dentista</p>
+          <h1 className="text-2xl font-extrabold text-[var(--ds-text)]">Acceso al panel</h1>
+          <p className="text-[var(--ds-text-muted)] text-sm mt-1">Ingresa con tu número de teléfono</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <div className="bg-[var(--ds-surface)] rounded-2xl border border-[var(--ds-border)] shadow-sm p-8">
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Correo electrónico
+              <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
+                Número de teléfono
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                autoComplete="email"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400"
+                type="tel"
+                value={phone}
+                onChange={(e) => { setPhone(e.target.value); setError(""); }}
+                autoComplete="tel"
+                placeholder="Ej. 55 1234 5678"
+                className={`w-full border rounded-xl px-4 py-2.5 text-sm text-[var(--ds-text)] bg-[var(--ds-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-ring)]/40 focus:border-[var(--ds-ring)] transition-colors ${
+                  phone && !phoneValid ? "border-[var(--ds-error)]" : "border-[var(--ds-border)]"
+                }`}
               />
+              {phone && !phoneValid && (
+                <p className="text-xs text-[var(--ds-error)] mt-1">Ingresa al menos 10 dígitos.</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
                 Contraseña
               </label>
               <div className="relative">
@@ -84,12 +93,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   autoComplete="current-password"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 pr-10"
+                  className="w-full border border-[var(--ds-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--ds-text)] bg-[var(--ds-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-ring)]/40 focus:border-[var(--ds-ring)] transition-colors pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShow(!show)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+                  aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -97,22 +107,26 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5">{error}</p>
+              <p className="text-sm text-[var(--ds-error)] bg-[var(--ds-error)]/8 border border-[var(--ds-error)]/20 rounded-xl px-4 py-2.5">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-sky-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-sky-700 transition-colors disabled:opacity-60 mt-2"
+              className="w-full bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60 mt-2"
             >
-              {submitting ? "Iniciando sesión..." : "Iniciar sesión"}
+              {submitting ? "Verificando…" : "Iniciar sesión"}
             </button>
           </form>
 
-          <div className="mt-5 p-3 bg-gray-50 rounded-xl text-xs text-gray-500 space-y-0.5">
-            <p className="font-semibold text-gray-700 mb-1">Credenciales demo</p>
-            <p>Email: <span className="font-mono">dentista@demo.com</span></p>
-            <p>Contraseña: <span className="font-mono">demo123</span></p>
+          {/* Demo credentials */}
+          <div className="mt-5 p-3 bg-[var(--ds-surface-muted)] rounded-xl text-xs text-[var(--ds-text-muted)] space-y-0.5">
+            <p className="font-semibold text-[var(--ds-text)] mb-1">Credenciales demo</p>
+            <p>Teléfono: <span className="font-mono">{SPECIALIST_DEMO_ACCOUNT.phone}</span></p>
+            <p>Contraseña: <span className="font-mono">{SPECIALIST_DEMO_ACCOUNT.password}</span></p>
+            <p className="opacity-60 mt-1 text-[11px]">
+              ⚠️ Mock frontend — acceso por teléfono no valida con backend real.
+            </p>
           </div>
         </div>
       </div>

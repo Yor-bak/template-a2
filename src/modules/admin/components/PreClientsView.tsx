@@ -4,30 +4,24 @@ import { useAdminStore, BUSINESS_TYPE_LABELS, PRE_CLIENT_STATUS_LABELS } from "@
 import { S, C } from "@/modules/admin/components/adminUi";
 import type { PreClient, PreClientStatus, BusinessType } from "@/types/user";
 
-// ── Design token aliases (Midnight Ink system) ────────────────────────────────
-// Only the three system variants are used — never improvised Tailwind colors.
-const B_ACCENT = `bg-[var(--accent-muted)] text-[var(--accent)] border-[var(--accent)]`;
-const B_MUTED  = `bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border)]`;
-const B_DANGER = `bg-[var(--bg-elevated)] text-[var(--danger)] border-[var(--danger)]`;
-const BADGE    = `inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium tracking-wide border-[0.5px]`;
+// ── Design token aliases (Quiet Ledger system) ────────────────────────────────
+// Status is plain colored text, never a filled badge — only the system's two
+// semantic colors are used, never improvised Tailwind colors.
+const TXT_ACCENT = `text-[var(--accent)] font-medium`;
+const TXT_DANGER = `text-[var(--danger)] font-medium`;
+const BADGE       = `text-[11px] tracking-wide`;
 
 // Status → visual variant mapping
-// new / contacted        → muted   (neutral, no commitment yet)
-// interested / negotiating / awaiting_payment → accent (active pipeline)
-// converted              → accent  (success)
-// discarded              → danger  (lost)
+// awaiting_payment (active pipeline) / converted (success) → accent
+// discarded (lost)                                          → danger
 const PC_META: Record<PreClientStatus, { label: string; cls: string }> = {
-  new:              { label: "Nuevo",          cls: B_MUTED  },
-  contacted:        { label: "Contactado",     cls: B_MUTED  },
-  interested:       { label: "Interesado",     cls: B_ACCENT },
-  negotiating:      { label: "Negociando",     cls: B_ACCENT },
-  awaiting_payment: { label: "Esp. pago",      cls: B_ACCENT },
-  converted:        { label: "Convertido",     cls: B_ACCENT },
-  discarded:        { label: "Descartado",     cls: B_DANGER },
+  awaiting_payment: { label: "Esp. pago",  cls: TXT_ACCENT },
+  converted:        { label: "Convertido", cls: TXT_ACCENT },
+  discarded:        { label: "Descartado", cls: TXT_DANGER },
 };
 
 const ALL_STATUSES: PreClientStatus[] = [
-  "new", "contacted", "interested", "negotiating", "awaiting_payment", "converted", "discarded",
+  "awaiting_payment", "converted", "discarded",
 ];
 
 const ALL_BUSINESS_TYPES: BusinessType[] = [
@@ -88,7 +82,7 @@ interface PcFormState {
 
 const EMPTY_FORM: PcFormState = {
   specialistName: "", phone: "", businessName: "", businessType: "",
-  sellerId: "", status: "new", notes: "",
+  sellerId: "", status: "awaiting_payment", notes: "",
 };
 
 function formFromPc(pc: PreClient): PcFormState {
@@ -137,7 +131,7 @@ function PcModal({ editing, onClose }: { editing: PreClient | null; onClose: () 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div
-        className="w-full max-w-lg rounded-2xl border-[0.5px] border-[var(--border)] p-6"
+        className="w-full max-w-lg rounded-[var(--radius-surface)] border-[0.5px] border-[var(--border)] p-6 shadow-[0_1px_3px_rgba(0,0,0,.35)]"
         style={{ background: C.bgSurface }}
       >
         <h3 className="text-base font-semibold text-[var(--text-primary)] mb-5">
@@ -214,7 +208,7 @@ function PcModal({ editing, onClose }: { editing: PreClient | null; onClose: () 
           </div>
 
           {error && (
-            <p className="text-[var(--danger)] text-xs bg-[var(--bg-elevated)] border-[0.5px] border-[var(--danger)] rounded-lg px-3 py-2">
+            <p className="text-[var(--danger)] text-xs">
               {error}
             </p>
           )}
@@ -244,9 +238,12 @@ export default function PreClientsView() {
   const [editing, setEditing]           = useState<PreClient | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
 
+  // Exclude converted pre-clients from the main list
+  const activePreClients = useMemo(() => preClients.filter((p) => p.status !== "converted"), [preClients]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return preClients.filter((p) => {
+    return activePreClients.filter((p) => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (typeFilter  !== "all" && p.businessType !== typeFilter) return false;
       if (!q) return true;
@@ -257,13 +254,15 @@ export default function PreClientsView() {
         (p.businessName ?? "").toLowerCase().includes(q)
       );
     });
-  }, [preClients, search, statusFilter, typeFilter]);
+  }, [activePreClients, search, statusFilter, typeFilter]);
 
   const counts = useMemo(() => {
-    const c: Partial<Record<PreClientStatus | "all", number>> = { all: preClients.length };
-    for (const s of ALL_STATUSES) c[s] = preClients.filter((p) => p.status === s).length;
+    const convertedCount = preClients.filter((p) => p.status === "converted").length;
+    const c: Partial<Record<PreClientStatus | "all", number>> = { all: activePreClients.length };
+    for (const s of ALL_STATUSES.filter((s) => s !== "converted")) c[s] = activePreClients.filter((p) => p.status === s).length;
+    c["converted"] = convertedCount;
     return c;
-  }, [preClients]);
+  }, [preClients, activePreClients]);
 
   function openCreate() { setEditing(null); setShowModal(true); }
   function openEdit(pc: PreClient) { setEditing(pc); setShowModal(true); }
@@ -273,7 +272,7 @@ export default function PreClientsView() {
     return clients.find((c) => c.id === clientId)?.clientNumber ?? null;
   }
 
-  const thCls = "px-3 py-2.5 text-left text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.1em] whitespace-nowrap";
+  const thCls = "px-3 py-2.5 text-left text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-[0.08em] whitespace-nowrap";
   const tdCls = "px-3 py-3 text-sm text-[var(--text-primary)] align-middle";
 
   return (
@@ -283,7 +282,7 @@ export default function PreClientsView() {
         <div>
           <h2 className="text-base font-semibold text-[var(--text-primary)]">Preclientes</h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            {preClients.length} registros · {counts["converted"] ?? 0} convertidos ·{" "}
+            {activePreClients.length} activos · {counts["converted"] ?? 0} convertidos ·{" "}
             <span className="text-[var(--accent)]">
               Para registrar la transferencia, ve a la pestaña Transferencias
             </span>
@@ -306,7 +305,7 @@ export default function PreClientsView() {
           onChange={(e) => setStatusFilter(e.target.value as PreClientStatus | "all")}
         >
           <option value="all">Todos los estados ({counts.all})</option>
-          {ALL_STATUSES.map((s) => (
+          {ALL_STATUSES.filter((s) => s !== "converted").map((s) => (
             <option key={s} value={s}>
               {PRE_CLIENT_STATUS_LABELS[s]} ({counts[s] ?? 0})
             </option>
@@ -334,8 +333,7 @@ export default function PreClientsView() {
 
       {/* Table */}
       <div
-        className="rounded-xl border-[0.5px] border-[var(--border)] overflow-x-auto"
-        style={{ background: C.bgSurface }}
+        className="rounded-none border-[0.5px] border-[var(--border)] overflow-x-auto bg-[var(--bg-base)]"
       >
         {filtered.length === 0 ? (
           <EmptyState filtered={!!(search || statusFilter !== "all" || typeFilter !== "all")} />
@@ -360,7 +358,7 @@ export default function PreClientsView() {
                 return (
                   <tr
                     key={pc.id}
-                    className={`hover:bg-[var(--bg-elevated)] transition-colors ${isLast ? "" : "border-b-[0.5px] border-[var(--border)]"}`}
+                    className={`hover:bg-[var(--bg-elevated)] transition-colors ${isLast ? "" : "border-b-[0.5px] border-[var(--border)]"} ${pc.status === "discarded" ? "opacity-50" : ""}`}
                   >
                     {/* N° */}
                     <td className={tdCls}>
@@ -371,7 +369,9 @@ export default function PreClientsView() {
 
                     {/* Especialista + notas */}
                     <td className={tdCls}>
-                      <div className="font-medium text-sm">{pc.specialistName}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm">{pc.specialistName}</span>
+                      </div>
                       {pc.notes && (
                         <div
                           className="text-[11px] text-[var(--text-muted)] mt-0.5 max-w-[200px] truncate"
@@ -440,7 +440,7 @@ export default function PreClientsView() {
 
                         {statusDropdown === pc.id && (
                           <div
-                            className="absolute top-full left-0 mt-1 z-30 rounded-lg border-[0.5px] border-[var(--border)] shadow-xl min-w-[170px] overflow-hidden"
+                            className="absolute top-full left-0 mt-1 z-30 rounded-[var(--radius-surface)] border-[0.5px] border-[var(--border)] shadow-[0_1px_3px_rgba(0,0,0,.35)] min-w-[170px] overflow-hidden"
                             style={{ background: C.bgElevated }}
                           >
                             {ALL_STATUSES.filter((s) => s !== "converted").map((s) => (

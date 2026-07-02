@@ -125,7 +125,7 @@ export function PsicologoTemplate03({ profile, onPaletteChange, isPreview = fals
       className={`${fraunces.variable} ${figtree.variable} relative min-h-screen overflow-hidden bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-figtree)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

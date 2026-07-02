@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import type { CommissionStatus } from "@/types/user";
 import { useAdminStore, COMMISSION_STATUS_LABELS } from "@/store/adminStore";
-import { S, Th, BadgeEl, COMMISSION_META, fmtDate } from "./adminUi";
+import { S, Th, BadgeEl, COMMISSION_META, fmtDate, StatGrid, StatCell } from "./adminUi";
 
 export function CommissionsView() {
   const store = useAdminStore();
@@ -39,28 +39,23 @@ export function CommissionsView() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-7">
+    <div>
       <div className="mb-6">
         <h2 className="text-[var(--text-primary)] font-semibold text-base">Comisiones</h2>
         <p className="text-[var(--text-muted)] text-xs mt-0.5">{store.commissions.length} registros totales · comisiones fijas</p>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <StatGrid cols={4} className="mb-6">
         {[
           { label: "Total comisiones", value: `$${totalComm.toLocaleString("es-MX")}`,       sub: `${filtered.length} registros` },
           { label: "Pendientes",       value: `$${pendingTotal.toLocaleString("es-MX")}`,    sub: `${filtered.filter((c) => c.status === "pending").length} comisiones` },
           { label: "Autorizadas",      value: `$${authorizedTotal.toLocaleString("es-MX")}`, sub: `${filtered.filter((c) => c.status === "authorized").length} comisiones` },
           { label: "Pagadas",          value: `$${paidTotal.toLocaleString("es-MX")}`,       sub: `${filtered.filter((c) => c.status === "paid").length} comisiones` },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl px-4 py-4 relative overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-[var(--accent)]" />
-            <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1">{s.label}</p>
-            <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{s.value}</p>
-            <p className="text-[10px] text-[var(--text-muted)]">{s.sub}</p>
-          </div>
+          <StatCell key={s.label} label={s.label} value={s.value} sub={s.sub} />
         ))}
-      </div>
+      </StatGrid>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4">
@@ -101,7 +96,7 @@ export function CommissionsView() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl overflow-hidden bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)]">
+      <div className="rounded-none overflow-hidden bg-[var(--bg-base)] border-[0.5px] border-[var(--border)]">
         <div className="px-5 py-3.5 border-b-[0.5px] border-[var(--border)]">
           <p className="text-[11px] text-[var(--text-muted)]">{filtered.length} registros</p>
         </div>
@@ -213,7 +208,7 @@ export function CommissionsView() {
 
       {payModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-sm bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-2xl p-6 space-y-4">
+          <div className="w-full max-w-sm bg-[var(--bg-surface)] border-[0.5px] border-[var(--border)] rounded-[var(--radius-surface)] shadow-[0_1px_3px_rgba(0,0,0,.35)] p-6 space-y-4">
             <h3 className="text-[var(--text-primary)] font-semibold text-sm">Registrar pago de comisión</h3>
             <div>
               <label className={S.label}>Referencia de transferencia</label>

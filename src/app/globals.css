@@ -49,19 +49,47 @@
   --ds-warning:          #8a5e14;
   --ds-error:            #a83030;
   --ds-ring:             #3fb8a8;
+
+  /* Extended tokens (handoff naming) — same defaults as above, pre-hydration only */
+  --ds-bg-base:              #f7f6f1;
+  --ds-bg-surface:           #fdfcf9;
+  --ds-bg-surface-secondary: #efeee9;
+  --ds-bg-elevated:          #ffffff;
+  --ds-bg-hover:             #efeee9;
+  --ds-bg-selected:          #efeee9;
+  --ds-text-primary:         #102A33;
+  --ds-text-secondary:       #5a6e76;
+  --ds-text-disabled:        #5a6e76;
+  --ds-border-strong:        #dddbd4;
+  --ds-divider:              #dddbd4;
+  --ds-accent-hover:         #3fb8a8;
+  --ds-accent-soft:          #efeee9;
+  --ds-accent-foreground:    #ffffff;
+  --ds-success-soft:         #efeee9;
+  --ds-warning-soft:         #efeee9;
+  --ds-danger:               #a83030;
+  --ds-danger-soft:          #efeee9;
+  --ds-info:                 #3fb8a8;
+  --ds-info-soft:            #efeee9;
+  --ds-focus-ring:           #3fb8a8;
+  --ds-overlay:              rgba(0, 0, 0, 0.5);
 }
 
-/* ── Admin panel design tokens — Midnight Ink ────────────────────────────── */
+/* ── Admin panel design tokens — Quiet Ledger ────────────────────────────── */
 :root {
-  --bg-base:     #0f0e17;
-  --bg-surface:  #1a1b1f;
-  --bg-elevated: #24262b;
-  --accent:      #c9a84c;
-  --accent-muted:#c9a84c44;
-  --text-primary:#f5f0e8;
-  --text-muted:  #9a9ca3;
-  --border:      #34373e;
-  --danger:      #e05a5a;
+  --bg-base:     #0a0a0a;
+  --bg-surface:  #141414;
+  --bg-elevated: #1a1a1a;
+  --accent:      #8a8370;
+  --accent-muted:#8a837022;
+  --text-primary:#f2efe9;
+  --text-muted:  #9a9690;
+  --text-faint:  #6b6659;
+  --border:        rgba(255, 255, 255, .08);
+  --border-strong: rgba(255, 255, 255, .16);
+  --danger:      #c9857a;
+  --radius-control: 6px;
+  --radius-surface: 8px;
 }
 
 @theme inline {
@@ -96,22 +124,59 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-background);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
-  border-radius: 3px;
+/* ── Scrollbar tokens ──────────────────────────────────────────────────────── */
+/*
+ * Track usa rgba(0,0,0,0.06) — capa oscura neutra que produce gris suave
+ * independientemente del color de fondo del tema (evita que un fondo rosado
+ * se filtre cuando el track es transparent).
+ * Thumb usa colores fijos sin referencia a --color-accent ni --ds-accent.
+ */
+:root {
+  --scrollbar-track:       rgba(0, 0, 0, 0.06);
+  --scrollbar-thumb:       #9ca3af;
+  --scrollbar-thumb-hover: #6b7280;
 }
 
-/* Admin-section scrollbar */
-.adm-scroll::-webkit-scrollbar { width: 4px; }
-.adm-scroll::-webkit-scrollbar-track { background: var(--bg-base); }
-.adm-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* Firefox — documento y contenedores internos */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Chrome, Edge, Safari — global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  /* Sin border: evita que el color de fondo del track se filtre por los bordes */
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+/* Admin panel — contexto oscuro: thumbs más sutiles */
+.adm-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #52575f rgba(255, 255, 255, 0.04);
+}
+.adm-scroll::-webkit-scrollbar       { width: 5px; height: 5px; }
+.adm-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.04); }
+.adm-scroll::-webkit-scrollbar-thumb {
+  background: #52575f;
+  border-radius: 999px;
+}
+.adm-scroll::-webkit-scrollbar-thumb:hover { background: #71767f; }
 
 /* Calibration rule: the recurring tick-marked midline motif */
 .rule {
@@ -163,7 +228,14 @@ html {
 
 @media (prefers-reduced-motion: no-preference) {
   .reveal {
-    animation: reveal 0.7s ease-out both;
+    animation: reveal 220ms ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -176,4 +248,29 @@ html {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── Specialist Dashboard / Worker Panel theme root ────────────────────────
+   Scoped to [data-ds-theme-root] so it never touches Admin or public pages. */
+[data-ds-theme-root] input:-webkit-autofill,
+[data-ds-theme-root] input:-webkit-autofill:hover,
+[data-ds-theme-root] input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--ds-bg-elevated) inset;
+  -webkit-text-fill-color: var(--ds-text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-ds-theme-root] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+[data-ds-theme-root] ::-webkit-scrollbar-track {
+  background: var(--ds-bg-base);
+}
+[data-ds-theme-root] ::-webkit-scrollbar-thumb {
+  background: var(--ds-border-strong);
+  border-radius: 3px;
+}
+[data-ds-theme-root] ::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-text-disabled);
 }

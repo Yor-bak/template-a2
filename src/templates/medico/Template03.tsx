@@ -193,7 +193,7 @@ export function MedicoTemplate03({ profile, onPaletteChange, isPreview = false }
       className={`${manrope.variable} ${karla.variable} min-h-screen bg-white text-[var(--c-ink)]`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-karla)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
       {/* Header */}

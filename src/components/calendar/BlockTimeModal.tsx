@@ -104,7 +104,7 @@ export function BlockTimeModal({ defaultDate = "", onClose }: Props) {
             </button>
             <button
               type="submit"
-              className="flex-1 bg-[var(--color-primary)] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors"
+              className="flex-1 bg-[var(--color-primary)] text-[var(--ds-primary-fg)] py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--color-primary-dark)] transition-colors"
             >
               Bloquear
             </button>

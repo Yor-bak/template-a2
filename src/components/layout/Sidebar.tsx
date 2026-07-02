@@ -17,7 +17,6 @@ import {
   HeadsetIcon,
   ClipboardList,
   CreditCard,
-  Bell,
   UsersRound,
 } from "lucide-react";
 
@@ -28,7 +27,6 @@ const nav = [
   { href: "/dashboard/pacientes", label: "Clientes", icon: Users },
   { href: "/dashboard/planes", label: "Planes de atención", icon: ClipboardList },
   { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard },
-  { href: "/dashboard/seguimientos", label: "Seguimientos", icon: Bell },
   { href: "/dashboard/equipo", label: "Equipo", icon: UsersRound, premium: true },
   { href: "/dashboard/ingresos", label: "Ingresos", icon: DollarSign },
   { href: "/dashboard/reportes", label: "Reportes", icon: BarChart2 },

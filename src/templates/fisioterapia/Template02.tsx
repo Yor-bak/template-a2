@@ -178,7 +178,7 @@ export function FisioterapiaTemplate02({ profile, onPaletteChange, isPreview = f
       className={`${bricolage.variable} ${onest.variable} min-h-screen bg-[var(--c-bg)] text-[var(--c-ink)] pb-28`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-onest)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

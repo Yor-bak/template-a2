@@ -149,7 +149,7 @@ export function MedicoTemplate01({ profile, onPaletteChange, isPreview = false }
       className={`${lora.variable} ${nunitoSans.variable} min-h-screen bg-medico-bg text-medico-ink`}
       style={{ ...(PALETTES[active].vars as React.CSSProperties), fontFamily: "var(--f-nunito-sans)" }}
     >
-      {!isPreview && (
+      {isPreview && (
         <PaletteSwitcher palettes={PALETTES} active={active} onSelect={setActive} />
       )}
 

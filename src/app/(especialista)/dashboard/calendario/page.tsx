@@ -134,7 +134,7 @@ export default function CalendarioPage() {
                       "aspect-square flex items-center justify-center rounded-lg text-[11px] transition-all relative",
                       !cell.isCurrentMonth ? "opacity-20 text-[var(--ds-text-muted)]" : "",
                       isSelected
-                        ? "bg-[var(--ds-primary)] text-white font-bold"
+                        ? "bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] font-bold"
                         : isToday
                         ? "ring-1 ring-[var(--color-accent)] text-[var(--ds-text)] font-semibold hover:bg-[var(--ds-surface-muted)]/40"
                         : isClosed && cell.isCurrentMonth

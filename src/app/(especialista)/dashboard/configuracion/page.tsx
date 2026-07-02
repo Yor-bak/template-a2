@@ -7,8 +7,11 @@ import {
   ExternalLink, Save, Wifi, WifiOff, Info,
   Image, Search, MessageSquare, Globe, EyeOff,
   GraduationCap, Star, HelpCircle, Eye, Trash2, Plus,
-  Sun, Moon, Monitor, Database, Download,
+  Sun, Moon, Monitor, Database, Download, Shield, Lock,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { changeClientPassword } from "@/lib/clientAuth";
+import { validatePhoneNumber } from "@/lib/phoneUtils";
 import { useClientData } from "@/contexts/ClientDataContext";
 import { exportToCSV } from "@/lib/exportUtils";
 import type { MessageTemplates } from "@/types/clinic";
@@ -18,7 +21,7 @@ import { useExtraProfile } from "@/contexts/ExtraProfileContext";
 import type { PublicTestimonial, PublicFAQ, DashboardTheme } from "@/types/profile";
 import { getInitials } from "@/lib/profileUtils";
 import { TEMPLATE_REGISTRY, getTemplate } from "@/templates/registry";
-import { DASHBOARD_THEME_PRESETS, getThemePreset } from "@/lib/dashboardThemes";
+import { DASHBOARD_THEME_PRESETS, getThemePreset, DASHBOARD_DARK_THEME_PRESETS, getDarkThemePreset } from "@/lib/dashboardThemes";
 import type { TemplateImageField } from "@/templates/types";
 import { usePublicProfile } from "@/hooks/usePublicProfile";
 import { DEFAULT_CLINIC_CONFIG as legacyClinic } from "@/config/defaultClinicData";
@@ -29,7 +32,7 @@ import {
   validateClinicConfig,
 } from "@/lib/clinicUtils";
 
-type Tab = "general" | "especialista" | "contacto" | "redes" | "horarios" | "pagos" | "apariencia" | "pagina" | "testimonios" | "preguntas" | "automatizacion" | "imagenes" | "seo" | "mensajes" | "datos";
+type Tab = "general" | "especialista" | "contacto" | "redes" | "horarios" | "pagos" | "apariencia" | "pagina" | "testimonios" | "preguntas" | "automatizacion" | "imagenes" | "seo" | "mensajes" | "datos" | "modulos" | "seguridad";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "general",        label: "General",            icon: User          },
@@ -47,6 +50,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "mensajes",       label: "Mensajes",           icon: MessageSquare },
   { id: "automatizacion", label: "Automatización",     icon: Bot           },
   { id: "datos",          label: "Datos y respaldo",   icon: Database      },
+  { id: "modulos",        label: "Módulos",            icon: CheckCircle2  },
+  { id: "seguridad",      label: "Seguridad",          icon: Shield        },
 ];
 
 // ── Shared UI ──────────────────────────────────────────────────────────────────
@@ -55,7 +60,7 @@ const inputCls = (err?: string) =>
   `w-full border ${
     err
       ? "border-red-300 bg-[var(--ds-error)]/10 focus:ring-red-200"
-      : "border-[var(--ds-border)] bg-[var(--ds-surface)] focus:ring-[var(--color-accent-soft)]"
+      : "border-[var(--ds-border)] bg-[var(--ds-surface)] focus:ring-[var(--ds-ring)]/40"
   } rounded-xl px-4 py-2.5 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)]/50 focus:outline-none focus:ring-2 focus:border-[var(--ds-ring)] transition-colors`;
 
 function Field({
@@ -110,7 +115,7 @@ function SaveRow({
       <button
         onClick={onSave}
         disabled={saving || !dirty}
-        className="flex items-center gap-2 bg-[var(--ds-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Save className="w-4 h-4" />
         {saving ? "Guardando…" : "Guardar cambios"}
@@ -308,7 +313,7 @@ function TimeInput({ value, onChange }: { value: string; onChange: (v: string) =
       type="time"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="border border-[var(--ds-border)] bg-[var(--ds-surface)] rounded-lg px-2.5 py-1.5 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)] focus:border-[var(--ds-ring)] transition-colors"
+      className="border border-[var(--ds-border)] bg-[var(--ds-surface)] rounded-lg px-2.5 py-1.5 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-ring)]/40 focus:border-[var(--ds-ring)] transition-colors"
     />
   );
 }
@@ -797,6 +802,88 @@ function LivePreviewPanel({ PreviewComponent, profile, paletteVars, paletteBg }:
   );
 }
 
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function validateImageFile(file: File): string | null {
+  if (!ACCEPTED_TYPES.includes(file.type)) return "Tipo no soportado. Usa JPG, PNG o WebP.";
+  if (file.size > MAX_FILE_BYTES) return "El archivo supera el límite de 5 MB.";
+  return null;
+}
+
+function ImageUploadField({
+  label, required, description, aspectRatio, value, onChange,
+}: {
+  label: string; required?: boolean; description?: string; aspectRatio?: string;
+  value: string; onChange: (v: string) => void;
+}) {
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const err = validateImageFile(file);
+    if (err) { setFileError(err); return; }
+    setFileError(null);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      onChange(dataUrl);
+    } catch {
+      setFileError("Error al procesar el archivo.");
+    }
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
+        {label}{required && <span className="text-[var(--ds-accent)] ml-0.5">*</span>}
+      </label>
+      {description && <p className="text-xs text-[var(--ds-text-muted)]/60 mb-1">{description}</p>}
+      {aspectRatio && <p className="text-xs text-[var(--ds-text-muted)]/50 mb-2">Proporción recomendada: {aspectRatio}</p>}
+      <div className="flex gap-2 items-center flex-wrap">
+        <input
+          type="url"
+          value={value.startsWith("data:") ? "" : value}
+          onChange={e => { setFileError(null); onChange(e.target.value); }}
+          placeholder="https://..."
+          className={`${inputCls()} flex-1 min-w-0`}
+        />
+        <label className="flex items-center gap-1.5 cursor-pointer px-3 py-2 rounded-xl border border-[var(--ds-border)] text-xs text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-muted)] whitespace-nowrap flex-shrink-0">
+          <Image className="w-3.5 h-3.5" />
+          {value ? "Reemplazar" : "Subir archivo"}
+          <input type="file" accept={ACCEPTED_TYPES.join(",")} className="hidden" onChange={handleFile} />
+        </label>
+        {value && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            <button onClick={() => onChange("")} className="text-red-400 hover:text-[var(--ds-error)] flex-shrink-0">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        )}
+      </div>
+      {fileError && <p className="text-xs text-[var(--ds-error)] mt-1">{fileError}</p>}
+      {value?.startsWith("data:") && (
+        <p className="text-[11px] text-[var(--ds-text-muted)]/60 mt-1">
+          ⚠ Imagen almacenada localmente — se perderá al limpiar el navegador. En producción se subirá a un servidor.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function TemplateImagesSection({
   imageFields, currentImages, onUpdate,
 }: {
@@ -810,6 +897,17 @@ function TemplateImagesSection({
     onUpdate({ ...currentImages, [key]: value });
   }
 
+  async function handleMultiFile(key: string, arr: string[], e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    const results: string[] = [];
+    for (const file of files) {
+      if (validateImageFile(file)) continue;
+      try { results.push(await readFileAsDataUrl(file)); } catch { /* skip */ }
+    }
+    updateField(key, [...arr, ...results]);
+  }
+
   return (
     <SectionCard title="Imágenes de esta plantilla">
       <div className="space-y-5">
@@ -818,6 +916,7 @@ function TemplateImagesSection({
 
           if (field.multiple) {
             const arr = (Array.isArray(value) ? value : []) as string[];
+            const canAdd = !field.maxItems || arr.length < field.maxItems;
             return (
               <div key={field.key}>
                 <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
@@ -832,14 +931,14 @@ function TemplateImagesSection({
                     <div key={i} className="flex gap-2 items-center">
                       <input
                         type="url"
-                        value={url}
+                        value={url.startsWith("data:") ? "" : url}
                         onChange={e => {
                           const next = [...arr];
                           next[i] = e.target.value;
                           updateField(field.key, next);
                         }}
                         placeholder="https://..."
-                        className={inputCls()}
+                        className={`${inputCls()} flex-1 min-w-0`}
                       />
                       {url && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -850,13 +949,20 @@ function TemplateImagesSection({
                       </button>
                     </div>
                   ))}
-                  {(!field.maxItems || arr.length < field.maxItems) && (
-                    <button
-                      onClick={() => updateField(field.key, [...arr, ""])}
-                      className="flex items-center gap-1 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-primary)]"
-                    >
-                      <Plus className="w-3 h-3" /> Agregar imagen
-                    </button>
+                  {canAdd && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateField(field.key, [...arr, ""])}
+                        className="flex items-center gap-1 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-primary)]"
+                      >
+                        <Plus className="w-3 h-3" /> Agregar URL
+                      </button>
+                      <label className="flex items-center gap-1 cursor-pointer text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-primary)]">
+                        <Image className="w-3 h-3" /> Subir archivo(s)
+                        <input type="file" accept={ACCEPTED_TYPES.join(",")} multiple className="hidden"
+                          onChange={e => handleMultiFile(field.key, arr, e)} />
+                      </label>
+                    </div>
                   )}
                 </div>
               </div>
@@ -865,33 +971,15 @@ function TemplateImagesSection({
 
           const strVal = typeof value === "string" ? value : "";
           return (
-            <div key={field.key}>
-              <label className="block text-sm font-medium text-[var(--ds-text-muted)] mb-1">
-                {field.label}{field.required && <span className="text-[var(--ds-accent)] ml-0.5">*</span>}
-              </label>
-              {field.description && <p className="text-xs text-[var(--ds-text-muted)]/60 mb-1">{field.description}</p>}
-              {field.recommendedAspectRatio && (
-                <p className="text-xs text-[var(--ds-text-muted)]/50 mb-2">Proporción recomendada: {field.recommendedAspectRatio}</p>
-              )}
-              <div className="flex gap-2 items-center">
-                <input
-                  type="url"
-                  value={strVal}
-                  onChange={e => updateField(field.key, e.target.value)}
-                  placeholder="https://..."
-                  className={inputCls()}
-                />
-                {strVal && (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={strVal} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                    <button onClick={() => updateField(field.key, "")} className="text-red-400 hover:text-[var(--ds-error)] flex-shrink-0">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+            <ImageUploadField
+              key={field.key}
+              label={field.label}
+              required={field.required}
+              description={field.description}
+              aspectRatio={field.recommendedAspectRatio}
+              value={strVal}
+              onChange={v => updateField(field.key, v)}
+            />
           );
         })}
       </div>
@@ -903,11 +991,16 @@ function DashboardThemeSection({ theme, onChange }: {
   theme: DashboardTheme;
   onChange: (partial: Partial<DashboardTheme>) => void;
 }) {
-  const { mode, selectedThemeId } = theme;
+  const { mode, selectedThemeId, selectedDarkThemeId } = theme;
 
   function selectTheme(id: string) {
     const preset = getThemePreset(id);
-    onChange({ selectedThemeId: id, lightColors: preset.light, darkColors: preset.dark });
+    onChange({ selectedThemeId: id, lightColors: preset.light });
+  }
+
+  function selectDarkTheme(id: string) {
+    const preset = getDarkThemePreset(id);
+    onChange({ selectedDarkThemeId: id, darkColors: preset.colors });
   }
 
   const MODE_OPTIONS: { value: DashboardTheme["mode"]; label: string; Icon: React.ElementType }[] = [
@@ -916,40 +1009,17 @@ function DashboardThemeSection({ theme, onChange }: {
     { value: "system", label: "Sistema",Icon: Monitor },
   ];
 
+  const showLightPicker = mode === "light" || mode === "system";
+  const showDarkPicker = mode === "dark" || mode === "system";
+
   return (
     <SectionCard title="Tema del panel">
       <p className="text-xs text-[var(--ds-text-muted)]/70 mb-4">
         Apariencia exclusiva de tu panel privado — no afecta la página pública ni las paletas de los templates.
       </p>
 
-      {/* Theme picker */}
-      <div className="space-y-1.5 mb-5">
-        {DASHBOARD_THEME_PRESETS.map((preset) => {
-          const active = (selectedThemeId ?? "marfil") === preset.id;
-          return (
-            <button
-              key={preset.id}
-              onClick={() => selectTheme(preset.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
-                active
-                  ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/8"
-                  : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40"
-              }`}
-            >
-              <div className="flex gap-1 flex-shrink-0">
-                {preset.previewColors.map((c, i) => (
-                  <span key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10" style={{ background: c }} />
-                ))}
-              </div>
-              <span className="text-sm font-medium text-[var(--ds-text)]">{preset.name}</span>
-              {active && <CheckCircle2 className="w-4 h-4 text-[var(--ds-accent)] ml-auto" />}
-            </button>
-          );
-        })}
-      </div>
-
       {/* Mode selector */}
-      <div>
+      <div className="mb-5">
         <p className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">Modo</p>
         <div className="flex gap-2">
           {MODE_OPTIONS.map(({ value, label, Icon }) => (
@@ -967,6 +1037,74 @@ function DashboardThemeSection({ theme, onChange }: {
           ))}
         </div>
       </div>
+
+      {/* Light theme picker */}
+      {showLightPicker && (
+        <div className="mb-5">
+          <p className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">
+            Paleta clara
+          </p>
+          <div className="space-y-1.5">
+            {DASHBOARD_THEME_PRESETS.map((preset) => {
+              const active = (selectedThemeId ?? "marfil") === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => selectTheme(preset.id)}
+                  aria-pressed={active}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
+                    active
+                      ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/8"
+                      : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40"
+                  }`}
+                >
+                  <div className="flex gap-1 flex-shrink-0">
+                    {preset.previewColors.map((c, i) => (
+                      <span key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10" style={{ background: c }} />
+                    ))}
+                  </div>
+                  <span className="text-sm font-medium text-[var(--ds-text)]">{preset.name}</span>
+                  {active && <CheckCircle2 className="w-4 h-4 text-[var(--ds-accent)] ml-auto" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Dark theme picker — the 5 approved dark palettes */}
+      {showDarkPicker && (
+        <div>
+          <p className="text-xs font-semibold text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">
+            Paleta oscura
+          </p>
+          <div className="space-y-1.5">
+            {DASHBOARD_DARK_THEME_PRESETS.map((preset) => {
+              const active = (selectedDarkThemeId ?? "graphite-aqua") === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => selectDarkTheme(preset.id)}
+                  aria-pressed={active}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
+                    active
+                      ? "border-[var(--color-accent)] bg-[var(--ds-accent)]/8"
+                      : "border-[var(--ds-border)] hover:border-[var(--color-accent)]/40"
+                  }`}
+                >
+                  <div className="flex gap-1 flex-shrink-0">
+                    {preset.previewColors.map((c, i) => (
+                      <span key={i} className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10" style={{ background: c }} />
+                    ))}
+                  </div>
+                  <span className="text-sm font-medium text-[var(--ds-text)]">{preset.name}</span>
+                  {active && <CheckCircle2 className="w-4 h-4 text-[var(--ds-accent)] ml-auto" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </SectionCard>
   );
 }
@@ -1652,7 +1790,7 @@ function TestimoniosTab() {
         </div>
         <button
           onClick={handleAdd}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--ds-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--ds-primary)] px-4 py-2 text-sm font-medium text-[var(--ds-primary-fg)] hover:opacity-90 transition"
         >
           <Plus className="w-4 h-4" /> Agregar testimonio
         </button>
@@ -1727,7 +1865,7 @@ function PreguntasTab() {
         </div>
         <button
           onClick={handleAdd}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--ds-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--ds-primary)] px-4 py-2 text-sm font-medium text-[var(--ds-primary-fg)] hover:opacity-90 transition"
         >
           <Plus className="w-4 h-4" /> Agregar pregunta
         </button>
@@ -1881,7 +2019,7 @@ function DatosTab() {
           <p className="pl-4">"data": {"{"}  clients, carePlans, payments, followUps, appointments, services  {"}"}</p>
           <p>{"}"}</p>
         </div>
-        <button onClick={exportBackup} className="flex items-center gap-2 bg-[var(--ds-primary)] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors">
+        <button onClick={exportBackup} className="flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[var(--ds-primary)] transition-colors">
           <Download className="w-4 h-4" />
           Exportar respaldo completo en JSON
         </button>
@@ -1891,10 +2029,200 @@ function DatosTab() {
   );
 }
 
+// ── Módulos tab ───────────────────────────────────────────────────────────────
+
+function ModulosTab() {
+  const { config, saveConfig, isSaving } = useClinicConfig();
+  const clinicalHistoryEnabled = config.features?.clinicalHistory !== false;
+  const [saved, setSaved] = useState(false);
+
+  async function toggle(value: boolean) {
+    await saveConfig({ features: { ...config.features, clinicalHistory: value } });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <SectionCard title="Módulos del negocio">
+      <p className="text-xs text-[var(--ds-text-muted)] mb-5">
+        Activa o desactiva módulos según las necesidades de tu negocio. Desactivar un módulo no elimina datos existentes; solo oculta el acceso hasta que lo vuelvas a activar.
+      </p>
+      <div className="space-y-4">
+        {/* Clinical history */}
+        <div className="flex items-start justify-between gap-4 p-4 bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-xl">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[var(--ds-text)]">Historial clínico</p>
+            <p className="text-xs text-[var(--ds-text-muted)] mt-0.5">
+              Expedientes y notas clínicas por paciente. Disponible en el perfil de cada cliente.
+            </p>
+            {!clinicalHistoryEnabled && (
+              <p className="text-[11px] text-[var(--ds-warning)] mt-1.5">
+                Desactivado — los datos anteriores siguen guardados y estarán disponibles al reactivar.
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => toggle(!clinicalHistoryEnabled)}
+            disabled={isSaving}
+            className={`flex-shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${clinicalHistoryEnabled ? "bg-[var(--ds-primary)]" : "bg-[var(--ds-border)]"}`}
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${clinicalHistoryEnabled ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
+      </div>
+      {saved && (
+        <div className="mt-3 flex items-center gap-1.5 text-[var(--ds-success)] text-sm">
+          <CheckCircle2 className="w-4 h-4" /> Configuración guardada
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+// ── Seguridad tab ─────────────────────────────────────────────────────────────
+
+function SeguridadTab() {
+  const { user, clearMustChange } = useAuth();
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const phone = user?.phone ?? "";
+  const phoneValid = validatePhoneNumber(phone).valid;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setSuccess("");
+    if (!currentPw.trim()) { setError("La contraseña actual es obligatoria."); return; }
+    if (!newPw.trim()) { setError("La nueva contraseña no puede estar vacía."); return; }
+    if (newPw.length < 6) { setError("La nueva contraseña debe tener al menos 6 caracteres."); return; }
+    if (newPw !== confirmPw) { setError("La nueva contraseña y la confirmación no coinciden."); return; }
+    if (newPw === currentPw) { setError("La nueva contraseña no puede ser igual a la actual."); return; }
+    if (!phoneValid) { setError("Tu cuenta no tiene un teléfono de acceso configurado. Contacta a soporte."); return; }
+
+    setSubmitting(true);
+    const result = changeClientPassword(phone, currentPw, newPw);
+    setSubmitting(false);
+
+    if (result.success) {
+      setSuccess("Contraseña actualizada correctamente.");
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      clearMustChange?.();
+    } else {
+      setError(result.message);
+    }
+  }
+
+  return (
+    <div className="max-w-lg space-y-6">
+      {user?.mustChangePassword && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+          <Lock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+          <p className="text-sm text-amber-800 font-medium">
+            Debes cambiar tu contraseña antes de continuar. Fue establecida por un administrador.
+          </p>
+        </div>
+      )}
+
+      <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Shield className="w-5 h-5 text-[var(--ds-primary)]" />
+          <h2 className="font-bold text-[var(--ds-text)]">Cambiar contraseña</h2>
+        </div>
+        <p className="text-xs text-[var(--ds-text-muted)] -mt-3">
+          Acceso por teléfono: <span className="font-mono font-semibold">{phone || "—"}</span>
+        </p>
+
+        <div className="text-xs text-[var(--ds-text-muted)] bg-[var(--ds-surface-muted)] rounded-xl p-3 space-y-1">
+          <p className="font-semibold text-[var(--ds-text)] mb-1">Requisitos de contraseña</p>
+          <p>• Mínimo 6 caracteres</p>
+          <p>• No puede ser igual a la contraseña actual</p>
+        </div>
+
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--ds-text)] mb-1.5">Contraseña actual</label>
+            <div className="relative">
+              <input
+                type={show ? "text" : "password"}
+                className="w-full border border-[var(--ds-border)] rounded-xl px-4 py-2.5 text-sm bg-[var(--ds-bg)] text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30 pr-20"
+                value={currentPw}
+                onChange={(e) => { setCurrentPw(e.target.value); setError(""); }}
+                autoComplete="current-password"
+              />
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]" onClick={() => setShow(!show)}>
+                {show ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--ds-text)] mb-1.5">Nueva contraseña</label>
+            <input
+              type={show ? "text" : "password"}
+              className="w-full border border-[var(--ds-border)] rounded-xl px-4 py-2.5 text-sm bg-[var(--ds-bg)] text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30"
+              value={newPw}
+              onChange={(e) => { setNewPw(e.target.value); setError(""); }}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--ds-text)] mb-1.5">Confirmar nueva contraseña</label>
+            <input
+              type={show ? "text" : "password"}
+              className={`w-full border rounded-xl px-4 py-2.5 text-sm bg-[var(--ds-bg)] text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-primary)]/30 ${confirmPw && confirmPw !== newPw ? "border-red-300" : "border-[var(--ds-border)]"}`}
+              value={confirmPw}
+              onChange={(e) => { setConfirmPw(e.target.value); setError(""); }}
+              autoComplete="new-password"
+            />
+            {confirmPw && confirmPw !== newPw && (
+              <p className="text-xs text-red-500 mt-1">Las contraseñas no coinciden.</p>
+            )}
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">{error}</p>
+          )}
+          {success && (
+            <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5">{success}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
+          >
+            {submitting ? "Guardando…" : "Actualizar contraseña"}
+          </button>
+        </form>
+
+        <p className="text-[11px] text-[var(--ds-text-muted)] text-center">
+          ⚠️ Mock frontend — las contraseñas se almacenan con obfuscación básica. No apto para producción.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function ConfiguracionPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("general");
+  // Allow URL ?tab=seguridad to open security tab directly (for mustChangePassword redirect)
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const t = sp.get("tab");
+      if (t && ["general","especialista","contacto","redes","horarios","pagos","apariencia","pagina","testimonios","preguntas","automatizacion","imagenes","seo","mensajes","datos","seguridad"].includes(t)) {
+        return t as Tab;
+      }
+    }
+    return "general";
+  });
   const { config, saveConfig } = useClinicConfig();
   const isPublished = config.publicPageStatus === "published";
 
@@ -1935,27 +2263,50 @@ export default function ConfiguracionPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-2xl p-1 mb-6 overflow-x-auto">
-        {TABS.map((tab) => {
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={[
-                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0",
-                active
-                  ? "bg-[var(--ds-surface)] shadow-sm text-[var(--ds-primary)] border border-[var(--ds-border)]"
-                  : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] hover:bg-white/60",
-              ].join(" ")}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Tabs — agrupados visualmente */}
+      {(() => {
+        const TAB_GROUPS: { label: string; ids: Tab[] }[] = [
+          { label: "Negocio",       ids: ["general", "especialista", "contacto", "redes", "horarios", "pagos"] },
+          { label: "Página pública",ids: ["apariencia", "pagina", "testimonios", "preguntas", "imagenes", "seo"] },
+          { label: "Comunicación",  ids: ["mensajes", "automatizacion"] },
+          { label: "Sistema",       ids: ["datos", "modulos", "seguridad"] },
+        ];
+        return (
+          <div className="mb-6 overflow-x-auto">
+            <div className="flex items-start gap-4 min-w-max">
+              {TAB_GROUPS.map((group, gi) => (
+                <div key={group.label} className="flex flex-col gap-1 min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ds-text-muted)]/70 px-1 mb-0.5 whitespace-nowrap">
+                    {group.label}
+                  </p>
+                  <div className="flex items-center gap-0.5 bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-xl p-0.5">
+                    {group.ids.map(id => {
+                      const tab = TABS.find(t => t.id === id);
+                      if (!tab) return null;
+                      const active = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={[
+                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap",
+                            active
+                              ? "bg-[var(--ds-surface)] shadow-sm text-[var(--ds-primary)] border border-[var(--ds-border)]"
+                              : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-surface)]/60",
+                          ].join(" ")}
+                        >
+                          <tab.icon className="w-3 h-3 flex-shrink-0" />
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tab content */}
       {activeTab === "general"        && <GeneralTab />}
@@ -1973,6 +2324,8 @@ export default function ConfiguracionPage() {
       {activeTab === "mensajes"       && <MessagesTab />}
       {activeTab === "automatizacion" && <AutomationTab />}
       {activeTab === "datos"          && <DatosTab />}
+      {activeTab === "modulos"        && <ModulosTab />}
+      {activeTab === "seguridad"      && <SeguridadTab />}
     </div>
   );
 }

@@ -55,6 +55,27 @@ export interface WorkerInvoice {
   createdAt: string;
 }
 
+// ─── Operational task (delegated by specialist, distinct from client assignment) ──
+
+export type OpsTaskStatus = "pending" | "completed" | "overdue";
+
+export interface WorkerOpsTask {
+  id: string;
+  workerId: string;
+  title: string;
+  description?: string;
+  dueDate?: string;   // ISO date
+  status: OpsTaskStatus;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export const OPS_TASK_STATUS_LABELS: Record<OpsTaskStatus, string> = {
+  pending:   "Pendiente",
+  completed: "Completada",
+  overdue:   "Vencida",
+};
+
 // ─── Commission ───────────────────────────────────────────────────────────────
 
 export interface WorkerCommission {
@@ -101,7 +122,8 @@ export interface EquipoStore {
   commissions: WorkerCommission[];
   settlements: WorkerSettlement[];
   assignments: AssignmentMap;
-  tasks: WorkerTask[];
+  tasks: WorkerTask[];        // client assignments (clientName, serviceName…)
+  opsTasks: WorkerOpsTask[];  // operational tasks (title, description…)
   invoices: WorkerInvoice[];
 }
 

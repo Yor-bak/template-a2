@@ -87,7 +87,7 @@ export default function PagosPage() {
           <button onClick={handleExport} className="inline-flex items-center gap-2 border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-3 py-2 rounded-xl text-sm font-medium hover:bg-[var(--ds-bg)]">
             <Download className="w-4 h-4" />CSV
           </button>
-          <button onClick={() => setShowForm((v) => !v)} className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-white px-4 py-2 rounded-xl text-sm font-bold">
+          <button onClick={() => setShowForm((v) => !v)} className="inline-flex items-center gap-2 bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-4 py-2 rounded-xl text-sm font-bold">
             <Plus className="w-4 h-4" />Registrar pago
           </button>
         </div>
@@ -148,7 +148,7 @@ export default function PagosPage() {
           </div>
           <div className="flex gap-3">
             <button onClick={() => setShowForm(false)} className="border border-[var(--ds-border)] text-[var(--ds-text-muted)] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[var(--ds-bg)]">Cancelar</button>
-            <button onClick={save} disabled={!form.clientId || !form.concept.trim() || !form.amount} className="bg-[var(--ds-primary)] text-white px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar pago</button>
+            <button onClick={save} disabled={!form.clientId || !form.concept.trim() || !form.amount} className="bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-40">Guardar pago</button>
           </div>
         </div>
       )}
